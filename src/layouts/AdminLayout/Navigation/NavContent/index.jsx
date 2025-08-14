@@ -46,7 +46,7 @@ export default function NavContent({ navigation, activeNav }) {
       <ListGroup variant="flush" as="ul" bsPrefix=" " className="pc-navbar">
         {navItems}
       </ListGroup>
-      <Card className="nav-action-card m-3">
+      {/* <Card className="nav-action-card m-3">
         <Card.Body>
           <h5 className="text-white">Upgrade To Pro</h5>
           <p className="text-white text-opacity-75">To get more features and components</p>
@@ -54,7 +54,7 @@ export default function NavContent({ navigation, activeNav }) {
             Buy Now
           </a>
         </Card.Body>
-      </Card>
+      </Card> */}
     </SimpleBar>
   );
 
@@ -68,9 +68,13 @@ export default function NavContent({ navigation, activeNav }) {
 
   const mHeader = (
     <div className="m-header">
-      <Link to="/dashboard/sales" className="b-brand">
+      {/* <Link to="/dashboard/sales" className="b-brand">
         <img src={logo} alt="" className="logo logo-lg" />
-      </Link>
+      </Link> */}
+
+       <h1 style={{ margin: 0, padding: "10px", fontSize: "20px", color: "#fff" }}>
+    FLS
+  </h1>
     </div>
   );
 

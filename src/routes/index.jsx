@@ -8,6 +8,10 @@ import AdminLayout from 'layouts/AdminLayout';
 // render - landing page
 const DashboardSales = lazy(() => import('../views/dashboard/DashSales/index'));
 
+const Transition = lazy(() => import('../views/dashboard/Transition/index'));
+
+
+
 // ==============================|| ROUTING RENDER ||============================== //
 
 const router = createBrowserRouter(

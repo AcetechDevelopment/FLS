@@ -15,7 +15,7 @@ export default function NavRight() {
   return (
     <ListGroup as="ul" bsPrefix=" " className="list-unstyled">
       <ListGroup.Item as="li" bsPrefix=" " className="pc-h-item">
-        <Dropdown>
+        {/* <Dropdown>
           <Dropdown.Toggle as="a" variant="link" className="pc-head-link arrow-none me-0">
             <i className="material-icons-two-tone">search</i>
           </Dropdown.Toggle>
@@ -27,10 +27,10 @@ export default function NavRight() {
               </div>
             </Form>
           </Dropdown.Menu>
-        </Dropdown>
+        </Dropdown> */}
       </ListGroup.Item>
       <ListGroup.Item as="li" bsPrefix=" " className="pc-h-item">
-        <Dropdown className="drp-user">
+        {/* <Dropdown className="drp-user">
           <Dropdown.Toggle as="a" variant="link" className="pc-head-link arrow-none me-0 user-name">
             <img src={avatar2} alt="userimage" className="user-avatar" />
             <span>
@@ -54,7 +54,7 @@ export default function NavRight() {
               <i className="material-icons-two-tone">chrome_reader_mode</i> Logout
             </Link>
           </Dropdown.Menu>
-        </Dropdown>
+        </Dropdown> */}
       </ListGroup.Item>
     </ListGroup>
   );

@@ -4,6 +4,9 @@ import AdminLayout from 'layouts/AdminLayout';
 import GuestLayout from 'layouts/GuestLayout';
 
 const DashboardSales = lazy(() => import('../views/dashboard/DashSales/index'));
+const  Transition = lazy(() => import('../views/dashboard/Transition/index'));
+
+
 
 const Typography = lazy(() => import('../views/ui-elements/basic/BasicTypography'));
 const Color = lazy(() => import('../views/ui-elements/basic/BasicColor'));
@@ -25,19 +28,23 @@ const MainRoutes = {
       element: <AdminLayout />,
       children: [
         {
-          path: '/dashboard/sales',
+          path: '/transition/inward',
           element: <DashboardSales />
         },
+          {
+          path: '/transition/dispatch',
+          element: <Transition />
+        },
         {
-          path: '/typography',
+          path: '/dashboard',
           element: <Typography />
         },
         {
-          path: '/color',
+          path: '/settings',
           element: <Color />
         },
         {
-          path: '/icons/Feather',
+          path: '/privilege',
           element: <FeatherIcon />
         },
         {

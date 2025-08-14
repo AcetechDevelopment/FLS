@@ -10,7 +10,7 @@ import { Link } from 'react-router-dom';
 export default function NavLeft() {
   return (
     <ListGroup as="ul" bsPrefix=" " className="list-unstyled">
-      <Dropdown as="li" className="pc-h-item">
+      {/* <Dropdown as="li" className="pc-h-item">
         <Dropdown.Toggle as="a" variant="link" className="pc-head-link arrow-none me-0 active ">
           Level
         </Dropdown.Toggle>
@@ -63,7 +63,7 @@ export default function NavLeft() {
             <span>Log out</span>
           </Dropdown.Item>
         </Dropdown.Menu>
-      </Dropdown>
+      </Dropdown> */}
     </ListGroup>
   );
 }
