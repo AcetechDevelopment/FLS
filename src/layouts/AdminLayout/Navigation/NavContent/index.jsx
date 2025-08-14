@@ -46,15 +46,20 @@ export default function NavContent({ navigation, activeNav }) {
       <ListGroup variant="flush" as="ul" bsPrefix=" " className="pc-navbar">
         {navItems}
       </ListGroup>
-      {/* <Card className="nav-action-card m-3">
-        <Card.Body>
-          <h5 className="text-white">Upgrade To Pro</h5>
-          <p className="text-white text-opacity-75">To get more features and components</p>
-          <a href="https://codedthemes.com/item/dashboardkit-react-admin-template/" target="_blank" className="btn btn-primary">
-            Buy Now
-          </a>
-        </Card.Body>
-      </Card> */}
+<Card 
+  className="nav-action-card mx-auto p-2" 
+  style={{ 
+    background: "#0d6efd", 
+    border: "none", 
+    boxShadow: "none", 
+    borderRadius: "6px",
+    width: "120px" // reduced width
+  }}
+>
+  <Card.Body className="text-center p-2">
+    <h5 className="text-white m-0">Acetech</h5>
+  </Card.Body>
+</Card>
     </SimpleBar>
   );
 
