@@ -46,20 +46,46 @@ export default function NavContent({ navigation, activeNav }) {
       <ListGroup variant="flush" as="ul" bsPrefix=" " className="pc-navbar">
         {navItems}
       </ListGroup>
-<Card 
-  className="nav-action-card mx-auto p-2" 
+
+
+{/* <div 
+  className="sidebar-footer text-center p-2" 
   style={{ 
-    background: "#0d6efd", 
-    border: "none", 
-    boxShadow: "none", 
-    borderRadius: "6px",
-    width: "120px" // reduced width
+    position: "absolute", 
+    bottom: "10px", 
+    width: "100%", 
+    textAlign: "center" 
   }}
 >
-  <Card.Body className="text-center p-2">
-    <h5 className="text-white m-0">Acetech</h5>
+  <h6 className="m-0" style={{ color: "#0d6efd" }}>
+    Acetech
+  </h6>
+</div> */}
+
+
+<Card 
+  className="nav-action-card m-3"
+  style={{ background: "transparent", border: "none", boxShadow: "none" }}
+>
+  <Card.Body>
+    <div 
+      style={{ 
+        position: "absolute", 
+        bottom: "10px", 
+        width: "100%", 
+        display: "flex", 
+        alignItems: "center", 
+        justifyContent: "center", 
+        gap: "10px"  // space between text and lines
+      }}
+    >
+      <div style={{ flex: 1, height: "1px", backgroundColor: "#0d6efd" }}></div>
+      <h6 className="m-0" style={{ color: "#0d6efd", whiteSpace: "nowrap" }}>Acetech</h6>
+      <div style={{ flex: 1, height: "1px", backgroundColor: "#0d6efd" }}></div>
+    </div>
   </Card.Body>
 </Card>
+
     </SimpleBar>
   );
 
