@@ -1,8 +1,8 @@
 import { useContext } from 'react';
 
 // project imports
-import NavLeft from './NavLeft';
-import NavRight from './NavRight';
+// import NavLeft from './NavLeft';
+// import NavRight from './NavRight';
 import { ConfigContext } from 'contexts/ConfigContext';
 
 // -----------------------|| NAV BAR ||-----------------------//
@@ -25,10 +25,10 @@ export default function NavBar() {
     <>
       <div className="header-wrapper">
         <div className={mobDrpClass.join(' ')}>
-          <NavLeft />
+          {/* <NavLeft /> */}
         </div>
         <div className="ms-auto">
-          <NavRight />
+          {/* <NavRight /> */}
         </div>
       </div>
       {(collapseTabMenu || collapseHeaderMenu) && <div className="pc-md-overlay" />}

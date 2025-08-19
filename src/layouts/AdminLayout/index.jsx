@@ -4,7 +4,7 @@ import { Outlet } from 'react-router-dom';
 // project imports
 import MobileHeader from './MobileHeader';
 import Navigation from './Navigation';
-import NavBar from './NavBar';
+// import NavBar from './NavBar';
 import Breadcrumb from './Breadcrumb';
 import useWindowSize from 'hooks/useWindowSize';
 import { ConfigContext } from 'contexts/ConfigContext';
@@ -19,6 +19,7 @@ export default function AdminLayout() {
   const bodyElement = document.body;
   const { collapseLayout } = configContext.state;
   const { dispatch } = configContext;
+
   useEffect(() => {
     if (windowSize.width > 992 && windowSize.width <= 1024) {
       dispatch({ type: actionType.COLLAPSE_MENU });
@@ -33,12 +34,19 @@ export default function AdminLayout() {
 
   let containerClass = ['pc-container'];
 
-  let adminlayout = (
+  return (
     <>
       <MobileHeader />
-      <NavBar />
+      {/* <NavBar /> */}
       <Navigation />
-      <div className={containerClass.join(' ')}>
+      <div
+        className={containerClass.join(' ')}
+        style={{
+          position: 'relative', // keep relative if required
+          top: 0,               // remove 70px top offset     
+          minHeight: '100vh',   // full viewport height
+        }}
+      >
         <div className="pcoded-content">
           <>
             <Breadcrumb />
@@ -47,9 +55,7 @@ export default function AdminLayout() {
             </Suspense>
           </>
         </div>
-      
       </div>
     </>
   );
-  return <>{adminlayout}</>;
 }

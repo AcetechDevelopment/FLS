@@ -4,6 +4,7 @@ import AdminLayout from 'layouts/AdminLayout';
 import GuestLayout from 'layouts/GuestLayout';
 import UserMaster from '../views/master/usermaster';
 import SupplierMaster from '../views/master/supplier';
+import MaterialMaster from '../views/master/materialmaster';
 
 const DashboardSales = lazy(() => import('../views/dashboard/DashSales/index'));
 const  Transition = lazy(() => import('../views/dashboard/Transition/index'));
@@ -68,6 +69,10 @@ const MainRoutes = {
         }, {
           path: '/supplier',
           element: <SupplierMaster />
+        },
+         {
+          path: '/materialmaster',
+          element: <MaterialMaster />
         }
 
       ]

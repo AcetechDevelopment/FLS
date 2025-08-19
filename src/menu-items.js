@@ -168,7 +168,7 @@ const menuItems = {
   children: [
     { id: 'supplier', title: 'Supplier', type: 'item', url: './supplier' },
     { id: 'prize-master', title: 'Prize Master', type: 'item', url: '#' },
-    { id: 'material-master', title: 'Material Master', type: 'item', url: '#' },
+    { id: 'material-master', title: 'Material Master', type: 'item', url: './materialmaster' },
     { id: 'user-master', title: 'User Master', type: 'item', url: './usermaster' },
     { id: 'supplier-group', title: 'Supplier Group', type: 'item', url: './suppliergroup' }
   ]

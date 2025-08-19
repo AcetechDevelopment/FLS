@@ -68,23 +68,44 @@ export default function NavContent({ navigation, activeNav }) {
   style={{ background: "transparent", border: "none", boxShadow: "none" }}
 >
   <Card.Body>
-    <div 
-      style={{ 
-        position: "absolute", 
-        bottom: "10px", 
-        width: "100%", 
-        display: "flex", 
-        alignItems: "center", 
-        justifyContent: "center", 
-        gap: "10px"  // space between text and lines
-      }}
-    >
-      <div style={{ flex: 1, height: "1px", backgroundColor: "#0d6efd" }}></div>
-      <h6 className="m-0" style={{ color: "#0d6efd", whiteSpace: "nowrap" }}>Acetech</h6>
-      <div style={{ flex: 1, height: "1px", backgroundColor: "#0d6efd" }}></div>
-    </div>
+    {/* <h6 
+  className="m-0" 
+  style={{ 
+    color: "transparent", 
+    WebkitTextStroke: "1px #0d6efd", 
+    fontWeight: "bold" 
+  }}
+>
+  Acetech
+</h6> */}
+
+{/* <h6 
+  className="m-0 text-center" 
+  style={{ 
+    background: "linear-gradient(90deg, #0d6efd, #6610f2)", 
+    WebkitBackgroundClip: "text", 
+    WebkitTextFillColor: "transparent", 
+    fontWeight: "bold", 
+    letterSpacing: "1px"
+  }}
+>
+  Acetech
+</h6> */}
+
+<h6 
+  className="m-0 text-center" 
+  style={{ 
+    color: "#0d6efd", 
+    fontWeight: "700", 
+    textTransform: "uppercase", 
+    letterSpacing: "3px"
+  }}
+>
+  Acetech
+</h6>
   </Card.Body>
 </Card>
+
 
     </SimpleBar>
   );
