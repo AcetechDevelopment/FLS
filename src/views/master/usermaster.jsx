@@ -260,7 +260,7 @@ const handlePrint = () => {
     className="table table-bordered table-striped align-middle"
     style={{ fontSize: "12px" }} // ✅ smaller font
   >
-    <thead className="table-primary" style={{ fontSize: "14px" }}>
+    <thead className="table-primary" style={{ fontSize: "12px" }}>
       <tr className="text-center">
         <th className="py-1 px-1">Name</th>
         <th className="py-1 px-1">Phone No</th>

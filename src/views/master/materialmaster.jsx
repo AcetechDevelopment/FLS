@@ -96,41 +96,61 @@ const MaterialMaster = () => {
   };
 
   // Print Table
-  const handlePrint = () => {
-    if (!materials.length) return alert("No materials to print.");
-    const table = document.getElementById("material-table");
-    const cloneTable = table.cloneNode(true);
+// Print Table
+const handlePrint = () => {
+  if (!materials.length) return alert("No materials to print.");
+  const table = document.getElementById("material-table");
+  const cloneTable = table.cloneNode(true);
 
-    const ths = cloneTable.querySelectorAll("thead th");
-    const trs = cloneTable.querySelectorAll("tbody tr");
+  // ✅ Remove "Action" column (last column) from header
+  const ths = cloneTable.querySelectorAll("thead th");
+  if (ths.length) {
+    ths[ths.length - 1].remove();
+  }
 
-    const printWindow = window.open("", "", "width=900,height=600");
-    printWindow.document.write(`
-      <html>
-        <head>
-          <title>Material Master</title>
-          <style>
-            table { width: 100%; border-collapse: collapse; font-size: 12px; }
-            th, td { border: 1px solid #ddd; padding: 6px; text-align: left; }
-            th { background-color: #0d6efd; color: white; }
-          </style>
-        </head>
-        <body>
-          <h2>Material Master</h2>
-          ${cloneTable.outerHTML}
-        </body>
-      </html>
-    `);
-    printWindow.document.close();
-    printWindow.print();
-  };
+  // ✅ Remove "Action" cells from each row
+  const trs = cloneTable.querySelectorAll("tbody tr");
+  trs.forEach((tr) => {
+    const tds = tr.querySelectorAll("td");
+    if (tds.length) {
+      tds[tds.length - 1].remove();
+    }
+  });
+
+  const printWindow = window.open("", "", "width=900,height=600");
+  printWindow.document.write(`
+    <html>
+      <head>
+        <title>Material Master</title>
+        <style>
+          table { width: 100%; border-collapse: collapse; font-size: 12px; }
+          th, td { border: 1px solid #ddd; padding: 6px; text-align: left; }
+          th { background-color: #0d6efd; color: white; }
+        </style>
+      </head>
+      <body>
+        <h2>Material Master</h2>
+        ${cloneTable.outerHTML}
+      </body>
+    </html>
+  `);
+  printWindow.document.close();
+  printWindow.print();
+};
 
   // Filtered materials
-  const filteredMaterials = materials.filter(
-    (m) =>
-      m.materialName.toLowerCase().includes(search.toLowerCase()) ||
-      m.materialCode.toLowerCase().includes(search.toLowerCase())
-  );
+  // const filteredMaterials = materials.filter(
+  //   (m) =>
+  //     m.materialName.toLowerCase().includes(search.toLowerCase()) ||
+  //     m.materialCode.toLowerCase().includes(search.toLowerCase())
+  // );
+
+  const filteredMaterials = materials.filter((m) =>
+  m.materialName.toLowerCase().includes(search.toLowerCase()) ||
+  m.materialCode.toLowerCase().includes(search.toLowerCase()) ||
+  String(m.defaultPrice).toLowerCase().includes(search.toLowerCase()) || // ✅ handles number as string
+  m.materialType.toLowerCase().includes(search.toLowerCase())
+);
 
   return (
     <div className="container">
