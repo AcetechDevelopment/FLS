@@ -6,6 +6,8 @@ import UserMaster from '../views/master/usermaster';
 import SupplierMaster from '../views/master/supplier';
 import MaterialMaster from '../views/master/materialmaster';
 import SupplierGroup from '../views/master/suppliergroup';
+import MaterialStockMaster from '../views/Stock/Materialstock';
+
 
 const DashboardSales = lazy(() => import('../views/dashboard/DashSales/index'));
 const  Transition = lazy(() => import('../views/dashboard/Transition/index'));
@@ -78,6 +80,10 @@ const MainRoutes = {
          {
           path: '/suppliergroup',
           element: < SupplierGroup/>
+        },
+        {
+          path: '/materialstock',
+          element: <MaterialStockMaster />
         }
 
       ]

@@ -1,21 +1,19 @@
-// third party
-import { createRoot } from 'react-dom/client';
-import { ConfigProvider } from './contexts/ConfigContext';
+import { createRoot } from "react-dom/client";
+import { ConfigProvider } from "./contexts/ConfigContext";
+import { MaterialProvider } from "./contexts/MaterialContext"; // ✅ import
 
-// project imports
-import App from './App';
-import reportWebVitals from './reportWebVitals';
+import App from "./App";
+import reportWebVitals from "./reportWebVitals";
+import "./index.scss";
 
-// style + assets
-import './index.scss';
-
-// -----------------------|| REACT DOM RENDER  ||-----------------------//
-
-const container = document.getElementById('root');
+const container = document.getElementById("root");
 const root = createRoot(container);
+
 root.render(
   <ConfigProvider>
-    <App />
+    <MaterialProvider>   {/* ✅ wrap app */}
+      <App />
+    </MaterialProvider>
   </ConfigProvider>
 );
 

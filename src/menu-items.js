@@ -149,13 +149,13 @@ const menuItems = {
       
      {
   id: 'operation-menu',
-  title: 'Operation',
+  title: 'Stock Managament',
   type: 'collapse',
   icon: 'material-icons-two-tone',
  iconname: 'build',
   children: [
-    { id: 'operation-1', title: 'Operation 1', type: 'item', url: '#' },
-    { id: 'operation-2', title: 'Operation 2', type: 'item', url: '#' }
+    { id: 'operation-1', title: 'Material Stock', type: 'item', url: '/materialstock' },
+    { id: 'operation-2', title: 'Stock Management', type: 'item', url: '#' }
   ]
 },
 
@@ -173,6 +173,7 @@ const menuItems = {
     { id: 'supplier-group', title: 'Supplier Group', type: 'item', url: '/suppliergroup' }
   ]
 },
+
 
       {
   id: 'settings',

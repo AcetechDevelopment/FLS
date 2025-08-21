@@ -258,7 +258,7 @@ const exportExcel = () => {
       );
     })
     .map((supplier) => (
-      <tr key={supplier.id} style={{ fontSize: "12px" }}>
+    <tr key={supplier.id} className="text-center" style={{ fontSize: "12px" }}>
         <td className="py-0 px-1">{supplier.code}</td>
         <td className="py-0 px-1">{supplier.name}</td>
         <td className="py-0 px-1">{supplier.gst}</td>
