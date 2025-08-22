@@ -58,21 +58,58 @@ const MaterialMaster = () => {
     setMaterials(materials.filter((m) => m.id !== id));
   };
 
+  // const exportPDF = () => {
+  //   if (!materials.length) return alert("No materials to export.");
+  //   const doc = new jsPDF();
+  //   doc.text("Material Master", 14, 15);
+  //   autoTable(doc, {
+  //     head: [["Code", "Name", "Price", "Type"]],
+  //     body: materials.map((m) => [
+  //       m.materialCode,
+  //       m.materialName,
+  //       m.defaultPrice,
+  //       m.materialType,
+  //     ]),
+  //   });
+  //   doc.save("MaterialMaster.pdf");
+  // };
+
+
   const exportPDF = () => {
-    if (!materials.length) return alert("No materials to export.");
-    const doc = new jsPDF();
-    doc.text("Material Master", 14, 15);
-    autoTable(doc, {
-      head: [["Code", "Name", "Price", "Type"]],
-      body: materials.map((m) => [
-        m.materialCode,
-        m.materialName,
-        m.defaultPrice,
-        m.materialType,
-      ]),
-    });
-    doc.save("MaterialMaster.pdf");
-  };
+  if (!materials.length) return alert("No materials to export.");
+  const doc = new jsPDF();
+
+  // Title
+  doc.setFontSize(14);
+  doc.text("Material Master", doc.internal.pageSize.getWidth() / 2, 15, {
+    align: "center", // ✅ Center title
+  });
+
+  autoTable(doc, {
+    startY: 25, // move table below the title
+    head: [["Code", "Name", "Price", "Type"]],
+    body: materials.map((m) => [
+      m.materialCode,
+      m.materialName,
+      m.defaultPrice,
+      m.materialType,
+    ]),
+    theme: "grid",
+    styles: {
+      halign: "center", // ✅ center all text inside table
+      fontSize: 10,
+    },
+    headStyles: {
+      fillColor: [22, 160, 133] // nice green header
+    },
+    margin: { left: 20, right: 20 }, // ✅ balanced alignment
+    tableWidth: "auto", // ✅ table adjusts to content but respects margins
+  });
+
+  doc.save("MaterialMaster.pdf");
+};
+
+
 
   const exportExcel = () => {
     if (!materials.length) return alert("No materials to export.");
@@ -161,129 +198,69 @@ const MaterialMaster = () => {
         <th className="py-1 px-1">Material Code</th>
         <th className="py-1 px-1">Material Name</th>
         <th className="py-1 px-1">  Default Price     </th>
-        <th className="py-1 px-1">Image</th>
+        <th className="py-1 px-1"> Material Type </th>
         <th className="py-1 px-1" style={{ minWidth: "140px" }}>Action</th>
+
       </tr>
     </thead>
 
-    <tbody>
-      {materials
-        .filter((material) => {
-          const query = search.toLowerCase();
-          return (
-            material.name?.toLowerCase().includes(query) ||
-            material.code?.toLowerCase().includes(query) ||
-            material.unit?.toLowerCase().includes(query) ||
-            material.hsn?.toLowerCase().includes(query)
-          );
-        })
-        .map((material) => (
-          <tr
-            key={material.id}
-            className="text-center"
-            style={{ fontSize: "12px" }}
+
+<tbody>
+  {filteredMaterials.map((material) => (
+    <tr key={material.id} className="text-center" style={{ fontSize: "12px" }}>
+      <td className="py-0 px-1">{material.materialCode}</td>
+      <td className="py-0 px-1">{material.materialName}</td>
+      <td className="py-0 px-1">{material.defaultPrice}</td>
+      <td className="py-0 px-1">{material.materialType}</td>
+      <td className="py-0 px-1 text-center">
+        {/* Edit */}
+        <button
+          className="btn btn-sm p-0 me-1"
+          style={{ background: "transparent", border: "none" }}
+          onClick={() => handleEditMaterial(material)}
+          title="Edit"
+        >
+          <span
+            className="material-icons-two-tone text-warning"
+            style={{ fontSize: "16px" }}
           >
-            <td className="py-0 px-1">{material.code}</td>
-            <td className="py-0 px-1">{material.name}</td>
-            <td className="py-0 px-1">{material.unit}</td>
-            <td className="py-0 px-1">{material.hsn}</td>
-            <td className="py-0 px-1 text-center">
-              {material.image ? (
-                <img
-                  src={material.image}
-                  alt="Material"
-                  width="25"
-                  height="25"
-                  style={{
-                    cursor: "pointer",
-                    borderRadius: "4px",
-                    objectFit: "cover",
-                  }}
-                  onClick={() => {
-                    setPreviewImage(material.image);
-                    setShowImageModal(true);
-                  }}
-                />
-              ) : (
-                <span className="text-muted" style={{ fontSize: "11px" }}>
-                  No Image
-                </span>
-              )}
-            </td>
-            <td className="py-0 px-1">
-              {/* Edit */}
-              <button
-                className="btn btn-sm p-0 me-1"
-                style={{ background: "transparent", border: "none" }}
-                onClick={() => handleEditMaterial(material)}
-                title="Edit"
-              >
-                <span
-                  className="material-icons-two-tone text-warning"
-                  style={{ fontSize: "16px" }}
-                >
-                  edit
-                </span>
-              </button>
+            edit
+          </span>
+        </button>
 
-              {/* Stock */}
-              <button
-                className="btn btn-sm p-0 me-1"
-                style={{ background: "transparent", border: "none" }}
-                onClick={() => alert("Open Stock for " + material.name)}
-                title="Stock"
-              >
-                <span
-                  className="material-icons-two-tone text-info"
-                  style={{ fontSize: "16px" }}
-                >
-                  inventory_2
-                </span>
-              </button>
-
-              {/* Delete */}
-              <button
-                className="btn btn-sm p-0"
-                style={{ background: "transparent", border: "none" }}
-                onClick={() => deleteRow(material.id)}
-                title="Delete"
-              >
-                <span
-                  className="material-icons-two-tone text-danger"
-                  style={{ fontSize: "16px" }}
-                >
-                  delete
-                </span>
-              </button>
-            </td>
-          </tr>
-        ))}
-
-      {materials.filter((material) => {
-        const query = search.toLowerCase();
-        return (
-          material.name?.toLowerCase().includes(query) ||
-          material.code?.toLowerCase().includes(query) ||
-          material.unit?.toLowerCase().includes(query) ||
-          material.hsn?.toLowerCase().includes(query)
-        );
-      }).length === 0 && (
-        <tr>
-          <td
-            colSpan="6"
-            className="text-center text-muted py-2"
-            style={{ fontSize: "12px" }}
+        {/* Delete */}
+        <button
+          className="btn btn-sm p-0"
+          style={{ background: "transparent", border: "none" }}
+          onClick={() => deleteMaterial(material.id)}
+          title="Delete"
+        >
+          <span
+            className="material-icons-two-tone text-danger"
+            style={{ fontSize: "16px" }}
           >
-            No materials found
-          </td>
-        </tr>
-      )}
-    </tbody>
+            delete
+          </span>
+        </button>
+      </td>
+    </tr>
+  ))}
+
+  {filteredMaterials.length === 0 && (
+    <tr>
+      <td colSpan="5" className="text-center text-muted py-2" style={{ fontSize: "12px" }}>
+        No materials found
+      </td>
+    </tr>
+  )}
+</tbody>
+
+
   </table>
 </div>
 
       {/* Modal */}
-      {showModal && (
+      {/* {showModal && (
         <div className="modal d-block" tabIndex="-1" style={{ background: "#00000099" }}>
           <div className="modal-dialog">
             <div className="modal-content">
@@ -342,7 +319,94 @@ const MaterialMaster = () => {
             </div>
           </div>
         </div>
-      )}
+      )} */}
+
+      {showModal && (
+  <div className="modal fade show d-block" tabIndex="-1">
+    <div className="modal-dialog modal-sm"> {/* ✅ smaller width */}
+      <div className="modal-content" style={{ fontSize: "13px" }}> {/* ✅ reduced font */}
+        
+        {/* Header */}
+        <div className="modal-header py-2">
+          <h6 className="modal-title"> {/* ✅ smaller title */}
+            {editingMaterial ? "Edit Material" : "New Material"}
+          </h6>
+          <button
+            type="button"
+            className="btn-close"
+            onClick={() => setShowModal(false)}
+            style={{ fontSize: "10px" }}
+          ></button>
+        </div>
+
+        {/* Body */}
+        <div className="modal-body p-2">
+          <div className="mb-2">
+            <label className="form-label" style={{ fontSize: "12px" }}>
+              Material Name
+            </label>
+            <input
+              type="text"
+              className="form-control form-control-sm"
+              placeholder="Material Name"
+              value={formData.materialName}
+              onChange={(e) =>
+                setFormData({ ...formData, materialName: e.target.value })
+              }
+            />
+          </div>
+
+          <div className="mb-2">
+            <label className="form-label" style={{ fontSize: "12px" }}>
+              Default Price
+            </label>
+            <input
+              type="number"
+              className="form-control form-control-sm"
+              placeholder="Default Price"
+              value={formData.defaultPrice}
+              onChange={(e) =>
+                setFormData({ ...formData, defaultPrice: e.target.value })
+              }
+            />
+          </div>
+
+          <div className="mb-2">
+            <label className="form-label" style={{ fontSize: "12px" }}>
+              Material Type
+            </label>
+            <select
+              className="form-select form-select-sm"
+              value={formData.materialType}
+              onChange={(e) =>
+                setFormData({ ...formData, materialType: e.target.value })
+              }
+            >
+              <option value="Raw">Raw</option>
+              <option value="Finished">Finished</option>
+            </select>
+          </div>
+        </div>
+
+        {/* Footer */}
+        <div className="modal-footer py-2">
+          <button
+            className="btn btn-secondary btn-sm"
+            onClick={() => setShowModal(false)}
+          >
+            Cancel
+          </button>
+          <button
+            className="btn btn-primary btn-sm"
+            onClick={handleSaveMaterial}
+          >
+            {editingMaterial ? "Update" : "Add"}
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+)}
     </div>
   );
 };

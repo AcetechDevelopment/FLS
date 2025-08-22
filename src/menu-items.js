@@ -155,7 +155,7 @@ const menuItems = {
  iconname: 'build',
   children: [
     { id: 'operation-1', title: 'Material Stock', type: 'item', url: '/materialstock' },
-    { id: 'operation-2', title: 'Stock Management', type: 'item', url: '#' }
+    { id: 'operation-2', title: 'Stock Management', type: 'item', url: '/stockadjustement' }
   ]
 },
 

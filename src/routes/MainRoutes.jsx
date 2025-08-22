@@ -7,6 +7,7 @@ import SupplierMaster from '../views/master/supplier';
 import MaterialMaster from '../views/master/materialmaster';
 import SupplierGroup from '../views/master/suppliergroup';
 import MaterialStockMaster from '../views/Stock/Materialstock';
+import StockAdjustment from '../views/Stock/Stockadjustment';
 
 
 const DashboardSales = lazy(() => import('../views/dashboard/DashSales/index'));
@@ -84,7 +85,13 @@ const MainRoutes = {
         {
           path: '/materialstock',
           element: <MaterialStockMaster />
-        }
+        },
+
+         {
+          path: '/stockadjustement',
+          element: <StockAdjustment />
+        },
+      
 
       ]
     },
