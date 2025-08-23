@@ -416,19 +416,19 @@ const exportExcel = () => {
           </div>
 
           {/* ✅ Address Field */}
-          <div className="mb-2">
-            <label className="form-label" style={{ fontSize: "12px" }}>
-              Address
-            </label>
-            <input
-              type="text"
-              className="form-control form-control-sm"
-              value={formData.address || ""}
-              onChange={(e) =>
-                setFormData({ ...formData, address: e.target.value })
-              }
-            />
-          </div>
+<div className="mb-2">
+  <label className="form-label" style={{ fontSize: "12px" }}>
+    Address
+  </label>
+  <textarea
+    className="form-control form-control-sm"
+    rows={3} // adjust height (number of lines)
+    value={formData.address || ""}
+    onChange={(e) =>
+      setFormData({ ...formData, address: e.target.value })
+    }
+  />
+</div>
 
           <div className="mb-2">
             <label className="form-label" style={{ fontSize: "12px" }}>

@@ -139,7 +139,7 @@ const MaterialMaster = () => {
   );
 
   return (
-    <div className="container mt-3">
+    <div className="container mt-0">
       {/* Toolbar */}
      {/* Toolbar */}
       <div className="d-flex justify-content-between align-items-center mb-3 flex-wrap">
@@ -200,7 +200,6 @@ const MaterialMaster = () => {
         <th className="py-1 px-1">  Default Price     </th>
         <th className="py-1 px-1"> Material Type </th>
         <th className="py-1 px-1" style={{ minWidth: "140px" }}>Action</th>
-
       </tr>
     </thead>
 
