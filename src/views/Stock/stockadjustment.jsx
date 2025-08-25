@@ -3,30 +3,46 @@ import { MaterialContext } from "../../contexts/MaterialContext";
 
 const StockAdjustment = () => {
   const { materials, setMaterials } = useContext(MaterialContext);
-  const [editingId, setEditingId] = useState(null);
-  const [editValues, setEditValues] = useState({ stock: 0, price: 0 });
+  const [editingCell, setEditingCell] = useState({ id: null, field: null });
 
-  const handleEdit = (m) => {
-    setEditingId(m.id);
-    setEditValues({
-      stock: m.stock || 0,
-      price: m.defaultPrice || 0,
-    });
-  };
-
-  const handleSave = (id) => {
+  // ✅ Update material values
+  const handleChange = (id, field, value) => {
     setMaterials((prev) =>
       prev.map((m) =>
-        m.id === id
-          ? {
-              ...m,
-              stock: Number(editValues.stock),
-              defaultPrice: Number(editValues.price),
-            }
-          : m
+        m.id === id ? { ...m, [field]: Number(value) } : m
       )
     );
-    setEditingId(null);
+  };
+
+  // ✅ Reusable number validation (allowDecimal = true → price, false → stock)
+  const isNumberKey = (e, allowDecimal = false) => {
+    const char = e.key;
+    const allowedChars = "0123456789";
+    const controlKeys = ["Backspace", "Delete", "ArrowLeft", "ArrowRight", "Tab"];
+
+    // ✅ Allow navigation & editing keys
+    if (controlKeys.includes(char)) return;
+
+    // ✅ Allow only digits
+    if (allowedChars.includes(char)) return;
+
+    // ✅ Allow decimal point only if enabled and not already present
+    if (allowDecimal && char === "." && !e.target.value.includes(".")) return;
+
+    // ❌ Block everything else
+    e.preventDefault();
+  };
+
+  // ✅ Inline input style (looks same as table text)
+  const inputStyle = {
+    width: "100%",
+    height: "100%",
+    textAlign: "center",
+    border: "none",
+    outline: "none",
+    background: "transparent",
+    boxSizing: "border-box",
+    fontSize: "12px",
   };
 
   return (
@@ -44,85 +60,76 @@ const StockAdjustment = () => {
               <th className="py-1 px-1">Material Name</th>
               <th className="py-1 px-1">Default Price</th>
               <th className="py-1 px-1">Current Stock</th>
-              <th className="py-1 px-1" style={{ minWidth: "120px" }}>
-                Action
-              </th>
             </tr>
           </thead>
           <tbody>
             {materials.length > 0 ? (
               materials.map((m) => (
                 <tr key={m.id}>
+                  {/* Material Code */}
                   <td className="py-1 px-1">{m.materialCode}</td>
+
+                  {/* Material Name */}
                   <td className="py-1 px-1">{m.materialName}</td>
 
-                  {/* Default Price column */}
+                  {/* ✅ Default Price (editable, decimals allowed) */}
                   <td className="py-1 px-1">
-                    {editingId === m.id ? (
+                    {editingCell.id === m.id && editingCell.field === "defaultPrice" ? (
                       <input
-                        type="number"
-                        className="form-control form-control-sm text-center"
-                        value={editValues.price}
+                        type="text"
+                        value={m.defaultPrice}
+                        autoFocus
+                        onKeyDown={(e) => isNumberKey(e, true)} // ✅ allow decimal
                         onChange={(e) =>
-                          setEditValues({ ...editValues, price: e.target.value })
+                          handleChange(m.id, "defaultPrice", e.target.value)
                         }
+                        onBlur={() => setEditingCell({ id: null, field: null })}
+                        style={inputStyle}
+                        placeholder="Enter price"
                       />
                     ) : (
-                      <>₹ {m.defaultPrice || 0}</>
+                      <span
+                        onClick={() =>
+                          setEditingCell({ id: m.id, field: "defaultPrice" })
+                        }
+                        style={{ display: "block", cursor: "text" }}
+                      >
+                        {m.defaultPrice || 0}
+                      </span>
                     )}
                   </td>
 
-                  {/* Stock column */}
+                  {/* ✅ Current Stock (editable, integers only) */}
                   <td className="py-1 px-1">
-                    {editingId === m.id ? (
+                    {editingCell.id === m.id && editingCell.field === "stock" ? (
                       <input
-                        type="number"
-                        className="form-control form-control-sm text-center"
-                        value={editValues.stock}
+                        type="text"
+                        value={m.stock}
+                        autoFocus
+                        onKeyDown={(e) => isNumberKey(e, false)} // ✅ integers only
                         onChange={(e) =>
-                          setEditValues({ ...editValues, stock: e.target.value })
+                          handleChange(m.id, "stock", e.target.value)
                         }
+                        onBlur={() => setEditingCell({ id: null, field: null })}
+                        style={inputStyle}
+                        placeholder="Enter stock"
                       />
                     ) : (
-                      m.stock || 0
+                      <span
+                        onClick={() =>
+                          setEditingCell({ id: m.id, field: "stock" })
+                        }
+                        style={{ display: "block", cursor: "text" }}
+                      >
+                     {m.stock}
+                      </span>
                     )}
                   </td>
-
-                  {/* Action column */}
-                <td className="py-1 px-1">
-  {editingId === m.id ? (
-    <>
-      <button
-        className="btn btn-success btn-sm me-1"
-        onClick={() => handleSave(m.id)}
-      >
-        <span className="material-icons">save</span> {/* ✅ Save icon */}
-      </button>
-      <button
-        className="btn btn-danger btn-sm"
-        onClick={() => setEditingId(null)}
-      >
-        <span className="material-icons">cancel</span> {/* ✅ Cancel icon */}
-      </button>
-    </>
-  ) : (
-    <button
-      className="btn btn-warning btn-sm"
-      onClick={() => handleEdit(m)}
-    >
-      <span className="material-icons">  edit </span> {/* ✅ Better edit icon */}
-    </button>
-  )}
-</td>
                 </tr>
               ))
             ) : (
               <tr>
-                <td
-                  colSpan="5"
-                  className="text-center text-muted py-2"
-                  style={{ fontSize: "12px" }}
-                >
+                <td colSpan="4" className="text-center text-muted py-2">
                   No materials found
                 </td>
               </tr>

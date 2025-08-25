@@ -110,7 +110,6 @@ const MaterialMaster = () => {
 };
 
 
-
   const exportExcel = () => {
     if (!materials.length) return alert("No materials to export.");
     const data = materials.map((m) => ({
@@ -354,21 +353,33 @@ const MaterialMaster = () => {
               }
             />
           </div>
+<div className="mb-2">
+  <label className="form-label" style={{ fontSize: "12px" }}>
+    Default Price
+  </label>
+  <input
+    type="text"   // ✅ changed to text so we can fully control input
+    className="form-control form-control-sm"
+    placeholder="Default Price"
+    value={formData.defaultPrice}
+    onKeyDown={(e) => {
+      const char = e.key;
+      const allowedChars = "0123456789";
+      const controlKeys = ["Backspace", "Delete", "ArrowLeft", "ArrowRight", "Tab"];
 
-          <div className="mb-2">
-            <label className="form-label" style={{ fontSize: "12px" }}>
-              Default Price
-            </label>
-            <input
-              type="number"
-              className="form-control form-control-sm"
-              placeholder="Default Price"
-              value={formData.defaultPrice}
-              onChange={(e) =>
-                setFormData({ ...formData, defaultPrice: e.target.value })
-              }
-            />
-          </div>
+      if (controlKeys.includes(char)) return;
+
+      // ✅ allow one decimal
+      if (char === "." && !e.target.value.includes(".")) return;
+
+      // block everything else
+      if (!allowedChars.includes(char)) e.preventDefault();
+    }}
+    onChange={(e) =>
+      setFormData({ ...formData, defaultPrice: e.target.value })
+    }
+  />
+</div>
 
           <div className="mb-2">
             <label className="form-label" style={{ fontSize: "12px" }}>

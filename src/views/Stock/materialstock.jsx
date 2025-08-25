@@ -27,7 +27,7 @@ const MaterialStock = () => {
                 <tr key={m.id} className="text-center">
                   <td className="py-1 px-1">{m.materialCode}</td>
                   <td className="py-1 px-1">{m.materialName}</td>
-                  <td className="py-1 px-1">₹ {m.defaultPrice || 0}</td>
+                  <td className="py-1 px-1"> {m.defaultPrice || 0}</td>
                   <td className="py-1 px-1">{m.materialType}</td>
                 </tr>
               ))
