@@ -1405,3 +1405,63 @@ body .tox-tinymce-aux {
 // ============================
 //   19. Form css end
 // ============================
+
+
+// important 
+// Apply globally for all tables
+table {
+  th,
+  td {
+    user-select: none;   // prevent text highlight
+    cursor: default;     // arrow cursor instead of text
+  }
+}
+
+
+table {
+  th,
+  td {
+    user-select: none;
+    cursor: default;
+
+    span {
+      user-select: text;   // allow selecting only actual text
+      cursor: text;        // I-beam cursor only when over text
+    }
+  }
+}
+
+
+table {
+  th,
+  td {
+    user-select: none !important;   // prevent highlighting
+    cursor: default !important;     // force arrow cursor
+  }
+}
+
+
+table {
+  th,
+  td {
+    user-select: none !important;
+    cursor: default !important;
+
+    .cell-text {
+      user-select: text;   // only actual text is selectable
+      cursor: text;
+    }
+  }
+}
+
+
+table td,
+table th {
+  padding: 0;              // remove padding that shows "auto" cursor
+}
+
+table td .cell-text,
+table th .cell-text {
+  display: block;
+  padding: 8px;            // put padding back only on inner span
+}

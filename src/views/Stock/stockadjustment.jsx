@@ -72,59 +72,115 @@ const StockAdjustment = () => {
                   {/* Material Name */}
                   <td className="py-1 px-1">{m.materialName}</td>
 
-                  {/* ✅ Default Price (editable, decimals allowed) */}
-                  <td className="py-1 px-1">
-                    {editingCell.id === m.id && editingCell.field === "defaultPrice" ? (
-                      <input
-                        type="text"
-                        value={m.defaultPrice}
-                        autoFocus
-                        onKeyDown={(e) => isNumberKey(e, true)} // ✅ allow decimal
-                        onChange={(e) =>
-                          handleChange(m.id, "defaultPrice", e.target.value)
-                        }
-                        onBlur={() => setEditingCell({ id: null, field: null })}
-                        style={inputStyle}
-                        placeholder="Enter price"
-                      />
-                    ) : (
-                      <span
-                        onClick={() =>
-                          setEditingCell({ id: m.id, field: "defaultPrice" })
-                        }
-                        style={{ display: "block", cursor: "text" }}
-                      >
-                        {m.defaultPrice || 0}
-                      </span>
-                    )}
-                  </td>
 
-                  {/* ✅ Current Stock (editable, integers only) */}
-                  <td className="py-1 px-1">
-                    {editingCell.id === m.id && editingCell.field === "stock" ? (
-                      <input
-                        type="text"
-                        value={m.stock}
-                        autoFocus
-                        onKeyDown={(e) => isNumberKey(e, false)} // ✅ integers only
-                        onChange={(e) =>
-                          handleChange(m.id, "stock", e.target.value)
-                        }
-                        onBlur={() => setEditingCell({ id: null, field: null })}
-                        style={inputStyle}
-                        placeholder="Enter stock"
-                      />
-                    ) : (
-                      <span
-                        onClick={() =>
-                          setEditingCell({ id: m.id, field: "stock" })
-                        }
-                        style={{ display: "block", cursor: "text" }}
-                      >
-                     {m.stock}
-                      </span>
-                    )}
-                  </td>
+        {/* ✅ Default Price (editable, only numbers allowed now) */}
+{/* <td className="py-1 px-1">
+  {editingCell.id === m.id && editingCell.field === "defaultPrice" ? (
+    <input
+      type="text"
+      value={m.defaultPrice}
+      autoFocus
+      onKeyDown={isNumberKey}   // ✅ restrict input
+      onChange={(e) =>
+        handleChange(m.id, "defaultPrice", e.target.value)
+      }
+      onBlur={() => setEditingCell({ id: null, field: null })}
+      style={inputStyle}
+      placeholder="Enter price"
+    />
+  ) : (
+    <span
+      onClick={() =>
+        setEditingCell({ id: m.id, field: "defaultPrice" })
+      }
+      style={{ display: "block", cursor: "text" }}
+    >
+      {m.defaultPrice || 0}
+    </span>
+  )}
+</td> */}
+
+  {/* <td className="py-1 px-1">
+  {editingCell.id === m.id && editingCell.field === "defaultPrice" ? (
+    <input
+      type="text"
+      className="form-control form-control-sm"   // ✅ Bootstrap style
+      value={m.defaultPrice}
+      autoFocus
+      onKeyDown={isNumberKey}   // ✅ restrict input
+      onChange={(e) =>
+        handleChange(m.id, "defaultPrice", e.target.value)
+      }
+      onBlur={() => setEditingCell({ id: null, field: null })}
+      placeholder="Enter price"
+    />
+  ) : (
+    <span
+      onClick={() =>
+        setEditingCell({ id: m.id, field: "defaultPrice" })
+      }
+      style={{ display: "block", cursor: "text" }}
+    >
+      {m.defaultPrice || 0}
+    </span>
+  )}
+</td> */}
+
+
+<td className="py-1 px-1">
+  {editingCell.id === m.id && editingCell.field === "defaultPrice" ? (
+    <input
+      type="text"
+      className="form-control form-control-sm"   // ✅ Bootstrap input
+      value={m.defaultPrice}
+      autoFocus
+      onKeyDown={isNumberKey}   // ✅ restrict input
+      onChange={(e) =>
+        handleChange(m.id, "defaultPrice", e.target.value)
+      }
+      onBlur={() => setEditingCell({ id: null, field: null })}
+      placeholder="Enter price"
+    />
+  ) : (
+    <span
+      onClick={() =>
+        setEditingCell({ id: m.id, field: "defaultPrice" })
+      }
+      style={{ display: "block", cursor: "text" }}
+    >
+      {m.defaultPrice || 0}
+    </span>
+  )}
+</td>
+
+
+{/* ✅ Current Stock (editable, only integers allowed) */}
+
+<td className="py-1 px-1">
+  {editingCell.id === m.id && editingCell.field === "stock" ? (
+    <input
+      type="text"
+      className="form-control form-control-sm"   // ✅ Bootstrap input
+      value={m.stock}
+      autoFocus
+      onKeyDown={(e) => isNumberKey(e, false)}   // ❌ only integers
+      onChange={(e) =>
+        handleChange(m.id, "stock", e.target.value)
+      }
+      onBlur={() => setEditingCell({ id: null, field: null })}
+      placeholder="Enter stock"
+    />
+  ) : (
+    <span
+      onClick={() =>
+        setEditingCell({ id: m.id, field: "stock" })
+      }
+      style={{ display: "block", cursor: "text" }}
+    >
+      {m.stock || 0}
+    </span>
+  )}
+</td>
                 </tr>
               ))
             ) : (

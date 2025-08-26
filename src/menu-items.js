@@ -69,13 +69,13 @@ const menuItems = {
               id: 'inward',
               title: 'Inward',
               type: 'item',
-              url: '/transition/inward'
+              url: '/inwardpage'
             },
             {
     id: 'dispatch',
     title: 'Dispatch',
     type: 'item',
-    url: '/transition/dispatch'
+    url: '/dispatch'
   }
           ]
         }
