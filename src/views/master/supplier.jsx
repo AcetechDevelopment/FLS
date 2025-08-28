@@ -288,49 +288,50 @@ const exportExcel = () => {
         </td>
         <td className="py-0 px-1">
           {/* Edit */}
-          <button
-            className="btn btn-sm p-0 me-1"
-            style={{ background: "transparent", border: "none" }}
-            onClick={() => handleEditSupplier(supplier)}
-            title="Edit"
-          >
-            <span
-              className="material-icons-two-tone text-warning"
-              style={{ fontSize: "16px" }}
-            >
-              edit
-            </span>
-          </button>
+   {/* Edit */}
+<button
+  className="btn btn-sm p-0 me-1"
+  style={{ background: "transparent", border: "none", cursor: "pointer" }}
+  onClick={() => handleEditSupplier(supplier)}
+  title="Edit"
+>
+  <span
+    className="material-icons-two-tone text-warning"
+    style={{ fontSize: "16px", cursor: "pointer" }}
+  >
+    edit
+  </span>
+</button>
 
-          {/* Price List */}
-          <button
-            className="btn btn-sm p-0 me-1"
-            style={{ background: "transparent", border: "none" }}
-            onClick={() => alert("Open Price List for " + supplier.name)}
-            title="Price List"
-          >
-            <span
-              className="material-icons-two-tone text-info"
-              style={{ fontSize: "16px" }}
-            >
-              list_alt
-            </span>
-          </button>
+{/* Price List */}
+<button
+  className="btn btn-sm p-0 me-1"
+  style={{ background: "transparent", border: "none", cursor: "pointer" }}
+  onClick={() => alert("Open Price List for " + supplier.name)}
+  title="Price List"
+>
+  <span
+    className="material-icons-two-tone text-info"
+    style={{ fontSize: "16px", cursor: "pointer" }}
+  >
+    list_alt
+  </span>
+</button>
 
-          {/* Delete */}
-          <button
-            className="btn btn-sm p-0"
-            style={{ background: "transparent", border: "none" }}
-            onClick={() => deleteRow(supplier.id)}
-            title="Delete"
-          >
-            <span
-              className="material-icons-two-tone text-danger"
-              style={{ fontSize: "16px" }}
-            >
-              delete
-            </span>
-          </button>
+{/* Delete */}
+<button
+  className="btn btn-sm p-0"
+  style={{ background: "transparent", border: "none", cursor: "pointer" }}
+  onClick={() => deleteRow(supplier.id)}
+  title="Delete"
+>
+  <span
+    className="material-icons-two-tone text-danger"
+    style={{ fontSize: "16px", cursor: "pointer" }}
+  >
+    delete
+  </span>
+</button>
         </td>
       </tr>
     ))}
@@ -453,15 +454,18 @@ const exportExcel = () => {
           </div>
         </div>
         <div className="modal-footer py-2">
-          <button
+
+          <button className="btn btn-primary btn-sm" onClick={handleSaveSupplier}>
+            {editingSupplier ? "Update" : "Add"}
+          </button>
+
+                      <button
             className="btn btn-secondary btn-sm"
             onClick={() => setShowModal(false)}
           >
             Cancel
           </button>
-          <button className="btn btn-primary btn-sm" onClick={handleSaveSupplier}>
-            {editingSupplier ? "Update" : "Add"}
-          </button>
+
         </div>
       </div>
     </div>

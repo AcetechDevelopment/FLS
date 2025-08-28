@@ -11,7 +11,7 @@
   .pcoded-content {
     padding-left: 30px;
     padding-right: 30px;
-    padding-top: 30px;
+    padding-top: 15px;
   }
 
   .page-header + .row {
@@ -416,3 +416,11 @@
   background: darken($body-bg, 20%);
 }
 // Common layout css end
+
+
+
+		.table-sm > :not(caption) > * > * {
+    padding: 0.01rem 0.01rem !important;
+}
+
+

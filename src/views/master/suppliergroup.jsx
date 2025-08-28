@@ -274,32 +274,37 @@ const SupplierGroup = () => {
           </td>
 
           {/* Action */}
-          <td className="py-1 px-1">
-            <button
-              className="btn btn-sm p-0 me-1"
-              style={{ background: "transparent", border: "none" }}
-              onClick={() => handleEditGroup(group)}
-            >
-              <span
-                className="material-icons-two-tone text-warning"
-                style={{ fontSize: "16px" }}
-              >
-                edit
-              </span>
-            </button>
-            <button
-              className="btn btn-sm p-0"
-              style={{ background: "transparent", border: "none" }}
-              onClick={() => deleteRow(group.id)}
-            >
-              <span
-                className="material-icons-two-tone text-danger"
-                style={{ fontSize: "16px" }}
-              >
-                delete
-              </span>
-            </button>
-          </td>
+         <td className="py-1 px-1">
+  {/* Edit */}
+  <button
+    className="btn btn-sm p-0 me-1"
+    style={{ background: "transparent", border: "none", cursor: "pointer" }}
+    onClick={() => handleEditGroup(group)}
+    title="Edit"
+  >
+    <span
+      className="material-icons-two-tone text-warning"
+      style={{ fontSize: "16px", cursor: "pointer" }}
+    >
+      edit
+    </span>
+  </button>
+
+  {/* Delete */}
+  <button
+    className="btn btn-sm p-0"
+    style={{ background: "transparent", border: "none", cursor: "pointer" }}
+    onClick={() => deleteRow(group.id)}
+    title="Delete"
+  >
+    <span
+      className="material-icons-two-tone text-danger"
+      style={{ fontSize: "16px", cursor: "pointer" }}
+    >
+      delete
+    </span>
+  </button>
+</td>
         </tr>
       ))}
 
@@ -438,18 +443,21 @@ const SupplierGroup = () => {
         </div>
 
         <div className="modal-footer py-2 px-3">
-          <button
-            className="btn btn-sm btn-secondary"
-            onClick={() => setShowModal(false)}
-          >
-            Cancel
-          </button>
+        
           <button
             className="btn btn-sm btn-primary"
             onClick={handleSaveGroup}
           >
             {editingGroup ? "Update" : "Add"}
           </button>
+
+          <button
+            className="btn btn-sm btn-secondary"
+            onClick={() => setShowModal(false)}
+          >
+            Cancel
+          </button>
+
         </div>
       </div>
     </div>

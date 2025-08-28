@@ -9,7 +9,7 @@ const InwardPage = () => {
     referenceNo: "",
   });
 
-  const [materials, setMaterials] = useState([]); 
+  const [materials, setMaterials] = useState([]);
   const [newMaterial, setNewMaterial] = useState({ material: "", quantity: "" });
 
   // ✅ Restrict input to numbers only
@@ -47,116 +47,107 @@ const InwardPage = () => {
 
   return (
     <div className="container" style={{ fontSize: "12px" }}>
-      <h6 className="mb-2">Inward Entry</h6>
-      <div className="row">
-        {/* Left Side */}
-        <div className="col-md-6">
-          <div className="mb-0">
-  <label className="form-label mb-0" style={{ fontSize: "10px", lineHeight: "1" }}>
-    Customer Name
-  </label>
-  <input
-    type="text"
-    className="form-control"
-    style={{ height: "22px", fontSize: "11px", padding: "0 4px" }}
-    value={formData.customerName}
-    onChange={(e) =>
-      setFormData({ ...formData, customerName: e.target.value })
-    }
-  />
-</div>
-          <div className="mb-1">
-            <label className="form-label mb-0" style={{ fontSize: "11px" }}>
-              Address
-            </label>
-            <textarea
-              className="form-control form-control-sm"
-              rows="2"
-              value={formData.address}
-              onChange={(e) =>
-                setFormData({ ...formData, address: e.target.value })
-              }
-            />
-          </div>
+      {/* 🔹 Header Inputs */}
+      <div className="row align-items-center g-1">
+        {/* Customer Name */}
+        <div className="col-md-3">
+          <input
+            type="text"
+            className="form-control form-control-sm"
+            style={{ fontSize: "10px", height: "18px", padding: "0 2px", lineHeight: "1" }}
+            placeholder="Customer Name"
+            value={formData.customerName}
+            onChange={(e) =>
+              setFormData({ ...formData, customerName: e.target.value })
+            }
+          />
         </div>
 
-        {/* Right Side */}
-      <div className="col-md-6">
-  <div className="mb-0">
-    <label className="form-label mb-0" style={{ fontSize: "10px" }}>
-      Inward Number
-    </label>
-    <input
-      type="text"
-      className="form-control form-control-sm py-0"
-      style={{ fontSize: "11px", height: "24px" }}
-      value={formData.inwardNo}
-      readOnly
-    />
-  </div>
+        {/* Address */}
+        <div className="col-md-3">
+          <textarea
+            className="form-control form-control-sm"
+            style={{ fontSize: "11px", height: "24px", padding: "0 4px" }}
+            placeholder="Address"
+            value={formData.address}
+            onChange={(e) =>
+              setFormData({ ...formData, address: e.target.value })
+            }
+          />
+        </div>
 
-  <div className="mb-0">
-    <label className="form-label mb-0" style={{ fontSize: "10px" }}>
-      Reference No.
-    </label>
-    <input
-      type="text"
-      className="form-control form-control-sm py-0"
-      style={{ fontSize: "11px", height: "24px" }}
-      value={formData.referenceNo}
-      readOnly
-    />
-  </div>
-</div>
+        {/* Inward Number */}
+        <div className="col-md-3">
+          <input
+            type="text"
+            className="form-control form-control-sm"
+            style={{ fontSize: "10px", height: "18px", padding: "0 2px", lineHeight: "1" }}
+            placeholder="Inward Number"
+            value={formData.inwardNo}
+            readOnly
+          />
+        </div>
+
+        {/* Reference No */}
+        <div className="col-md-3">
+          <input
+            type="text"
+            className="form-control form-control-sm"
+            style={{ fontSize: "10px", height: "18px", padding: "0 2px", lineHeight: "1" }}
+            placeholder="Reference No."
+            value={formData.referenceNo}
+            readOnly
+          />
+        </div>
       </div>
 
       {/* ✅ Material Table */}
       <div className="mt-3">
-        <h6 className="mb-1">Materials</h6>
         <table
           className="table table-bordered table-sm"
-          style={{ fontSize: "12px" }}
+          style={{ fontSize: "11px", marginBottom: "6px" }}
         >
-        <thead className="table-light">
-  <tr style={{ fontSize: "11px", lineHeight: "1" }}>
-    <th style={{ width: "6%", padding: "2px" }}>Sl.No</th>
-    <th style={{ padding: "2px" }}>Material</th>
-    <th style={{ width: "14%", padding: "2px" }}>Qty</th>
-    <th style={{ width: "10%", padding: "2px" }}>Action</th>
-  </tr>
-</thead>
+          <thead className="table-light text-center">
+            <tr style={{ fontSize: "11px", lineHeight: "1.6" }}>
+              <th style={{ width: "6%", padding: "2px" }}>Sl.No</th>
+              <th style={{ padding: "2px" }}>Material</th>
+              <th style={{ width: "14%", padding: "2px" }}>Qty</th>
+              <th style={{ width: "10%", padding: "2px" }}>Action</th>
+            </tr>
+          </thead>
           <tbody>
             {materials.map((m, index) => (
-              <tr key={m.id}>
+              <tr key={m.id} className="text-center">
                 <td>{index + 1}</td>
                 <td>{m.material}</td>
                 <td>{m.quantity}</td>
                 <td>
-                 <button
+                  <button
                     className="btn btn-sm p-0"
                     title="Delete"
                     style={{ background: "transparent", border: "none", cursor: "pointer" }}
-                      onClick={() => handleRemove(m.id)}
+                    onClick={() => handleRemove(m.id)}
+                  >
+                    <span
+                      className="material-icons-two-tone text-danger"
+                      style={{ fontSize: "16px", cursor: "pointer" }}
                     >
-     <span
-    className="material-icons-two-tone text-danger"
-    style={{ fontSize: "16px" }}
-  >
-    delete
-  </span>
-</button>
+                      delete
+                    </span>
+                  </button>
                 </td>
               </tr>
             ))}
           </tbody>
         </table>
 
-        {/* ✅ Compact Input Row */}
-        <div className="row g-1 align-items-center mt-1">
+        {/* ✅ Input Row for New Material */}
+        <div className="row g-1 align-items-center">
           <div className="col-md-6">
             <input
               type="text"
               className="form-control form-control-sm"
+              style={{ fontSize: "11px", height: "22px", padding: "0 4px" }}
               placeholder="Material"
               value={newMaterial.material}
               onChange={(e) =>
@@ -168,6 +159,7 @@ const InwardPage = () => {
             <input
               type="text"
               className="form-control form-control-sm"
+              style={{ fontSize: "11px", height: "22px", padding: "0 4px" }}
               placeholder="Qty"
               value={newMaterial.quantity}
               onKeyDown={isNumberKey}
@@ -182,10 +174,11 @@ const InwardPage = () => {
               onClick={handleAddMaterial}
               style={{
                 borderRadius: "50%",
-                width: "26px",
-                height: "26px",
-                fontSize: "14px",
+                width: "22px",
+                height: "22px",
+                fontSize: "13px",
                 padding: 0,
+                cursor: "pointer",
               }}
             >
               +

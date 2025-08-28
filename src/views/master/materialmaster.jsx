@@ -212,9 +212,9 @@ const MaterialMaster = () => {
       <td className="py-0 px-1">{material.materialType}</td>
       <td className="py-0 px-1 text-center">
         {/* Edit */}
-        <button
+        {/* <button
           className="btn btn-sm p-0 me-1"
-          style={{ background: "transparent", border: "none" }}
+          style={{ background: "transparent", border: "none",cursor: "pointer" }}
           onClick={() => handleEditMaterial(material)}
           title="Edit"
         >
@@ -224,10 +224,28 @@ const MaterialMaster = () => {
           >
             edit
           </span>
-        </button>
+        </button> */}
+
+
+      <button
+  className="btn btn-sm p-0 me-1"
+  style={{ background: "transparent", border: "none", cursor: "pointer" }}
+  onClick={() => handleEditMaterial(material)}
+  title="Edit"
+>
+  <span
+    className="material-icons-two-tone text-warning"
+    style={{ fontSize: "16px", cursor: "pointer" }}
+  >
+    edit
+  </span>
+</button>
+
+
+
 
         {/* Delete */}
-        <button
+        {/* <button
           className="btn btn-sm p-0"
           style={{ background: "transparent", border: "none" }}
           onClick={() => deleteMaterial(material.id)}
@@ -239,7 +257,24 @@ const MaterialMaster = () => {
           >
             delete
           </span>
-        </button>
+        </button> */}
+
+          <button
+  className="btn btn-sm p-0"
+  style={{ background: "transparent", border: "none", cursor: "pointer" }}
+  onClick={() => deleteMaterial(material.id)}
+  title="Delete"
+>
+  <span
+    className="material-icons-two-tone text-danger"
+    style={{ fontSize: "16px", cursor: "pointer" }}
+  >
+    delete
+  </span>
+</button>
+
+
+
       </td>
     </tr>
   ))}
@@ -353,6 +388,7 @@ const MaterialMaster = () => {
               }
             />
           </div>
+          
 <div className="mb-2">
   <label className="form-label" style={{ fontSize: "12px" }}>
     Default Price
@@ -400,19 +436,23 @@ const MaterialMaster = () => {
 
         {/* Footer */}
         <div className="modal-footer py-2">
-          <button
-            className="btn btn-secondary btn-sm"
-            onClick={() => setShowModal(false)}
-          >
-            Cancel
-          </button>
+         
           <button
             className="btn btn-primary btn-sm"
             onClick={handleSaveMaterial}
           >
             {editingMaterial ? "Update" : "Add"}
           </button>
+
+               <button
+            className="btn btn-secondary btn-sm"
+            onClick={() => setShowModal(false)}
+          >
+            Cancel
+          </button>
+
         </div>
+
       </div>
     </div>
   </div>
