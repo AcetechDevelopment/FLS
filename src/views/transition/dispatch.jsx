@@ -7,6 +7,7 @@ const DispatchPage = () => {
     address: "",
     dispatchNo: "",
     referenceNo: "",
+    inwardNo: "",
   });
 
   const [materials, setMaterials] = useState([]);
@@ -33,6 +34,37 @@ const DispatchPage = () => {
     }));
   }, []);
 
+  // ✅ Auto-fetch inward data when inwardNo changes
+  useEffect(() => {
+    if (!formData.inwardNo) return;
+
+    // Simulate API call / context fetch
+    const inwardData = JSON.parse(localStorage.getItem("inwards")) || [];
+
+    const found = inwardData.find(
+      (entry) => entry.inwardNo === formData.inwardNo
+    );
+
+    if (found) {
+      setFormData((prev) => ({
+        ...prev,
+        customerName: found.customerName,
+        address: found.address,
+        referenceNo: found.referenceNo,
+      }));
+      setMaterials(found.materials || []);
+    } else {
+      // clear if inward not found
+      setFormData((prev) => ({
+        ...prev,
+        customerName: "",
+        address: "",
+        referenceNo: "",
+      }));
+      setMaterials([]);
+    }
+  }, [formData.inwardNo]);
+
   // ✅ Add material
   const handleAddMaterial = () => {
     if (!newMaterial.material || !newMaterial.quantity) return;
@@ -49,17 +81,39 @@ const DispatchPage = () => {
     <div className="container" style={{ fontSize: "12px" }}>
       {/* 🔹 Header Inputs */}
       <div className="row align-items-center g-1">
+        {/* Inward No (🔑 key field) */}
+        <div className="col-md-2">
+          <input
+            type="text"
+            className="form-control form-control-sm"
+            style={{
+              fontSize: "10px",
+              height: "18px",
+              padding: "0 2px",
+              lineHeight: "1",
+            }}
+            placeholder="Inward Number"
+            value={formData.inwardNo}
+            onChange={(e) =>
+              setFormData({ ...formData, inwardNo: e.target.value })
+            }
+          />
+        </div>
+
         {/* Customer Name */}
         <div className="col-md-3">
           <input
             type="text"
             className="form-control form-control-sm"
-            style={{ fontSize: "10px", height: "18px", padding: "0 2px", lineHeight: "1" }}
+            style={{
+              fontSize: "10px",
+              height: "18px",
+              padding: "0 2px",
+              lineHeight: "1",
+            }}
             placeholder="Customer Name"
             value={formData.customerName}
-            onChange={(e) =>
-              setFormData({ ...formData, customerName: e.target.value })
-            }
+            readOnly
           />
         </div>
 
@@ -70,18 +124,21 @@ const DispatchPage = () => {
             style={{ fontSize: "11px", height: "24px", padding: "0 4px" }}
             placeholder="Address"
             value={formData.address}
-            onChange={(e) =>
-              setFormData({ ...formData, address: e.target.value })
-            }
+            readOnly
           />
         </div>
 
         {/* Dispatch Number */}
-        <div className="col-md-3">
+        <div className="col-md-2">
           <input
             type="text"
             className="form-control form-control-sm"
-            style={{ fontSize: "10px", height: "18px", padding: "0 2px", lineHeight: "1" }}
+            style={{
+              fontSize: "10px",
+              height: "18px",
+              padding: "0 2px",
+              lineHeight: "1",
+            }}
             placeholder="Dispatch Number"
             value={formData.dispatchNo}
             readOnly
@@ -89,11 +146,16 @@ const DispatchPage = () => {
         </div>
 
         {/* Reference No */}
-        <div className="col-md-3">
+        <div className="col-md-2">
           <input
             type="text"
             className="form-control form-control-sm"
-            style={{ fontSize: "10px", height: "18px", padding: "0 2px", lineHeight: "1" }}
+            style={{
+              fontSize: "10px",
+              height: "18px",
+              padding: "0 2px",
+              lineHeight: "1",
+            }}
             placeholder="Reference No."
             value={formData.referenceNo}
             readOnly
@@ -125,7 +187,11 @@ const DispatchPage = () => {
                   <button
                     className="btn btn-sm p-0"
                     title="Delete"
-                    style={{ background: "transparent", border: "none", cursor: "pointer" }}
+                    style={{
+                      background: "transparent",
+                      border: "none",
+                      cursor: "pointer",
+                    }}
                     onClick={() => handleRemove(m.id)}
                   >
                     <span

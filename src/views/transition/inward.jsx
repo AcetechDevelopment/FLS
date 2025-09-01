@@ -1,5 +1,9 @@
 import React, { useState, useEffect, useRef } from "react";
 import "bootstrap/dist/css/bootstrap.min.css";
+import { useContext } from "react";
+import { InwardContext } from "../../contexts/Inward";
+
+
 
 const InwardPage = () => {
   const [formData, setFormData] = useState({
@@ -8,6 +12,8 @@ const InwardPage = () => {
     inwardNo: "",
     referenceNo: "",
   });
+
+  const { inwards, setInwards } = useContext(InwardContext);
 
   const [materials, setMaterials] = useState([]);
   const [newMaterial, setNewMaterial] = useState({ material: "", quantity: "" });
@@ -29,6 +35,22 @@ const handleKeyDown = (e, index, refsArray) => {
       nextField.focus();
     }
   }
+};
+
+const handleSave = () => {
+  const newInward = {
+    inwardNo: formData.inwardNo,
+    customerName: formData.customerName,
+    address: formData.address,
+    referenceNo: formData.referenceNo,
+    materials: [...materials],
+  };
+
+  setInwards([...inwards, newInward]);   // ✅ update shared context
+
+  // Optional: reset form
+  setFormData({ customerName: "", address: "", inwardNo: "", referenceNo: "" });
+  setMaterials([]);
 };
 
   // Only numbers for Qty fields
@@ -107,7 +129,7 @@ const handleKeyDown = (e, index, refsArray) => {
     fontSize: "12px",
     paddingBottom: 70,
     height: "90vh",       // full viewport height
-    overflow: "hidden"     // prevents page scroll
+    // prevents page scroll
   }}
 >
       {/* Header Inputs */}
@@ -127,17 +149,26 @@ const handleKeyDown = (e, index, refsArray) => {
   </div>
 
   {/* Address */}
-  <div className="col-md-3">
-    <textarea
-      ref={(el) => (headerRefs.current[1] = el)}
-      onKeyDown={(e) => handleKeyDown(e, 1, headerRefs)}
-      className="form-control form-control-sm"
-      style={{ fontSize: "11px", height: "24px", padding: "0 4px" }}
-      placeholder="Address"
-      value={formData.address}
-      onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-    />
-  </div>
+<div className="col-md-3">
+<textarea
+  className="form-control form-control-sm"
+  rows={1}
+  style={{
+    fontSize: "11px",
+    padding: "2px 4px",
+    overflow: "hidden", // keep scrollbar hidden
+    // ❌ remove resize: none
+  }}
+  placeholder="Address"
+  value={formData.address}
+  onChange={(e) => {
+    setFormData({ ...formData, address: e.target.value });
+    const textarea = e.target;
+    textarea.style.height = "auto";
+    textarea.style.height = textarea.scrollHeight + "px";
+  }}
+/>
+</div>
 
   {/* Inward Number */}
   <div className="col-md-3">
@@ -170,7 +201,7 @@ const handleKeyDown = (e, index, refsArray) => {
 
       {/* Materials Table */}
       <div className="mt-3">
-        <div className="card" style={{ height: "400px" }}>
+          <div className="card" style={{ height: "400px", marginBottom: "10px" }}>
           <div className="card-body p-0" style={{ height: "100%", overflow: "hidden" }}>
             {/* Header table (sticky) */}
             <table className="table table-bordered table-sm mb-0" style={{ fontSize: "11px" }}>
