@@ -1,11 +1,14 @@
 import { createRoot } from "react-dom/client";
 import { ConfigProvider } from "./contexts/ConfigContext";
 import { MaterialProvider } from "./contexts/MaterialContext";
+// import { InwardProvider } from "./contexts/Inward";
+// import { MaterialProvider } from "./contexts/MaterialContext";
 
 import App from "./App";
 import reportWebVitals from "./reportWebVitals";
 import "./index.scss";
 import { InwardProvider } from "./contexts/Inward";
+import { InventoryProvider } from "./contexts/InventoryContext";
 
 const container = document.getElementById("root");
 const root = createRoot(container);
@@ -13,8 +16,12 @@ const root = createRoot(container);
 root.render(
   <ConfigProvider>
     <MaterialProvider>
-      <InwardProvider>   {/* ✅ now correctly imported */}
-        <App />
+      <InwardProvider>  
+        <InventoryProvider>
+              <App />
+        </InventoryProvider>
+         {/* ✅ now correctly imported */}
+      
       </InwardProvider>
     </MaterialProvider>
   </ConfigProvider>

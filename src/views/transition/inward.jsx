@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import "bootstrap/dist/css/bootstrap.min.css";
 import { useContext } from "react";
 import { InwardContext } from "../../contexts/Inward";
+import { InventoryContext } from "../../contexts/InventoryContext";
 
 
 
@@ -63,16 +64,31 @@ const handleSave = () => {
   };
 
   // Auto-generate inward/ref numbers
-  useEffect(() => {
-    const randomInward = "INV-" + Math.floor(1000 + Math.random() * 9000);
-    const randomRef = "REF-" + Math.floor(1000 + Math.random() * 9000);
+  // useEffect(() => {
+  //   const randomInward = "INV-" + Math.floor(1000 + Math.random() * 9000);
+  //   const randomRef = "REF-" + Math.floor(1000 + Math.random() * 9000);
 
-    setFormData((prev) => ({
-      ...prev,
-      inwardNo: randomInward,
-      referenceNo: randomRef,
-    }));
+  //   setFormData((prev) => ({
+  //     ...prev,
+  //     inwardNo: randomInward,
+  //     referenceNo: randomRef,
+  //   }));
+  // }, []);
+
+    // Auto-generate inward/ref numbers (only if empty)
+  useEffect(() => {
+    setFormData((prev) => {
+      const randomInward = "INV-" + Math.floor(1000 + Math.random() * 9000);
+      const randomRef = "REF-" + Math.floor(1000 + Math.random() * 9000);
+
+      return {
+        ...prev,
+        inwardNo: prev.inwardNo || randomInward,   // ✅ keep manual if exists
+        referenceNo: prev.referenceNo || randomRef, // ✅ keep manual if exists
+      };
+    });
   }, []);
+
 
   // Add a material
   const handleAddMaterial = () => {
@@ -149,7 +165,7 @@ const handleSave = () => {
   </div>
 
   {/* Address */}
-<div className="col-md-3">
+{/* <div className="col-md-3">
 <textarea
   className="form-control form-control-sm"
   rows={1}
@@ -157,7 +173,7 @@ const handleSave = () => {
     fontSize: "11px",
     padding: "2px 4px",
     overflow: "hidden", // keep scrollbar hidden
-    // ❌ remove resize: none
+   
   }}
   placeholder="Address"
   value={formData.address}
@@ -168,10 +184,34 @@ const handleSave = () => {
     textarea.style.height = textarea.scrollHeight + "px";
   }}
 />
+</div> */}
+
+
+{/* Address */}
+<div className="col-md-3">
+  <textarea
+    ref={(el) => (headerRefs.current[1] = el)}
+    onKeyDown={(e) => handleKeyDown(e, 1, headerRefs)}
+    className="form-control form-control-sm"
+    rows={1}
+    style={{
+      fontSize: "11px",
+      padding: "2px 4px",
+      overflow: "hidden", // keep scrollbar hidden
+    }}
+    placeholder="Address"
+    value={formData.address}
+    onChange={(e) => {
+      setFormData({ ...formData, address: e.target.value });
+      const textarea = e.target;
+      textarea.style.height = "auto";
+      textarea.style.height = textarea.scrollHeight + "px";
+    }}
+  />
 </div>
 
   {/* Inward Number */}
-  <div className="col-md-3">
+  {/* <div className="col-md-3">
     <input
       type="text"
       ref={(el) => (headerRefs.current[2] = el)}
@@ -182,7 +222,22 @@ const handleSave = () => {
       value={formData.inwardNo}
       onChange={(e) => setFormData({ ...formData, inwardNo: e.target.value })}
     />
-  </div>
+  </div> */}
+
+
+  <div className="col-md-3">
+  <input
+    type="text"
+    ref={(el) => (headerRefs.current[2] = el)}
+    onKeyDown={(e) => handleKeyDown(e, 2, headerRefs)}
+    className="form-control form-control-sm"
+    style={{ fontSize: "10px", height: "18px", padding: "0 2px", lineHeight: "1" }}
+    placeholder="Inward Number"
+    value={formData.inwardNo}
+    onChange={(e) => setFormData({ ...formData, inwardNo: e.target.value })} // ✅ user can type manually
+  />
+</div>
+
 
   {/* Reference Number */}
   <div className="col-md-3">
@@ -396,10 +451,11 @@ const handleSave = () => {
           +
         </button>
       </div>
+      
     </div>
   </div>
 </div>
-      </div>
+</div>
     </div>
   );
 };
