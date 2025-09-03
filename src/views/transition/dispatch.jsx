@@ -1,15 +1,45 @@
 import React, { useState, useEffect, useRef } from "react";
 import "bootstrap/dist/css/bootstrap.min.css";
 import { getInwardByNo,saveDispatch } from "../../utils/fakeapi";
+// import React, { useState, useEffect, useRef } from "react";
 
 const DispatchPage = () => {
-  const [formData, setFormData] = useState({
-    customerName: "",
-    address: "",
-    dispatchNo: "",
-    referenceNo: "",
-    inwardNo: "",
-  });
+  // const [formData, setFormData] = useState({
+  //   customerName: "",
+  //   address: "",
+  //   dispatchNo: "",
+  //   referenceNo: "",
+  //   inwardNo: "",
+  // });
+
+
+ const [formData, setFormData] = useState({
+  customerName: "",
+  address: "",
+  inwardNo: "",
+  referenceNo: "",
+});
+
+const [materials, setMaterials] = useState([]);
+
+const fetchInwardDetails = (inwardNo) => {
+  const inwards = JSON.parse(localStorage.getItem("inwards")) || [];
+  const found = inwards.find((i) => i.inwardNo === inwardNo);
+  if (found) {
+    setFormData({
+      inwardNo: found.inwardNo,
+      customerName: found.customerName,
+      address: found.address,
+      referenceNo: found.referenceNo,
+    });
+    setMaterials(found.materials);
+  } else {
+    alert("Inward not found!");
+    setMaterials([]);
+  }
+};
+
+
 
   const handleInwardLookup = async () => {
   try {
@@ -33,7 +63,7 @@ const DispatchPage = () => {
   }
 };
 
-  const [materials, setMaterials] = useState([]);
+  // const [materials, setMaterials] = useState([]);
   const [newMaterial, setNewMaterial] = useState({ material: "", quantity: "" });
 
   // 🔹 Refs for inputs
@@ -120,29 +150,31 @@ const DispatchPage = () => {
   }
 }, [formData.inwardNo]);
 
-const fetchInwardDetails = (inwardNo) => {
-  const inwardData = JSON.parse(localStorage.getItem("inwards")) || [];
-  const found = inwardData.find((entry) => entry.inwardNo === inwardNo);
+// const fetchInwardDetails = (inwardNo) => {
 
-  if (found) {
-    setFormData((prev) => ({
-      ...prev,
-      customerName: found.customerName,
-      address: found.address,
-      referenceNo: found.referenceNo,
-    }));
-    setMaterials(found.materials || []);
-  } else {
-    alert("No Inward found with this number!");
-    setFormData((prev) => ({
-      ...prev,
-      customerName: "",
-      address: "",
-      referenceNo: "",
-    }));
-    setMaterials([]);
-  }
-};
+
+//   const inwardData = JSON.parse(localStorage.getItem("inwards")) || [];
+//   const found = inwardData.find((entry) => entry.inwardNo === inwardNo);
+
+//   if (found) {
+//     setFormData((prev) => ({
+//       ...prev,
+//       customerName: found.customerName,
+//       address: found.address,
+//       referenceNo: found.referenceNo,
+//     }));
+//     setMaterials(found.materials || []);
+//   } else {
+//     alert("No Inward found with this number!");
+//     setFormData((prev) => ({
+//       ...prev,
+//       customerName: "",
+//       address: "",
+//       referenceNo: "",
+//     }));
+//     setMaterials([]);
+//   }
+// };
 
 
   const handleAddMaterial = () => {
@@ -199,7 +231,7 @@ const fetchInwardDetails = (inwardNo) => {
   }}
 /> */}
 
-<input
+{/* <input
   ref={inwardRef}
   type="text"
   className="form-control form-control-sm"
@@ -208,6 +240,25 @@ const fetchInwardDetails = (inwardNo) => {
   onKeyDown={(e) => {
     if (e.key === "Enter") {
       handleInwardLookup();
+      focusNext(customerRef);
+    }
+  }}
+/> */}
+
+
+<input
+  ref={inwardRef}
+  type="text"
+  className="form-control form-control-sm"
+  style={{ fontSize: "10px", height: "18px", padding: "0 2px", lineHeight: "1" }}
+  placeholder="Inward Number"
+  value={formData.inwardNo}
+  onChange={(e) =>
+    setFormData({ ...formData, inwardNo: e.target.value })
+  }
+  onKeyDown={(e) => {
+    if (e.key === "Enter") {
+      fetchInwardDetails(formData.inwardNo);
       focusNext(customerRef);
     }
   }}
@@ -299,7 +350,7 @@ const fetchInwardDetails = (inwardNo) => {
           </tbody>
         </table>
 
-        <div className="row g-1 align-items-center">
+        {/* <div className="row g-1 align-items-center">
           <div className="col-md-6">
             <input
               ref={materialRef}
@@ -337,7 +388,7 @@ const fetchInwardDetails = (inwardNo) => {
               +
             </button>
           </div>
-        </div>
+        </div> */}
       </div>
     </div>
   );
