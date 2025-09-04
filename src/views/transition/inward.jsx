@@ -1,5 +1,8 @@
 import React, { useState, useEffect, useRef } from "react";
 import "bootstrap/dist/css/bootstrap.min.css";
+// import jsPDF from "jspdf";
+// import autoTable from "jspdf-autotable";
+import { PrintUtils } from "../../utils/printUtils";
 
 const InwardPage = () => {
   const [formData, setFormData] = useState({
@@ -9,8 +12,28 @@ const InwardPage = () => {
     referenceNo: "",
   });
 
-  const [materials, setMaterials] = useState([]);
-  const [newMaterial, setNewMaterial] = useState({ material: "", quantity: "" });
+  
+const handlePrint = () => {
+  PrintUtils.Print(materials); // pass your materials array
+};
+
+  //  const [materials] = useState([
+  //   { partNo: "WK2212160300", hsn: "73269099", palletName: "Pallet FS Big", qty: 3, price: 19365 },
+  //   { partNo: "WK2212160301", hsn: "73269099", palletName: "Pallet FS Small", qty: 3, price: 12001 },
+  // ]);
+
+  // const [materials, setMaterials] = useState([]);
+  // const [newMaterial, setNewMaterial] = useState({ material: "", quantity: "" });
+
+  // Preloaded sample data (read-only or initial)
+const [sampleMaterials] = useState([
+  { partNo: "WK2212160300", hsn: "73269099", palletName: "Pallet FS Big", qty: 3, price: 19365 },
+  { partNo: "WK2212160301", hsn: "73269099", palletName: "Pallet FS Small", qty: 3, price: 12001 },
+]);
+
+// Dynamic materials (user will add here)
+const [materials, setMaterials] = useState([]);
+const [newMaterial, setNewMaterial] = useState({ material: "", quantity: "" });
 
   // Refs
   const qtyRefs = useRef([]);
@@ -95,6 +118,18 @@ const InwardPage = () => {
   const handleRemove = (id) => {
     setMaterials((prev) => prev.filter((m) => m.id !== id));
   };
+
+  // challan print code 
+     const challan = {
+    no: "DC2025175961678",
+    date: new Date().toLocaleDateString(),
+    reference: "541-2025-1004623",
+    billFrom: "AceDigital Technologies Pvt Ltd\nChennai, Tamil Nadu",
+    billTo: "Wipro Enterprises Pvt Ltd\nBangalore, Karnataka",
+  };
+
+
+
 
   return (
     <div
@@ -231,7 +266,7 @@ const InwardPage = () => {
         >
           <div className="card-body py-2 px-2 border-0">
             <div className="row g-1 align-items-center">
-              <div className="col-md-6">
+              <div className="col-md-4">
                 <input
                   ref={newMatNameRef}
                   type="text"
@@ -270,15 +305,16 @@ const InwardPage = () => {
                   }
                 />
               </div>
-           <div className="col-md-3 d-flex align-items-center">
+{/* Row 1: Add button */}
+<div className="col-md-1 d-flex align-items-center">
   <button
-    className="btn btn-success btn-sm d-flex align-items-center justify-content-center me-2"
+    className="btn btn-success btn-sm d-flex align-items-center justify-content-center"
     onClick={handleAddMaterial}
     style={{
       borderRadius: "50%",
       width: "22px",
       height: "22px",
-      fontSize: "13px",
+      fontSize: "20px",
       padding: 0,
       cursor: "pointer",
     }}
@@ -286,10 +322,28 @@ const InwardPage = () => {
   >
     +
   </button>
-  <button className="btn btn-primary btn-sm flex-grow-1" onClick={handleSave}>
-    Save Inward
+</div>
+
+{/* Row 2: Save & Save + Print aligned to end */}
+<div className="col-md-3 d-flex justify-content-end gap-2 mt-2">
+  <button 
+    className="btn btn-primary btn-sm" 
+    onClick={handleSave}
+  >
+    Save
+  </button>
+
+  <button 
+    className="btn btn-success btn-sm" 
+    onClick={async () => {
+      await handleSave();   // ✅ first save
+      handlePrint();        // ✅ then print
+    }}
+  >
+    Save & Print
   </button>
 </div>
+
             </div>
           
           </div>
