@@ -1,72 +1,21 @@
 import React, { useState, useEffect, useRef } from "react";
 import "bootstrap/dist/css/bootstrap.min.css";
-import { getInwardByNo,saveDispatch } from "../../utils/fakeapi";
-// import React, { useState, useEffect, useRef } from "react";
+import { getInwardByNo, saveDispatch } from "../../utils/fakeapi";
+import { DispatchPrintUtils } from "../../utils/printdispatch";
 
 const DispatchPage = () => {
-  // const [formData, setFormData] = useState({
-  //   customerName: "",
-  //   address: "",
-  //   dispatchNo: "",
-  //   referenceNo: "",
-  //   inwardNo: "",
-  // });
+  const [formData, setFormData] = useState({
+    inwardNo: "",
+    customerName: "",
+    address: "",
+    dispatchNo: "",
+    referenceNo: "",
+  });
 
-
- const [formData, setFormData] = useState({
-  customerName: "",
-  address: "",
-  inwardNo: "",
-  referenceNo: "",
-});
-
-const [materials, setMaterials] = useState([]);
-
-const fetchInwardDetails = (inwardNo) => {
-  const inwards = JSON.parse(localStorage.getItem("inwards")) || [];
-  const found = inwards.find((i) => i.inwardNo === inwardNo);
-  if (found) {
-    setFormData({
-      inwardNo: found.inwardNo,
-      customerName: found.customerName,
-      address: found.address,
-      referenceNo: found.referenceNo,
-    });
-    setMaterials(found.materials);
-  } else {
-    alert("Inward not found!");
-    setMaterials([]);
-  }
-};
-
-
-
-  const handleInwardLookup = async () => {
-  try {
-    const inward = await getInwardByNo(formData.inwardNo);
-    setFormData((prev) => ({
-      ...prev,
-      customerName: inward.customerName,
-      address: inward.address,
-      referenceNo: inward.referenceNo,
-    }));
-    setMaterials(inward.materials || []);
-  } catch (err) {
-    alert(err.message);
-    setFormData((prev) => ({
-      ...prev,
-      customerName: "",
-      address: "",
-      referenceNo: "",
-    }));
-    setMaterials([]);
-  }
-};
-
-  // const [materials, setMaterials] = useState([]);
+  const [materials, setMaterials] = useState([]);
   const [newMaterial, setNewMaterial] = useState({ material: "", quantity: "" });
 
-  // 🔹 Refs for inputs
+  // 🔹 Refs
   const inwardRef = useRef();
   const customerRef = useRef();
   const addressRef = useRef();
@@ -76,22 +25,10 @@ const fetchInwardDetails = (inwardNo) => {
   const qtyRef = useRef();
   const addBtnRef = useRef();
 
-  const focusNext = (ref) => {
-    ref.current && ref.current.focus();
-  };
-
-  const isNumberKey = (e) => {
-    const char = e.key;
-    const allowedChars = "0123456789";
-    const controlKeys = ["Backspace", "Delete", "ArrowLeft", "ArrowRight", "Tab"];
-    if (controlKeys.includes(char)) return;
-    if (!allowedChars.includes(char)) e.preventDefault();
-  };
-
+  // 🔹 Auto-generate DispatchNo & ReferenceNo
   useEffect(() => {
     const randomDispatch = "DSP-" + Math.floor(1000 + Math.random() * 9000);
     const randomRef = "REF-" + Math.floor(1000 + Math.random() * 9000);
-
     setFormData((prev) => ({
       ...prev,
       dispatchNo: randomDispatch,
@@ -99,182 +36,106 @@ const fetchInwardDetails = (inwardNo) => {
     }));
   }, []);
 
-  // useEffect(() => {
-  //   if (!formData.inwardNo) return;
+  // 🔹 Fetch inward details by number
+  const fetchInwardDetails = (inwardNo) => {
+    const inwards = JSON.parse(localStorage.getItem("inwards")) || [];
+    const found = inwards.find((i) => i.inwardNo === inwardNo);
+    if (found) {
+      setFormData({
+        inwardNo: found.inwardNo,
+        customerName: found.customerName,
+        address: found.address,
+        referenceNo: found.referenceNo,
+        dispatchNo: formData.dispatchNo,
+      });
+      setMaterials(found.materials || []);
+    } else {
+      alert("Inward not found!");
+      setMaterials([]);
+    }
+  };
 
-  //   const inwardData = JSON.parse(localStorage.getItem("inwards")) || [];
+  // 🔹 Save Dispatch
+  const handleSave = async () => {
+    const dispatchData = {
+      ...formData,
+      materials,
+      date: new Date().toISOString(),
+    };
 
-  //   const found = inwardData.find((entry) => entry.inwardNo === formData.inwardNo);
+    if (!materials.length) {
+      alert("⚠️ No materials to save!");
+      return;
+    }
 
-  //   if (found) {
-  //     setFormData((prev) => ({
-  //       ...prev,
-  //       customerName: found.customerName,
-  //       address: found.address,
-  //       referenceNo: found.referenceNo,
-  //     }));
-  //     setMaterials(found.materials || []);
-  //   } else {
-  //     setFormData((prev) => ({
-  //       ...prev,
-  //       customerName: "",
-  //       address: "",
-  //       referenceNo: "",
-  //     }));
-  //     setMaterials([]);
-  //   }
-  // }, [formData.inwardNo]);
+    const existing = JSON.parse(localStorage.getItem("dispatches")) || [];
+    existing.push(dispatchData);
+    localStorage.setItem("dispatches", JSON.stringify(existing));
 
-  useEffect(() => {
-  if (!formData.inwardNo) return;
+    await saveDispatch(dispatchData);
+    alert("✅ Dispatch saved!");
+  };
 
-  const inwardData = JSON.parse(localStorage.getItem("inwards")) || [];
-  const found = inwardData.find((entry) => entry.inwardNo === formData.inwardNo);
+  // 🔹 Print Dispatch
+  const handlePrint = () => {
+    const dispatchData = {
+      ...formData,
+      materials,
+      date: new Date().toISOString(),
+    };
 
-  if (found) {
-    setFormData((prev) => ({
-      ...prev,
-      customerName: found.customerName,
-      address: found.address,
-      referenceNo: found.referenceNo,
-    }));
-    setMaterials(found.materials || []);
-  } else {
-    setFormData((prev) => ({
-      ...prev,
-      customerName: "",
-      address: "",
-      referenceNo: "",
-    }));
-    setMaterials([]);
-  }
-}, [formData.inwardNo]);
+    if (!materials.length) {
+      alert("⚠️ No materials to print!");
+      return;
+    }
 
-// const fetchInwardDetails = (inwardNo) => {
+    DispatchPrintUtils.Print(dispatchData);
+  };
 
-
-//   const inwardData = JSON.parse(localStorage.getItem("inwards")) || [];
-//   const found = inwardData.find((entry) => entry.inwardNo === inwardNo);
-
-//   if (found) {
-//     setFormData((prev) => ({
-//       ...prev,
-//       customerName: found.customerName,
-//       address: found.address,
-//       referenceNo: found.referenceNo,
-//     }));
-//     setMaterials(found.materials || []);
-//   } else {
-//     alert("No Inward found with this number!");
-//     setFormData((prev) => ({
-//       ...prev,
-//       customerName: "",
-//       address: "",
-//       referenceNo: "",
-//     }));
-//     setMaterials([]);
-//   }
-// };
-
-
+  // 🔹 Add Material
   const handleAddMaterial = () => {
     if (!newMaterial.material || !newMaterial.quantity) return;
     setMaterials([...materials, { ...newMaterial, id: materials.length + 1 }]);
     setNewMaterial({ material: "", quantity: "" });
-    focusNext(materialRef); // focus back to material input
+    materialRef.current && materialRef.current.focus();
   };
 
+  // 🔹 Remove Material
   const handleRemove = (id) => {
     setMaterials(materials.filter((m) => m.id !== id));
   };
 
-
-  const handleSubmit = async () => {
-  const dispatch = {
-    ...formData,
-    materials,
-    date: new Date().toISOString(),
-  };
-  await saveDispatch(dispatch);
-  alert("Dispatch saved!");
-  setFormData({ inwardNo: "", customerName: "", address: "", referenceNo: "" });
-  setMaterials([]);
-};
-
   return (
     <div className="container" style={{ fontSize: "12px" }}>
+      {/* -------- Form Inputs -------- */}
       <div className="row align-items-center g-1">
         <div className="col-md-2">
-          {/* <input
+          <input
             ref={inwardRef}
             type="text"
             className="form-control form-control-sm"
-            style={{ fontSize: "10px", height: "18px", padding: "0 2px", lineHeight: "1" }}
+            style={{ fontSize: "10px", height: "18px", padding: "0 2px" }}
             placeholder="Inward Number"
             value={formData.inwardNo}
             onChange={(e) => setFormData({ ...formData, inwardNo: e.target.value })}
-            onKeyDown={(e) => e.key === "Enter" && focusNext(customerRef)}
-          /> */}
-          {/* <input
-  ref={inwardRef}
-  type="text"
-  className="form-control form-control-sm"
-  style={{ fontSize: "10px", height: "18px", padding: "0 2px", lineHeight: "1" }}
-  placeholder="Inward Number"
-  value={formData.inwardNo}
-  onChange={(e) => setFormData({ ...formData, inwardNo: e.target.value })}
-  onKeyDown={(e) => {
-    if (e.key === "Enter") {
-      fetchInwardDetails(formData.inwardNo); // ✅ get inward details
-      focusNext(customerRef);
-    }
-  }}
-/> */}
-
-{/* <input
-  ref={inwardRef}
-  type="text"
-  className="form-control form-control-sm"
-  value={formData.inwardNo}
-  onChange={(e) => setFormData({ ...formData, inwardNo: e.target.value })}
-  onKeyDown={(e) => {
-    if (e.key === "Enter") {
-      handleInwardLookup();
-      focusNext(customerRef);
-    }
-  }}
-/> */}
-
-
-<input
-  ref={inwardRef}
-  type="text"
-  className="form-control form-control-sm"
-  style={{ fontSize: "10px", height: "18px", padding: "0 2px", lineHeight: "1" }}
-  placeholder="Inward Number"
-  value={formData.inwardNo}
-  onChange={(e) =>
-    setFormData({ ...formData, inwardNo: e.target.value })
-  }
-  onKeyDown={(e) => {
-    if (e.key === "Enter") {
-      fetchInwardDetails(formData.inwardNo);
-      focusNext(customerRef);
-    }
-  }}
-/>
-    </div>
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                fetchInwardDetails(formData.inwardNo);
+                customerRef.current && customerRef.current.focus();
+              }
+            }}
+          />
+        </div>
 
         <div className="col-md-3">
           <input
             ref={customerRef}
             type="text"
             className="form-control form-control-sm"
-            style={{ fontSize: "10px", height: "18px", padding: "0 2px", lineHeight: "1" }}
+            style={{ fontSize: "10px", height: "18px" }}
             placeholder="Customer Name"
             value={formData.customerName}
             readOnly
-            onKeyDown={(e) => e.key === "Enter" && focusNext(addressRef)}
           />
         </div>
 
@@ -282,11 +143,10 @@ const fetchInwardDetails = (inwardNo) => {
           <textarea
             ref={addressRef}
             className="form-control form-control-sm"
-            style={{ fontSize: "11px", height: "24px", padding: "0 4px" }}
+            style={{ fontSize: "11px", height: "24px" }}
             placeholder="Address"
             value={formData.address}
             readOnly
-            onKeyDown={(e) => e.key === "Enter" && focusNext(dispatchRef)}
           />
         </div>
 
@@ -295,11 +155,10 @@ const fetchInwardDetails = (inwardNo) => {
             ref={dispatchRef}
             type="text"
             className="form-control form-control-sm"
-            style={{ fontSize: "10px", height: "18px", padding: "0 2px", lineHeight: "1" }}
+            style={{ fontSize: "10px", height: "18px" }}
             placeholder="Dispatch Number"
             value={formData.dispatchNo}
             readOnly
-            onKeyDown={(e) => e.key === "Enter" && focusNext(referenceRef)}
           />
         </div>
 
@@ -308,23 +167,23 @@ const fetchInwardDetails = (inwardNo) => {
             ref={referenceRef}
             type="text"
             className="form-control form-control-sm"
-            style={{ fontSize: "10px", height: "18px", padding: "0 2px", lineHeight: "1" }}
+            style={{ fontSize: "10px", height: "18px" }}
             placeholder="Reference No."
             value={formData.referenceNo}
             readOnly
-            onKeyDown={(e) => e.key === "Enter" && focusNext(materialRef)}
           />
         </div>
       </div>
 
+      {/* -------- Materials Table -------- */}
       <div className="mt-3">
-        <table className="table table-bordered table-sm" style={{ fontSize: "11px", marginBottom: "6px" }}>
+        <table className="table table-bordered table-sm" style={{ fontSize: "11px" }}>
           <thead className="table-light text-center">
-            <tr style={{ fontSize: "11px", lineHeight: "1.6" }}>
-              <th style={{ width: "6%", padding: "2px" }}>Sl.No</th>
-              <th style={{ padding: "2px" }}>Material</th>
-              <th style={{ width: "14%", padding: "2px" }}>Qty</th>
-              <th style={{ width: "10%", padding: "2px" }}>Action</th>
+            <tr>
+              <th style={{ width: "6%" }}>Sl.No</th>
+              <th>Material</th>
+              <th style={{ width: "14%" }}>Qty</th>
+              <th style={{ width: "10%" }}>Action</th>
             </tr>
           </thead>
           <tbody>
@@ -336,11 +195,10 @@ const fetchInwardDetails = (inwardNo) => {
                 <td>
                   <button
                     className="btn btn-sm p-0"
-                    title="Delete"
-                    style={{ background: "transparent", border: "none", cursor: "pointer" }}
                     onClick={() => handleRemove(m.id)}
+                    style={{ background: "transparent", border: "none" }}
                   >
-                    <span className="material-icons-two-tone text-danger" style={{ fontSize: "16px", cursor: "pointer" }}>
+                    <span className="material-icons-two-tone text-danger" style={{ fontSize: "16px" }}>
                       delete
                     </span>
                   </button>
@@ -350,45 +208,23 @@ const fetchInwardDetails = (inwardNo) => {
           </tbody>
         </table>
 
-        {/* <div className="row g-1 align-items-center">
-          <div className="col-md-6">
-            <input
-              ref={materialRef}
-              type="text"
-              className="form-control form-control-sm"
-              style={{ fontSize: "11px", height: "22px", padding: "0 4px" }}
-              placeholder="Material"
-              value={newMaterial.material}
-              onChange={(e) => setNewMaterial({ ...newMaterial, material: e.target.value })}
-              onKeyDown={(e) => e.key === "Enter" && focusNext(qtyRef)}
-            />
-          </div>
-          <div className="col-md-3">
-            <input
-              ref={qtyRef}
-              type="text"
-              className="form-control form-control-sm"
-              style={{ fontSize: "11px", height: "22px", padding: "0 4px" }}
-              placeholder="Qty"
-              value={newMaterial.quantity}
-              onKeyDown={(e) => {
-                isNumberKey(e);
-                if (e.key === "Enter") focusNext(addBtnRef);
-              }}
-              onChange={(e) => setNewMaterial({ ...newMaterial, quantity: e.target.value })}
-            />
-          </div>
-          <div className="col-md-3">
+        {/* -------- Save / Print Buttons -------- */}
+        <div className="card mt-3 shadow-sm">
+          <div className="card-body d-flex justify-content-end gap-2 p-2">
+            <button className="btn btn-primary btn-sm" onClick={handleSave}>
+              Save
+            </button>
             <button
-              ref={addBtnRef}
-              className="btn btn-success btn-sm d-flex align-items-center justify-content-center"
-              onClick={handleAddMaterial}
-              style={{ borderRadius: "50%", width: "22px", height: "22px", fontSize: "13px", padding: 0, cursor: "pointer" }}
+              className="btn btn-success btn-sm"
+              onClick={async () => {
+                await handleSave();
+                handlePrint();
+              }}
             >
-              +
+              Save & Print
             </button>
           </div>
-        </div> */}
+        </div>
       </div>
     </div>
   );

@@ -271,7 +271,7 @@ const [newMaterial, setNewMaterial] = useState({ material: "", quantity: "" });
                   ref={newMatNameRef}
                   type="text"
                   className="form-control form-control-sm"
-                  style={{ fontSize: "11px", height: "22px", padding: "0 4px" }}
+                  style={{ fontSize: "11px", height: "22px", padding: "0 4px",borderRadius:"10px" }}
                   placeholder="Material"
                   value={newMaterial.material}
                   onChange={(e) =>
@@ -311,7 +311,7 @@ const [newMaterial, setNewMaterial] = useState({ material: "", quantity: "" });
     className="btn btn-success btn-sm d-flex align-items-center justify-content-center"
     onClick={handleAddMaterial}
     style={{
-      borderRadius: "50%",
+      borderRadius: "48%",
       width: "22px",
       height: "22px",
       fontSize: "20px",
