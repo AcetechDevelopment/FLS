@@ -114,7 +114,7 @@ const DispatchPage = () => {
             ref={inwardRef}
             type="text"
             className="form-control form-control-sm"
-            style={{ fontSize: "10px", height: "18px", padding: "0 2px" }}
+            style={{ fontSize: "10px", height: "18px", padding: "0 2px",borderRadius:"8px" }}
             placeholder="Inward Number"
             value={formData.inwardNo}
             onChange={(e) => setFormData({ ...formData, inwardNo: e.target.value })}
@@ -132,7 +132,7 @@ const DispatchPage = () => {
             ref={customerRef}
             type="text"
             className="form-control form-control-sm"
-            style={{ fontSize: "10px", height: "18px" }}
+            style={{ fontSize: "10px", height: "18px",borderRadius:"8px" }}
             placeholder="Customer Name"
             value={formData.customerName}
             readOnly
@@ -143,7 +143,7 @@ const DispatchPage = () => {
           <textarea
             ref={addressRef}
             className="form-control form-control-sm"
-            style={{ fontSize: "11px", height: "24px" }}
+            style={{ fontSize: "11px", height: "24px",borderRadius:"8px" }}
             placeholder="Address"
             value={formData.address}
             readOnly
@@ -155,7 +155,7 @@ const DispatchPage = () => {
             ref={dispatchRef}
             type="text"
             className="form-control form-control-sm"
-            style={{ fontSize: "10px", height: "18px" }}
+            style={{ fontSize: "10px", height: "18px",borderRadius:"8px" }}
             placeholder="Dispatch Number"
             value={formData.dispatchNo}
             readOnly
@@ -167,7 +167,7 @@ const DispatchPage = () => {
             ref={referenceRef}
             type="text"
             className="form-control form-control-sm"
-            style={{ fontSize: "10px", height: "18px" }}
+            style={{ fontSize: "10px", height: "18px",borderRadius:"8px" }}
             placeholder="Reference No."
             value={formData.referenceNo}
             readOnly
@@ -209,22 +209,28 @@ const DispatchPage = () => {
         </table>
 
         {/* -------- Save / Print Buttons -------- */}
-        <div className="card mt-3 shadow-sm">
-          <div className="card-body d-flex justify-content-end gap-2 p-2">
-            <button className="btn btn-primary btn-sm" onClick={handleSave}>
-              Save
-            </button>
-            <button
-              className="btn btn-success btn-sm"
-              onClick={async () => {
-                await handleSave();
-                handlePrint();
-              }}
-            >
-              Save & Print
-            </button>
-          </div>
-        </div>
+   <div className="card mt-3 shadow-sm">
+  <div className="card-body d-flex justify-content-end gap-2 p-2">
+    <button
+      className="btn btn-primary btn-sm"
+      style={{ padding: "2px 8px", fontSize: "12px", height: "28px", borderRadius: "8px" }}
+      onClick={handleSave}
+    >
+      Save
+    </button>
+
+    <button
+      className="btn btn-success btn-sm"
+      style={{ padding: "2px 8px", fontSize: "12px", height: "28px", borderRadius: "8px" }}
+      onClick={async () => {
+        await handleSave();
+        handlePrint();
+      }}
+    >
+      Save & Print
+    </button>
+  </div>
+</div>
       </div>
     </div>
   );

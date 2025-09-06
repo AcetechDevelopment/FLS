@@ -143,35 +143,62 @@ const MaterialMaster = () => {
      {/* Toolbar */}
       <div className="d-flex justify-content-between align-items-center mb-3 flex-wrap">
         <div className="d-flex flex-wrap gap-1 mb-2">
-          <button
-            className="btn btn-sm btn-success py-1 px-2 d-flex align-items-center"
-            onClick={handleNewMaterial}
-          >
-            <span className="material-icons-two-tone me-1" style={{ fontSize: "14px" }}>add</span>
-            New
-          </button>
-          <button
-            className="btn btn-sm btn-danger py-1 px-2 d-flex align-items-center"
-            onClick={exportPDF}
-          >
-            <span className="material-icons-two-tone me-1" style={{ fontSize: "14px" }}>picture_as_pdf</span>
-            PDF
-          </button>
-          <button
-            className="btn btn-sm text-white py-1 px-2 d-flex align-items-center"
-            style={{ backgroundColor: "#1D6F42", borderColor: "#1D6F42" }}
-            onClick={exportExcel}
-          >
-            <span className="material-icons-two-tone me-1" style={{ fontSize: "14px" }}>grid_on</span>
-            Excel
-          </button>
-          <button
-            className="btn btn-sm btn-primary py-1 px-2 d-flex align-items-center"
-            onClick={handlePrint}
-          >
-            <span className="material-icons-two-tone me-1" style={{ fontSize: "14px" }}>print</span>
-            Print
-          </button>
+
+<button
+  className="btn btn-sm btn-success py-1 px-2 d-flex align-items-center"
+  style={{ borderRadius: "8px", fontSize: "13px" }}
+  onClick={handleNewMaterial}
+>
+  <span
+    className="material-icons-two-tone me-1"
+    style={{ fontSize: "12px" }}
+  >
+    add
+  </span>
+  New
+</button>
+
+     <button
+  className="btn btn-sm btn-danger py-1 px-2 d-flex align-items-center"
+  style={{ borderRadius: "8px", fontSize: "13px" }}
+  onClick={exportPDF}
+>
+  <span
+    className="material-icons-two-tone me-1"
+    style={{ fontSize: "14px" }}
+  >
+    picture_as_pdf
+  </span>
+  PDF
+</button>
+
+<button
+  className="btn btn-sm text-white py-1 px-2 d-flex align-items-center"
+  style={{ backgroundColor: "#1D6F42", borderColor: "#1D6F42", borderRadius: "8px", fontSize: "13px" }}
+  onClick={exportExcel}
+>
+  <span
+    className="material-icons-two-tone me-1"
+    style={{ fontSize: "14px" }}
+  >
+    grid_on
+  </span>
+  Excel
+</button>
+
+<button
+  className="btn btn-sm btn-primary py-1 px-2 d-flex align-items-center"
+  style={{ borderRadius: "8px", fontSize: "13px" }}
+  onClick={handlePrint}
+>
+  <span
+    className="material-icons-two-tone me-1"
+    style={{ fontSize: "14px" }}
+  >
+    print
+  </span>
+  Print
+</button>
         </div>
 
         <div style={{ width: "250px" }}>

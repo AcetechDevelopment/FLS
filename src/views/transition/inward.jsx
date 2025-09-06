@@ -144,7 +144,8 @@ const [newMaterial, setNewMaterial] = useState({ material: "", quantity: "" });
             ref={(el) => (headerRefs.current[0] = el)}
             onKeyDown={(e) => handleKeyDown(e, 0, headerRefs)}
             className="form-control form-control-sm"
-            style={{ fontSize: "10px", height: "18px", padding: "0 2px" }}
+            style={{ fontSize: "10px", height: "18px", padding: "0 2px", borderRadius:"8px"
+             }}
             placeholder="Customer Name"
             value={formData.something || ""}
             onChange={(e) =>
@@ -159,7 +160,7 @@ const [newMaterial, setNewMaterial] = useState({ material: "", quantity: "" });
             onKeyDown={(e) => handleKeyDown(e, 1, headerRefs)}
             className="form-control form-control-sm"
             rows={1}
-            style={{ fontSize: "11px", padding: "2px 4px", overflow: "hidden" }}
+            style={{ fontSize: "11px", padding: "2px 4px", overflow: "hidden",borderRadius:"8px" }}
             placeholder="Address"
             value={formData.address}
             onChange={(e) => setFormData({ ...formData, address: e.target.value })}
@@ -172,7 +173,7 @@ const [newMaterial, setNewMaterial] = useState({ material: "", quantity: "" });
             ref={(el) => (headerRefs.current[2] = el)}
             onKeyDown={(e) => handleKeyDown(e, 2, headerRefs)}
             className="form-control form-control-sm"
-            style={{ fontSize: "10px", height: "18px", padding: "0 2px" }}
+            style={{ fontSize: "10px", height: "18px", padding: "0 2px",borderRadius:"8px" }}
             placeholder="Inward Number"
             value={formData.inwardNo}
             onChange={(e) =>
@@ -187,7 +188,7 @@ const [newMaterial, setNewMaterial] = useState({ material: "", quantity: "" });
             ref={(el) => (headerRefs.current[3] = el)}
             onKeyDown={(e) => handleKeyDown(e, 3, headerRefs)}
             className="form-control form-control-sm"
-            style={{ fontSize: "10px", height: "18px", padding: "0 2px" }}
+            style={{ fontSize: "10px", height: "18px", padding: "0 2px",borderRadius:"8px" }}
             placeholder="Reference No."
             value={formData.referenceNo}
             onChange={(e) =>
@@ -271,7 +272,7 @@ const [newMaterial, setNewMaterial] = useState({ material: "", quantity: "" });
                   ref={newMatNameRef}
                   type="text"
                   className="form-control form-control-sm"
-                  style={{ fontSize: "11px", height: "22px", padding: "0 4px",borderRadius:"10px" }}
+                  style={{ fontSize: "11px", height: "22px", padding: "0 4px",borderRadius:"8px" }}
                   placeholder="Material"
                   value={newMaterial.material}
                   onChange={(e) =>
@@ -290,7 +291,7 @@ const [newMaterial, setNewMaterial] = useState({ material: "", quantity: "" });
                   ref={newMatQtyRef}
                   type="text"
                   className="form-control form-control-sm"
-                  style={{ fontSize: "11px", height: "22px", padding: "0 4px" }}
+                  style={{ fontSize: "11px", height: "22px", padding: "0 4px",borderRadius:"8px" }}
                   placeholder="Qty"
                   value={newMaterial.quantity}
                   onKeyDown={(e) => {
@@ -311,9 +312,9 @@ const [newMaterial, setNewMaterial] = useState({ material: "", quantity: "" });
     className="btn btn-success btn-sm d-flex align-items-center justify-content-center"
     onClick={handleAddMaterial}
     style={{
-      borderRadius: "48%",
-      width: "22px",
-      height: "22px",
+      borderRadius: "35%",
+      width: "30px",
+      height: "28px",
       fontSize: "20px",
       padding: 0,
       cursor: "pointer",
@@ -328,6 +329,7 @@ const [newMaterial, setNewMaterial] = useState({ material: "", quantity: "" });
 <div className="col-md-3 d-flex justify-content-end gap-2 mt-2">
   <button 
     className="btn btn-primary btn-sm" 
+    style={{ padding: "2px 8px", fontSize: "12px", height: "28px",borderRadius:"8px" }}
     onClick={handleSave}
   >
     Save
@@ -335,6 +337,7 @@ const [newMaterial, setNewMaterial] = useState({ material: "", quantity: "" });
 
   <button 
     className="btn btn-success btn-sm" 
+    style={{ padding: "2px 8px", fontSize: "12px", height: "28px",borderRadius:"8px" }}
     onClick={async () => {
       await handleSave();   // ✅ first save
       handlePrint();        // ✅ then print
