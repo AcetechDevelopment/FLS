@@ -6,44 +6,49 @@ const MaterialStock = () => {
 
   return (
     <div className="container mt-3">
-      <h5 className="mb-3">Material Stock</h5>
-      <div className="table-responsive">
-        <table
-          id="material-stock-table"
-          className="table table-bordered table-striped align-middle"
-          style={{ fontSize: "12px" }}
-        >
-          <thead className="table-primary" style={{ fontSize: "12px" }}>
-            <tr className="text-center">
-              <th className="py-1 px-1">Material Code</th>
-              <th className="py-1 px-1">Material Name</th>
-              <th className="py-1 px-1">Default Price</th>
-              <th className="py-1 px-1">Material Type</th>
-            </tr>
-          </thead>
-          <tbody>
-            {materials.length > 0 ? (
-              materials.map((m) => (
-                <tr key={m.id} className="text-center">
-                  <td className="py-1 px-1">{m.materialCode}</td>
-                  <td className="py-1 px-1">{m.materialName}</td>
-                  <td className="py-1 px-1"> {m.defaultPrice || 0}</td>
-                  <td className="py-1 px-1">{m.materialType}</td>
-                </tr>
-              ))
-            ) : (
+      <div className="card shadow-sm border-0 rounded-3">
+        <div className="card-body p-3">
+          <h5 className="mb-3 fw-semibold text-primary">📦 Material Stock</h5>
+
+          <div className="table-responsive">
+            <table
+              id="material-stock-table"
+              className="table table-sm table-hover table-bordered align-middle mb-0"
+              style={{ fontSize: "12px" }}
+            >
+              <thead className="table-primary text-center">
               <tr>
-                <td
-                  colSpan="4"
-                  className="text-center text-muted py-2"
-                  style={{ fontSize: "12px" }}
-                >
-                  No materials found
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
+          <th className="py-2 px-2 text-center">Material Code</th>
+          <th className="py-2 px-2 text-center">Material Name</th>
+          <th className="py-2 px-2 text-center">Default Price</th>
+          <th className="py-2 px-2 text-center">Material Type</th>
+        </tr>
+              </thead>
+              <tbody>
+                {materials.length > 0 ? (
+                  materials.map((m) => (
+                 <tr key={m.id}>
+  <td className="py-1 px-2 text-center">{m.materialCode}</td>
+  <td className="py-1 px-2 text-center">{m.materialName}</td>
+  <td className="py-1 px-2 text-center">{m.defaultPrice || 0}</td>
+  <td className="py-1 px-2 text-center">{m.materialType}</td>
+</tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td
+                      colSpan="4"
+                      className="text-center text-muted py-2"
+                      style={{ fontSize: "12px" }}
+                    >
+                      No materials found
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
       </div>
     </div>
   );

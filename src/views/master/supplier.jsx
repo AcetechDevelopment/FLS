@@ -170,16 +170,14 @@ const exportExcel = () => {
   return (
     <div className="container">
 
-      {/* Toolbar */}
-  <div className="d-flex justify-content-between align-items-center mb-3">
-  {/* ✅ Action Buttons */}
-<div className="d-flex flex-wrap gap-1 mb-2">
+<div className="d-flex flex-wrap gap-1 mb-3">
   {/* New Supplier */}
   <button
     className="btn btn-sm btn-success py-1 px-2 d-flex align-items-center"
+    style={{ borderRadius: "8px", fontSize: "13px" }}
     onClick={handleNewSupplier}
   >
-    <span className="material-icons-two-tone me-1" style={{ fontSize: "14px" }}>
+    <span className="material-icons-two-tone me-1" style={{ fontSize: "12px" }}>
       add
     </span>
     New
@@ -187,7 +185,8 @@ const exportExcel = () => {
 
   {/* PDF */}
   <button
-    className="btn btn-xs btn-danger py-1 px-2 d-flex align-items-center"
+    className="btn btn-sm btn-danger py-1 px-2 d-flex align-items-center"
+    style={{ borderRadius: "8px", fontSize: "13px" }}
     onClick={exportPDF}
   >
     <span className="material-icons-two-tone me-1" style={{ fontSize: "14px" }}>
@@ -199,7 +198,12 @@ const exportExcel = () => {
   {/* Excel */}
   <button
     className="btn btn-sm text-white py-1 px-2 d-flex align-items-center"
-    style={{ backgroundColor: "#1D6F42", borderColor: "#1D6F42" }}
+    style={{
+      backgroundColor: "#1D6F42",
+      borderColor: "#1D6F42",
+      borderRadius: "8px",
+      fontSize: "13px",
+    }}
     onClick={exportExcel}
   >
     <span className="material-icons-two-tone me-1" style={{ fontSize: "14px" }}>
@@ -211,6 +215,7 @@ const exportExcel = () => {
   {/* Print */}
   <button
     className="btn btn-sm btn-primary py-1 px-2 d-flex align-items-center"
+    style={{ borderRadius: "8px", fontSize: "13px" }}
     onClick={handlePrint}
   >
     <span className="material-icons-two-tone me-1" style={{ fontSize: "14px" }}>
@@ -218,18 +223,6 @@ const exportExcel = () => {
     </span>
     Print
   </button>
-</div>
-
-  {/* ✅ Search Box */}
-  <div style={{ width: "250px" }}>
-    <input
-      type="text"
-      className="form-control form-control-sm"
-      placeholder="🔍 Search supplier..."
-      value={search}
-      onChange={(e) => setSearch(e.target.value)}
-    />
-  </div>
 </div>
 
       {/* ✅ Responsive Table */}

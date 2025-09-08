@@ -141,7 +141,7 @@ const MaterialMaster = () => {
     <div className="container mt-0">
       {/* Toolbar */}
      {/* Toolbar */}
-      <div className="d-flex justify-content-between align-items-center mb-3 flex-wrap">
+      <div className="d-flex justify-content-between align-items-center mb-2 flex-wrap">
         <div className="d-flex flex-wrap gap-1 mb-2">
 
 <button
@@ -199,17 +199,18 @@ const MaterialMaster = () => {
   </span>
   Print
 </button>
-        </div>
+ </div>
 
-        <div style={{ width: "250px" }}>
-          <input
-            type="text"
-            className="form-control form-control-sm"
-            placeholder="🔍 Search material..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-          />
-        </div>
+       <div style={{ width: "250px" }}>
+  <input
+    type="text"
+    className="form-control form-control-sm"
+    placeholder="🔍 Search material..."
+    value={search}
+    onChange={(e) => setSearch(e.target.value)}
+    style={{ borderRadius: "8px" }}
+  />
+</div>
       </div>
 
       {/* Table */}
@@ -268,10 +269,7 @@ const MaterialMaster = () => {
   </span>
 </button>
 
-
-
-
-        {/* Delete */}
+      {/* Delete */}
         {/* <button
           className="btn btn-sm p-0"
           style={{ background: "transparent", border: "none" }}
@@ -299,8 +297,6 @@ const MaterialMaster = () => {
     delete
   </span>
 </button>
-
-
 
       </td>
     </tr>

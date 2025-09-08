@@ -132,10 +132,10 @@ const [newMaterial, setNewMaterial] = useState({ material: "", quantity: "" });
 
 
   return (
-    <div
-      className="container"
-      style={{ fontSize: "12px", paddingBottom: 70, height: "90vh" }}
-    >
+<div
+  className="container"
+  style={{ fontSize: "12px", paddingTop: "0px", paddingBottom: "70px", height: "90vh" }}
+>
       {/* Header Inputs */}
       <div className="row align-items-center g-1 mt-2">
         <div className="col-md-3">
@@ -266,7 +266,7 @@ const [newMaterial, setNewMaterial] = useState({ material: "", quantity: "" });
           style={{ positionL: "fixed", bottom: 0, right: 0, width: "100%", zIndex: 1000 }}
         >
           <div className="card-body py-2 px-2 border-0">
-            <div className="row g-1 align-items-center">
+          <div className="row g-1 align-items-center justify-content-end">
               <div className="col-md-4">
                 <input
                   ref={newMatNameRef}
@@ -315,7 +315,7 @@ const [newMaterial, setNewMaterial] = useState({ material: "", quantity: "" });
       borderRadius: "35%",
       width: "30px",
       height: "28px",
-      fontSize: "20px",
+      fontSize: "21px",
       padding: 0,
       cursor: "pointer",
     }}
