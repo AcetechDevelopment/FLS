@@ -298,7 +298,7 @@ const handlePrint = () => {
           <td className="py-1 px-1">{user.phone}</td>
 
           {/* Password with show on focus/blur */}
-          <td className="py-1 px-1">
+          {/* <td className="py-1 px-1 text-center">
             <input
               type={visiblePasswords[user.id] ? "text" : "password"}
               className="form-control form-control-sm border-0 bg-transparent p-0"
@@ -312,7 +312,43 @@ const handlePrint = () => {
               }
               style={{ width: "90px", fontSize: "12px" }}
             />
-          </td>
+          </td> */}
+
+{/* <td className="py-1 px-1 text-center" style={wi%dth}>
+  <input
+    type="password"
+    className="form-control form-control-sm border-0 bg-transparent p-0"
+    value={user.password}
+    readOnly
+    tabIndex={-1}
+    onMouseDown={(e) => e.preventDefault()}
+    style={{
+      fontSize: "12px",
+      textAlign: "center",   // ✅ force center
+    }}
+  />
+</td> */}
+
+
+<td
+  className="py-1 px-1 text-center"
+  style={{ width: "180px" }}   // ✅ fixed width
+>
+  <input
+    type="password"
+    className="form-control form-control-sm border-0 bg-transparent p-0"
+    value={user.password}
+    readOnly
+    tabIndex={-1}
+    onMouseDown={(e) => e.preventDefault()}
+    style={{
+      fontSize: "12px",
+      textAlign: "center", // ✅ force center inside input
+      width: "100%",       // ✅ make input fill the 180px cell
+    }}
+  />
+</td>
+
 
           <td className="py-1 px-1">{user.role}</td>
         <td className="py-1 px-1">
