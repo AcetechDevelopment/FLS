@@ -106,74 +106,107 @@ const DispatchPage = () => {
   };
 
   return (
-    <div className="container" style={{ fontSize: "12px" }}>
+    <div className="container" style={{ fontSize: "12px", }}>
       {/* -------- Form Inputs -------- */}
-      <div className="row align-items-center g-1">
-        <div className="col-md-2">
-          <input
-            ref={inwardRef}
-            type="text"
-            className="form-control form-control-sm"
-            style={{ fontSize: "10px", height: "18px", padding: "0 2px",borderRadius:"8px" }}
-            placeholder="Inward Number"
-            value={formData.inwardNo}
-            onChange={(e) => setFormData({ ...formData, inwardNo: e.target.value })}
-            onKeyDown={(e) => {
-              if (e.key === "Enter") {
-                fetchInwardDetails(formData.inwardNo);
-                customerRef.current && customerRef.current.focus();
-              }
-            }}
-          />
-        </div>
+<div className="row align-items-center g-1">
+  <div className="col-md-2">
+    <input
+      ref={inwardRef}
+      type="text"
+      className="form-control form-control-sm"
+      style={{
+        fontSize: "10px",
+        height: "18px",
+        padding: "0 2px",
+        borderRadius: "8px",
+      }}
+      placeholder="Inward Number"
+      value={formData.inwardNo}
+      onChange={(e) =>
+        setFormData({ ...formData, inwardNo: e.target.value })
+      }
+      onKeyDown={(e) => {
+        if (e.key === "Enter") {
+          e.preventDefault();
+          fetchInwardDetails(formData.inwardNo);
+          customerRef.current && customerRef.current.focus();
+        }
+      }}
+    />
+  </div>
 
-        <div className="col-md-3">
-          <input
-            ref={customerRef}
-            type="text"
-            className="form-control form-control-sm"
-            style={{ fontSize: "10px", height: "18px",borderRadius:"8px" }}
-            placeholder="Customer Name"
-            value={formData.customerName}
-            readOnly
-          />
-        </div>
+  <div className="col-md-3">
+    <input
+      ref={customerRef}
+      type="text"
+      className="form-control form-control-sm"
+      style={{ fontSize: "10px", height: "18px", borderRadius: "8px" }}
+      placeholder="Customer Name"
+      value={formData.customerName}
+      readOnly
+      onKeyDown={(e) => {
+        if (e.key === "Enter") {
+          e.preventDefault();
+          addressRef.current && addressRef.current.focus();
+        }
+      }}
+    />
+  </div>
 
-        <div className="col-md-3">
-          <textarea
-            ref={addressRef}
-            className="form-control form-control-sm"
-            style={{ fontSize: "11px", height: "24px",borderRadius:"8px" }}
-            placeholder="Address"
-            value={formData.address}
-            readOnly
-          />
-        </div>
+  <div className="col-md-3">
+    <textarea
+      ref={addressRef}
+      className="form-control form-control-sm"
+      style={{ fontSize: "11px", height: "24px", borderRadius: "8px" }}
+      placeholder="Address"
+      value={formData.address}
+      readOnly
+      onKeyDown={(e) => {
+        if (e.key === "Enter") {
+          e.preventDefault();
+          dispatchRef.current && dispatchRef.current.focus();
+        }
+      }}
+    />
+  </div>
 
-        <div className="col-md-2">
-          <input
-            ref={dispatchRef}
-            type="text"
-            className="form-control form-control-sm"
-            style={{ fontSize: "10px", height: "18px",borderRadius:"8px" }}
-            placeholder="Dispatch Number"
-            value={formData.dispatchNo}
-            readOnly
-          />
-        </div>
+  <div className="col-md-2">
+    <input
+      ref={dispatchRef}
+      type="text"
+      className="form-control form-control-sm"
+      style={{ fontSize: "10px", height: "18px", borderRadius: "8px" }}
+      placeholder="Dispatch Number"
+      value={formData.dispatchNo}
+      readOnly
+      onKeyDown={(e) => {
+        if (e.key === "Enter") {
+          e.preventDefault();
+          referenceRef.current && referenceRef.current.focus();
+        }
+      }}
+    />
+  </div>
 
-        <div className="col-md-2">
-          <input
-            ref={referenceRef}
-            type="text"
-            className="form-control form-control-sm"
-            style={{ fontSize: "10px", height: "18px",borderRadius:"8px" }}
-            placeholder="Reference No."
-            value={formData.referenceNo}
-            readOnly
-          />
-        </div>
-      </div>
+  <div className="col-md-2">
+    <input
+      ref={referenceRef}
+      type="text"
+      className="form-control form-control-sm"
+      style={{ fontSize: "10px", height: "18px", borderRadius: "8px" }}
+      placeholder="Reference No."
+      value={formData.referenceNo}
+      readOnly
+      onKeyDown={(e) => {
+        if (e.key === "Enter") {
+          e.preventDefault();
+          // 👇 move to next logical element after reference (maybe a button?)
+          nextButtonRef?.current?.focus();
+        }
+      }}
+    />
+  </div>
+</div>
 
       {/* -------- Materials Table -------- */}
       <div className="mt-3">

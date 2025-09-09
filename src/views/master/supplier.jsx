@@ -447,12 +447,11 @@ const exportExcel = () => {
           </div>
         </div>
         <div className="modal-footer py-2">
-
           <button className="btn btn-primary btn-sm" onClick={handleSaveSupplier}>
             {editingSupplier ? "Update" : "Add"}
           </button>
 
-                      <button
+            <button
             className="btn btn-secondary btn-sm"
             onClick={() => setShowModal(false)}
           >
