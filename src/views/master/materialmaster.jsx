@@ -17,6 +17,23 @@ const MaterialMaster = () => {
     materialType: "Raw",
   });
 
+
+  // const MaterialModalBody = ({ formData, setFormData }) => {
+  // const nameRef = useRef(null);
+  // const priceRef = useRef(null);
+  // const typeRef = useRef(null);
+
+  // // helper function: go to next field on Enter
+  // const handleKeyDown = (e, nextRef) => {
+  //   if (e.key === "Enter") {
+  //     e.preventDefault();
+  //     if (nextRef?.current) {
+  //       nextRef.current.focus();
+  //     }
+  //   }
+  // };
+
+  
   const generateMaterialCode = () => {
     const nextNumber = materials.length + 1;
     return `MAT${String(nextNumber).padStart(3, "0")}`;
@@ -109,7 +126,6 @@ const MaterialMaster = () => {
   doc.save("MaterialMaster.pdf");
 };
 
-
   const exportExcel = () => {
     if (!materials.length) return alert("No materials to export.");
     const data = materials.map((m) => ({
@@ -124,10 +140,47 @@ const MaterialMaster = () => {
     XLSX.writeFile(workbook, "MaterialMaster.xlsx");
   };
 
-  const handlePrint = () => {
-    if (!materials.length) return alert("No materials to print.");
-    window.print();
-  };
+const handlePrint = () => {
+  if (!materials.length) return alert("No materials to print.");
+
+  const table = document.getElementById("material-table");
+  if (!table) return;
+
+  // clone table
+  const cloneTable = table.cloneNode(true);
+
+  // ✅ remove the last column (Action) from header and body
+  const headerRow = cloneTable.querySelector("thead tr");
+  if (headerRow) headerRow.removeChild(headerRow.lastElementChild);
+
+  cloneTable.querySelectorAll("tbody tr").forEach((row) => {
+    row.removeChild(row.lastElementChild);
+  });
+
+  const printWindow = window.open("", "", "width=900,height=600");
+  printWindow.document.write(`
+    <html>
+      <head>
+        <title>Material Master</title>
+        <style>
+          body { font-family: Arial, sans-serif; margin: 20px; }
+          h2 { text-align: center; margin-bottom: 20px; }
+          table { width: 100%; border-collapse: collapse; font-size: 13px; }
+          th, td { border: 1px solid #ddd; padding: 6px; text-align: center; }
+          th { background-color: #0d6efd; color: white; }
+        </style>
+      </head>
+      <body>
+      
+        ${cloneTable.outerHTML}
+      </body>
+    </html>
+  `);
+
+  printWindow.document.close();
+  printWindow.print();
+};
+
 
   const filteredMaterials = materials.filter(
     (m) =>

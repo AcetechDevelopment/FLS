@@ -18,6 +18,14 @@ const SupplierMaster = () => {
     image: null,
   });
 
+    const handleRemoveImage = () => {
+    setFormData({ ...formData, image: "" });
+    if (fileInputRef.current) {
+      fileInputRef.current.value = ""; // ✅ clears the file input name
+    }
+  };
+
+
   // ✅ Generate Supplier Code
   const generateSupplierCode = () => {
     const nextNumber = suppliers.length + 1;
@@ -368,6 +376,7 @@ const exportExcel = () => {
             style={{ fontSize: "10px" }}
           ></button>
         </div>
+
         <div className="modal-body p-2">
           <div className="mb-2">
             <label className="form-label" style={{ fontSize: "12px" }}>
@@ -395,19 +404,24 @@ const exportExcel = () => {
             />
           </div>
 
-          <div className="mb-2">
-            <label className="form-label" style={{ fontSize: "12px" }}>
-              GST No.
-            </label>
-            <input
-              type="text"
-              className="form-control form-control-sm"
-              value={formData.gst}
-              onChange={(e) =>
-                setFormData({ ...formData, gst: e.target.value })
-              }
-            />
-          </div>
+       <div className="mb-2">
+  <label className="form-label" style={{ fontSize: "12px" }}>
+    GST No.
+  </label>
+  <input
+    type="text"
+    className="form-control form-control-sm"
+    value={formData.gst}
+    maxLength={15}  // ✅ restrict typing beyond 15 characters
+    onChange={(e) => {
+      const value = e.target.value.toUpperCase(); // optional: force uppercase
+      if (value.length <= 15) {
+        setFormData({ ...formData, gst: value });
+      }
+    }}
+  />
+</div>
+
 
           {/* ✅ Address Field */}
 <div className="mb-2">
@@ -424,27 +438,54 @@ const exportExcel = () => {
   />
 </div>
 
-          <div className="mb-2">
-            <label className="form-label" style={{ fontSize: "12px" }}>
-              Upload Image
-            </label>
-            <input
-              type="file"
-              className="form-control form-control-sm"
-              accept="image/*"
-              onChange={handleImageUpload}
-            />
-            {formData.image && (
-              <img
-                src={formData.image}
-                alt="Preview"
-                className="mt-2"
-                width="70"
-                height="70"
-                style={{ borderRadius: "6px" }}
-              />
-            )}
-          </div>
+     <div className="mb-2">
+      
+  <label className="form-label" style={{ fontSize: "12px" }}>
+    Upload Image
+  </label>
+  <input
+    type="file"
+    className="form-control form-control-sm"
+    accept="image/*"
+    onChange={handleImageUpload}
+  />
+
+  {formData.image && (
+    <div
+      className="position-relative d-inline-block mt-2"
+      style={{ width: "70px", height: "70px" }}
+    >
+      <img
+        src={formData.image}
+        alt="Preview"
+        width="70"
+        height="70"
+        style={{ borderRadius: "6px", border: "1px solid #ddd" }}
+      />
+      <button
+        type="button"
+        onClick={() => setFormData({ ...formData, image: "" })}
+        style={{
+          position: "absolute",
+          top: "-8px",
+          right: "-8px",
+          background: "red",
+          color: "white",
+          border: "none",
+          borderRadius: "50%",
+          width: "20px",
+          height: "20px",
+          fontSize: "12px",
+          lineHeight: "18px",
+          cursor: "pointer",
+        }}
+      >
+        ×
+      </button>
+    </div>
+  )}
+</div>
+
         </div>
         <div className="modal-footer py-2">
           <button className="btn btn-primary btn-sm" onClick={handleSaveSupplier}>
