@@ -1,8 +1,9 @@
-import { useState } from "react";
+
 import "bootstrap/dist/css/bootstrap.min.css";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import * as XLSX from "xlsx";
+import React, { useState, useRef } from "react";
 
 const SupplierMaster = () => {
   const [suppliers, setSuppliers] = useState([]);
@@ -18,13 +19,15 @@ const SupplierMaster = () => {
     image: null,
   });
 
-    const handleRemoveImage = () => {
+  const fileInputRef = useRef(null); // ✅ reference for file input
+
+  // ✅ Remove image + clear file input
+  const handleRemoveImage = () => {
     setFormData({ ...formData, image: "" });
     if (fileInputRef.current) {
-      fileInputRef.current.value = ""; // ✅ clears the file input name
+      fileInputRef.current.value = ""; // clears input text
     }
   };
-
 
   // ✅ Generate Supplier Code
   const generateSupplierCode = () => {
@@ -35,7 +38,15 @@ const SupplierMaster = () => {
   // Open modal for new supplier
   const handleNewSupplier = () => {
     setEditingSupplier(null);
-    setFormData({ name: "", code: generateSupplierCode(), gst: "", image: null });
+    setFormData({
+      name: "",
+      code: generateSupplierCode(),
+      gst: "",
+      image: null,
+    });
+    if (fileInputRef.current) {
+      fileInputRef.current.value = ""; // reset input field on new supplier
+    }
     setShowModal(true);
   };
 
@@ -43,6 +54,9 @@ const SupplierMaster = () => {
   const handleEditSupplier = (supplier) => {
     setEditingSupplier(supplier);
     setFormData(supplier);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = ""; // reset file input when editing
+    }
     setShowModal(true);
   };
 
@@ -51,7 +65,9 @@ const SupplierMaster = () => {
     if (editingSupplier) {
       setSuppliers(
         suppliers.map((s) =>
-          s.id === editingSupplier.id ? { ...formData, id: editingSupplier.id } : s
+          s.id === editingSupplier.id
+            ? { ...formData, id: editingSupplier.id }
+            : s
         )
       );
     } else {
@@ -65,16 +81,18 @@ const SupplierMaster = () => {
     setSuppliers(suppliers.filter((s) => s.id !== id));
   };
 
-  // ✅ Handle Image Upload
+  // ✅ Handle Image Upload (ignore cancel)
   const handleImageUpload = (e) => {
     const file = e.target.files[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setFormData({ ...formData, image: reader.result });
-      };
-      reader.readAsDataURL(file);
+    if (!file) {
+      // User clicked Cancel → keep old image + input
+      return;
     }
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setFormData({ ...formData, image: reader.result });
+    };
+    reader.readAsDataURL(file);
   };
 
 // ✅ Export PDF
@@ -438,54 +456,53 @@ const exportExcel = () => {
   />
 </div>
 
-     <div className="mb-2">
-      
-  <label className="form-label" style={{ fontSize: "12px" }}>
-    Upload Image
-  </label>
-  <input
-    type="file"
-    className="form-control form-control-sm"
-    accept="image/*"
-    onChange={handleImageUpload}
-  />
-
-  {formData.image && (
-    <div
-      className="position-relative d-inline-block mt-2"
-      style={{ width: "70px", height: "70px" }}
-    >
-      <img
-        src={formData.image}
-        alt="Preview"
-        width="70"
-        height="70"
-        style={{ borderRadius: "6px", border: "1px solid #ddd" }}
+    <div className="mb-2">
+      <label className="form-label" style={{ fontSize: "12px" }}>
+        Upload Image
+      </label>
+      <input
+        type="file"
+        className="form-control form-control-sm"
+        accept="image/*"
+        onChange={handleImageUpload}
+        ref={fileInputRef} // ✅ attach ref
       />
-      <button
-        type="button"
-        onClick={() => setFormData({ ...formData, image: "" })}
-        style={{
-          position: "absolute",
-          top: "-8px",
-          right: "-8px",
-          background: "red",
-          color: "white",
-          border: "none",
-          borderRadius: "50%",
-          width: "20px",
-          height: "20px",
-          fontSize: "12px",
-          lineHeight: "18px",
-          cursor: "pointer",
-        }}
-      >
-        ×
-      </button>
-    </div>
-  )}
-</div>
 
+      {formData.image && (
+        <div
+          className="position-relative d-inline-block mt-2"
+          style={{ width: "70px", height: "70px" }}
+        >
+          <img
+            src={formData.image}
+            alt="Preview"
+            width="70"
+            height="70"
+            style={{ borderRadius: "6px", border: "1px solid #ddd" }}
+          />
+          <button
+            type="button"
+            onClick={handleRemoveImage} // ✅ updated to clear preview + input text
+            style={{
+              position: "absolute",
+              top: "-8px",
+              right: "-8px",
+              background: "red",
+              color: "white",
+              border: "none",
+              borderRadius: "50%",
+              width: "20px",
+              height: "20px",
+              fontSize: "12px",
+              lineHeight: "18px",
+              cursor: "pointer",
+            }}
+          >
+            ×
+          </button>
+        </div>
+      )}
+    </div>
         </div>
         <div className="modal-footer py-2">
           <button className="btn btn-primary btn-sm" onClick={handleSaveSupplier}>

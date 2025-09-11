@@ -437,19 +437,19 @@ const SupplierGroup = () => {
           </div>
 
           {/* Prize Entry */}
-          <div className="mb-2">
-            <label className="form-label" style={{ fontSize: "13px" }}>
-              Prize
-            </label>
-            <input
-              type="text"
-              className="form-control form-control-sm"
-              value={formData.prize || ""}
-              onChange={(e) =>
-                setFormData({ ...formData, prize: e.target.value })
-              }
-            />
-          </div>
+         <div className="mb-2">
+  <label className="form-label" style={{ fontSize: "13px" }}>
+    Price
+  </label>
+  <input
+    type="number"
+    className="form-control form-control-sm"
+    value={formData.prize || ""}
+    onChange={(e) =>
+      setFormData({ ...formData, prize: e.target.value })
+    }
+  />
+</div>
         </div>
 
         <div className="modal-footer py-2 px-3">

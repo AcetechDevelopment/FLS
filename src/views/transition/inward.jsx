@@ -17,13 +17,6 @@ const handlePrint = () => {
   PrintUtils.Print(materials); // pass your materials array
 };
 
-  //  const [materials] = useState([
-  //   { partNo: "WK2212160300", hsn: "73269099", palletName: "Pallet FS Big", qty: 3, price: 19365 },
-  //   { partNo: "WK2212160301", hsn: "73269099", palletName: "Pallet FS Small", qty: 3, price: 12001 },
-  // ]);
-
-  // const [materials, setMaterials] = useState([]);
-  // const [newMaterial, setNewMaterial] = useState({ material: "", quantity: "" });
 
   // Preloaded sample data (read-only or initial)
 const [sampleMaterials] = useState([
@@ -285,63 +278,77 @@ const [newMaterial, setNewMaterial] = useState({ material: "", quantity: "" });
       {/* Materials Table */}
       <div className="mt-3">
         <div className="card" style={{ height: "400px", marginBottom: "10px" }}>
-          <div className="card-body p-0" style={{ height: "100%", overflow: "hidden" }}>
-            <table
-              className="table table-bordered table-sm mb-0"
-              style={{ fontSize: "11px" }}
-            >
-              <thead
-                className="table-light text-center"
-                style={{ position: "sticky", top: 0, zIndex: 2 }}
-              >
-                <tr style={{ fontSize: "11px", lineHeight: "1.6" }}>
-                  <th style={{ width: "6%", padding: "2px" }}>Sl.No</th>
-                  <th style={{ padding: "2px" }}>Material</th>
-                  <th style={{ width: "14%", padding: "2px" }}>Qty</th>
-                  <th style={{ width: "10%", padding: "2px" }}>Action</th>
-                </tr>
-              </thead>
-            </table>
-
-            <div style={{ height: "calc(100% - 35px)", overflowY: "auto" }}>
-              <table
-                className="table table-bordered table-sm mb-0"
-                style={{ fontSize: "11px" }}
-              >
-                <tbody>
-                  {materials.map((m, index) => (
-                  <tr key={m.id} className="text-center">
-  <td style={{ width: "6%", padding: "2px" }}>{index + 1}</td>
-  <td style={{ padding: "2px" }}>{m.material}</td>
-  <td style={{ width: "14%", padding: "2px" }}>{m.quantity}</td>
-  <td style={{ width: "10%", padding: "2px" }}>
-    <button
-      className="btn btn-sm p-0"
-      title="Delete"
-      style={{ background: "transparent", border: "none" }}
-      onClick={() => handleRemove(m.id)}
+       <div className="card-body p-0" style={{ height: "100%", overflow: "hidden" }}>
+  <table
+    className="table table-bordered table-sm mb-0"
+    style={{ fontSize: "11px" }}
+  >
+    <thead
+      className="table-light text-center"
+      style={{ position: "sticky", top: 0, zIndex: 2 }}
     >
-      <span
-        className="material-icons-two-tone text-danger"
-        style={{ fontSize: "16px", cursor: "pointer" }}
-      >
-        delete
-      </span>
-    </button>
-  </td>
-</tr>
-                  ))}
-                  {materials.length === 0 && (
-                    <tr>
-                      <td colSpan={4} className="text-center text-muted py-2">
-                        No materials yet. Add one below.
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
-          </div>
+      <tr style={{ fontSize: "11px", lineHeight: "1.6" }}>
+        <th style={{ width: "6%", padding: "2px" }}>Sl.No</th>
+        <th style={{ padding: "2px" }}>Material</th>
+        <th style={{ width: "14%", padding: "2px" }}>Qty</th>
+        <th style={{ width: "10%", padding: "2px" }}>Action</th>
+      </tr>
+    </thead>
+  </table>
+
+  <div style={{ height: "calc(100% - 35px)", overflowY: "auto" }}>
+    <table
+      className="table table-bordered table-sm mb-0"
+      style={{ fontSize: "11px" }}
+    >
+      <tbody>
+        {/* ✅ Row for Inward info */}
+        <tr>
+          <td colSpan={4} style={{ fontSize: "11px", fontWeight: "bold" }}>
+            Inward No: {formData.inwardNo || "N/A"} &nbsp; | &nbsp;
+            Reference No: {formData.referenceNo || "N/A"}
+            <br />
+            Customer: {formData.customerName || "N/A"} <br />
+            Address: {formData.address || "N/A"}
+          </td>
+        </tr>
+
+        {/* ✅ Materials rows */}
+        {materials.map((m, index) => (
+          <tr key={m.id} className="text-center">
+            <td style={{ width: "6%", padding: "2px" }}>{index + 1}</td>
+            <td style={{ padding: "2px" }}>{m.material}</td>
+            <td style={{ width: "14%", padding: "2px" }}>{m.quantity}</td>
+            <td style={{ width: "10%", padding: "2px" }}>
+              <button
+                className="btn btn-sm p-0"
+                title="Delete"
+                style={{ background: "transparent", border: "none" }}
+                onClick={() => handleRemove(m.id)}
+              >
+                <span
+                  className="material-icons-two-tone text-danger"
+                  style={{ fontSize: "16px", cursor: "pointer" }}
+                >
+                  delete
+                </span>
+              </button>
+            </td>
+          </tr>
+        ))}
+
+        {materials.length === 0 && (
+          <tr>
+            <td colSpan={4} className="text-center text-muted py-2">
+              No materials yet. Add one below.
+            </td>
+          </tr>
+        )}
+      </tbody>
+    </table>
+  </div>
+</div>
+
         </div>
 
         {/* Bottom input row */}
@@ -351,6 +358,7 @@ const [newMaterial, setNewMaterial] = useState({ material: "", quantity: "" });
         >
           <div className="card-body py-2 px-2 border-0">
      {/* Row 1: Inputs + Add */}
+
 <div className="row g-1 align-items-center">
   {/* Left Section: Inputs + Add */}
   <div className="col-md-8 d-flex align-items-center gap-2">
@@ -455,6 +463,7 @@ const [newMaterial, setNewMaterial] = useState({ material: "", quantity: "" });
           
           </div>
         </div>
+
       </div>
     </div>
   );
