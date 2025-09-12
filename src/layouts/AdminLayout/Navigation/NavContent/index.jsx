@@ -1,7 +1,7 @@
 import PropTypes from 'prop-types';
 import { useContext } from 'react';
 import { Link } from 'react-router-dom';
-
+import strom from "assets/images/strom.svg";
 // react-bootstrap
 import { Card, ListGroup } from 'react-bootstrap';
 
@@ -19,7 +19,6 @@ import logo from 'assets/images/logo.svg';
 
 export default function NavContent({ navigation, activeNav }) {
   const configContext = useContext(ConfigContext);
-
   const { collapseLayout } = configContext.state;
 
   const navItems = navigation.map((item) => {
@@ -47,66 +46,24 @@ export default function NavContent({ navigation, activeNav }) {
         {navItems}
       </ListGroup>
 
-
-{/* <div 
-  className="sidebar-footer text-center p-2" 
-  style={{ 
-    position: "absolute", 
-    bottom: "10px", 
-    width: "100%", 
-    textAlign: "center" 
-  }}
->
-  <h6 className="m-0" style={{ color: "#0d6efd" }}>
-    Acetech
-  </h6>
-</div> */}
-
-
-<Card 
-  className="nav-action-card m-3"
-  style={{ background: "transparent", border: "none", boxShadow: "none" }}
->
-  <Card.Body>
-    {/* <h6 
-  className="m-0" 
-  style={{ 
-    color: "transparent", 
-    WebkitTextStroke: "1px #0d6efd", 
-    fontWeight: "bold" 
-  }}
->
-  Acetech
-</h6> */}
-
-{/* <h6 
-  className="m-0 text-center" 
-  style={{ 
-    background: "linear-gradient(90deg, #0d6efd, #6610f2)", 
-    WebkitBackgroundClip: "text", 
-    WebkitTextFillColor: "transparent", 
-    fontWeight: "bold", 
-    letterSpacing: "1px"
-  }}
->
-  Acetech
-</h6> */}
-
-<h6 
-  className="m-0 text-center" 
-  style={{ 
-    color: "#0d6efd", 
-    fontWeight: "700", 
-    textTransform: "uppercase", 
-    letterSpacing: "3px"
-  }}
->
-  Acetech
-</h6>
-  </Card.Body>
-</Card>
-
-
+      <Card
+        className="nav-action-card m-3"
+        style={{ background: "transparent", border: "none", boxShadow: "none" }}
+      >
+        <Card.Body>
+          <h6
+            className="m-0 text-center"
+            style={{
+              color: "#0d6efd",
+              fontWeight: "700",
+              textTransform: "uppercase",
+              letterSpacing: "3px"
+            }}
+          >
+            Acetech
+          </h6>
+        </Card.Body>
+      </Card>
     </SimpleBar>
   );
 
@@ -120,22 +77,20 @@ export default function NavContent({ navigation, activeNav }) {
 
   const mHeader = (
     <div className="m-header">
-      {/* <Link to="/dashboard/sales" className="b-brand">
-        <img src={logo} alt="" className="logo logo-lg" />
-      </Link> */}
-
-       <h1 style={{ margin: 0, padding: "10px", fontSize: "20px", color: "#fff" }}>
-    FLS
-  </h1>
+      {/* Logo */}
+      <h1 style={{ margin: 0, padding: "10px" }}>
+        <img
+          src={strom}
+          alt="Logo"
+          style={{ height: "30px", width: "auto" }}
+        />
+      </h1>
     </div>
   );
 
-  let mainContent;
-
-  mainContent = (
+  const mainContent = (
     <>
       {mHeader}
-
       <div className="navbar-content next-scroll">{navContentNode}</div>
     </>
   );
@@ -143,4 +98,7 @@ export default function NavContent({ navigation, activeNav }) {
   return <>{mainContent}</>;
 }
 
-NavContent.propTypes = { navigation: PropTypes.any, activeNav: PropTypes.any };
+NavContent.propTypes = {
+  navigation: PropTypes.any,
+  activeNav: PropTypes.any
+};

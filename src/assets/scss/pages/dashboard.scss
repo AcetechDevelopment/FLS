@@ -45,3 +45,14 @@
     }
   }
 }
+
+
+.pc-sidebar {
+    background: var(--pc-sidebar-background);
+    box-shadow: var(--pc-sidebar-shadow);
+    width: 260px !important;
+    position: fixed;
+    top: 0;
+    bottom: 0;
+    z-index: 1026;
+}
