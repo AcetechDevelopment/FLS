@@ -12,8 +12,6 @@ import { ConfigContext } from 'contexts/ConfigContext';
 // third party
 import SimpleBar from 'simplebar-react';
 
-// assets
-import logo from 'assets/images/logo.svg';
 
 // -----------------------|| NAV CONTENT ||-----------------------//
 

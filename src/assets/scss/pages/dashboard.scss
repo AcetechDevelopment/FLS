@@ -56,3 +56,32 @@
     bottom: 0;
     z-index: 1026;
 }
+
+/* Compact table styles */
+.price-table td,
+.price-table th {
+  font-size: 11px;
+  padding: 2px 6px;
+  line-height: 1.2;
+}
+
+/* Smaller header text */
+.table-header {
+  font-size: 10px;
+  font-weight: 600;
+}
+
+/* Price input style */
+.price-input {
+  font-size: 11px;
+  width: 70px;
+  margin: auto;
+  text-align: center;
+  padding: 2px 4px;
+  line-height: 1.2;
+}
+
+/* No-data row */
+.no-data {
+  font-size: 11px;
+}

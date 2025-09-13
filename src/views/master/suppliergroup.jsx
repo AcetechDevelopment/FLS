@@ -14,6 +14,23 @@ const SupplierGroup = () => {
     description: "",
   });
 
+
+const isNumberKey = (e) => {
+  const char = e.key;
+  const allowedChars = "0123456789";
+  const controlKeys = ["Backspace", "Delete", "ArrowLeft", "ArrowRight", "Tab"];
+
+  // Allow control keys
+  if (controlKeys.includes(char)) return;
+
+  // Block non-numeric input
+  if (!allowedChars.includes(char)) {
+    e.preventDefault();
+  }
+};
+
+
+
   // Open modal for new group
   const handleNewGroup = () => {
     setEditingGroup(null);
@@ -244,92 +261,116 @@ const SupplierGroup = () => {
         <th className="py-1 px-1">Supplier</th>
         <th className="py-1 px-1">Material</th>
         <th className="py-1 px-1">Prize</th>
+            <th className="py-1 px-1">Pieces</th>
+                <th className="py-1 px-1"> Weight </th>
         <th className="py-1 px-1" style={{ minWidth: "100px" }}>
           Action
         </th>
       </tr>
     </thead>
 
-    <tbody>
-      {filteredGroups.map((group) => (
-        <tr className="text-center" key={group.id}>
-          {/* Group Name */}
-          <td className="py-1 px-1">{group.groupName}</td>
+<tbody>
+  {filteredGroups.map((group) => (
+    <tr className="text-center" key={group.id}>
+      {/* Group Name */}
+      <td className="py-1 px-1">{group.groupName}</td>
 
-          {/* Supplier Dropdown */}
-          <td className="py-1 px-1">
-            <select className="form-select form-select-sm">
-              <option value="">Select Supplier</option>
-              <option value="supplier">Supplier</option>
-              <option value="supplierGroup">Supplier Group</option>
-            </select>
-          </td>
+      {/* Supplier Dropdown */}
+      <td className="py-1 px-1">
+        <select className="form-select form-select-sm">
+          <option value="">Select Supplier</option>
+          <option value="supplier">Supplier</option>
+          <option value="supplierGroup">Supplier Group</option>
+        </select>
+      </td>
 
-          {/* Material Dropdown */}
-          <td className="py-1 px-1">
-            <select className="form-select form-select-sm">
-              <option value="">Select Material</option>
-              <option value="material1">Material 1</option>
-              <option value="material2">Material 2</option>
-            </select>
-          </td>
+      {/* Material Dropdown */}
+      <td className="py-1 px-1">
+        <select className="form-select form-select-sm">
+          <option value="">Select Material</option>
+          <option value="material1">Material 1</option>
+          <option value="material2">Material 2</option>
+        </select>
+      </td>
 
-          {/* Prize Manual Entry */}
-          <td className="py-1 px-1">
-            <input
-              type="text"
-              className="form-control form-control-sm"
-              placeholder="Enter Prize"
-            />
-          </td>
+      {/* Price Manual Entry */}
+      <td className="py-1 px-1">
+        <input
+          type="text"
+          className="form-control form-control-sm"
+          placeholder="Enter Price"
+        />
+      </td>
 
-          {/* Action */}
-         <td className="py-1 px-1">
-  {/* Edit */}
-  <button
-    className="btn btn-sm p-0 me-1"
-    style={{ background: "transparent", border: "none", cursor: "pointer" }}
-    onClick={() => handleEditGroup(group)}
-    title="Edit"
-  >
-    <span
-      className="material-icons-two-tone text-warning"
-      style={{ fontSize: "16px", cursor: "pointer" }}
-    >
-      edit
-    </span>
-  </button>
+      {/* No. of Pieces */}
+      <td className="py-1 px-1">
+        <input
+          type="number"
+          className="form-control form-control-sm"
+          placeholder="Pieces"
+          min="0"
+        />
+      </td>
 
-  {/* Delete */}
-  <button
-    className="btn btn-sm p-0"
-    style={{ background: "transparent", border: "none", cursor: "pointer" }}
-    onClick={() => deleteRow(group.id)}
-    title="Delete"
-  >
-    <span
-      className="material-icons-two-tone text-danger"
-      style={{ fontSize: "16px", cursor: "pointer" }}
-    >
-      delete
-    </span>
-  </button>
-</td>
-        </tr>
-      ))}
+      {/* Weight */}
+      <td className="py-1 px-1">
+        <input
+          type="number"
+          className="form-control form-control-sm"
+          placeholder="Weight (Kg)"
+          step="0.01"
+          min="0"
+        />
+      </td>
 
-      {filteredGroups.length === 0 && (
-        <tr>
-          <td
-            colSpan="5"
-            className="text-center text-muted py-1"
-            style={{ fontSize: "12px" }}
+      {/* Action */}
+      <td className="py-1 px-1">
+        {/* Edit */}
+        <button
+          className="btn btn-sm p-0 me-1"
+          style={{ background: "transparent", border: "none", cursor: "pointer" }}
+          onClick={() => handleEditGroup(group)}
+          title="Edit"
+        >
+          <span
+            className="material-icons-two-tone text-warning"
+            style={{ fontSize: "16px", cursor: "pointer" }}
           >
-            No supplier groups found
-          </td>
-        </tr>
-      )}
-    </tbody>
+            edit
+          </span>
+        </button>
+
+        {/* Delete */}
+        <button
+          className="btn btn-sm p-0"
+          style={{ background: "transparent", border: "none", cursor: "pointer" }}
+          onClick={() => deleteRow(group.id)}
+          title="Delete"
+        >
+          <span
+            className="material-icons-two-tone text-danger"
+            style={{ fontSize: "16px", cursor: "pointer" }}
+          >
+            delete
+          </span>
+        </button>
+      </td>
+    </tr>
+  ))}
+
+  {filteredGroups.length === 0 && (
+    <tr>
+      <td
+        colSpan="7"  // 👈 increased because of 2 new columns
+        className="text-center text-muted py-1"
+        style={{ fontSize: "12px" }}
+      >
+        No supplier groups found
+      </td>
+    </tr>
+  )}
+</tbody>
+
   </table>
 </div>
 
@@ -337,6 +378,7 @@ const SupplierGroup = () => {
 {showModal && (
   <div className="modal fade show d-block" tabIndex="-1">
     <div className="modal-dialog modal-sm">
+      
       <div className="modal-content">
         <div className="modal-header py-2 px-3">
           <h5 className="modal-title" style={{ fontSize: "14px" }}>
@@ -437,14 +479,17 @@ const SupplierGroup = () => {
           </div>
 
           {/* Prize Entry */}
-         <div className="mb-2">
+
+
+<div className="mb-2">
   <label className="form-label" style={{ fontSize: "13px" }}>
     Price
   </label>
   <input
-    type="number"
+    type="text"   // 👈 use text instead of number (number bypasses keyDown filtering)
     className="form-control form-control-sm"
     value={formData.prize || ""}
+    onKeyDown={isNumberKey}   // 👈 attach validation
     onChange={(e) =>
       setFormData({ ...formData, prize: e.target.value })
     }
@@ -470,6 +515,8 @@ const SupplierGroup = () => {
 
         </div>
       </div>
+
+
     </div>
   </div>
 )}

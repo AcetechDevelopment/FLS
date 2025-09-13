@@ -8,8 +8,6 @@ import FeatherIcon from 'feather-icons-react';
 import { ConfigContext } from 'contexts/ConfigContext';
 import * as actionType from 'store/actions';
 
-// assets
-import logo from 'assets/images/logo.svg';
 
 // -----------------------|| MOBILE HEADER ||-----------------------//
 

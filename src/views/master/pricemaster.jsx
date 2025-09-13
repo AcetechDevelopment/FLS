@@ -7,6 +7,20 @@ const PriceMaster = () => {
     { id: 2, name: "XYZ Traders" },
   ]);
 
+  const isNumberKey = (e) => {
+  const char = e.key;
+  const allowedChars = "0123456789";
+  const controlKeys = ["Backspace", "Delete", "ArrowLeft", "ArrowRight", "Tab"];
+
+  // Allow control keys
+  if (controlKeys.includes(char)) return;
+
+  // Block invalid characters
+  if (!allowedChars.includes(char)) {
+    e.preventDefault();
+  }
+};
+
   const [selectedSupplier, setSelectedSupplier] = useState(1); // default supplier
   const [priceList, setPriceList] = useState([
     { id: 1, material: "Cable", supplier: "ABC Suppliers", price: 120 },
@@ -67,56 +81,45 @@ const PriceMaster = () => {
           </div>
 
           {/* Table */}
-          <Table bordered hover responsive className="table-sm mb-0 text-center">
-            <thead className="table-light">
-              <tr>
-                <th style={{ fontSize: "10px", width: "60px" }}>Sl.No</th>
-                <th style={{ fontSize: "10px" }}>Material</th>
-                <th style={{ fontSize: "10px" }}>Supplier</th>
-                <th style={{ fontSize: "10px", width: "100px" }}>Price</th>
-              </tr>
-            </thead>
-            <tbody>
-              {priceList.length > 0 ? (
-                priceList.map((row, idx) => (
-                  <tr key={row.id}>
-                    <td style={{ fontSize: "11px" }}>{idx + 1}</td>
-                    <td style={{ fontSize: "11px" }}>{row.material}</td>
-                    <td style={{ fontSize: "11px" }}>{row.supplier}</td>
-                    <td>
-                      <Form.Control
-                        type="number"
-                        size="sm"
-                        value={row.price}
-                        onChange={(e) =>
-                          handlePriceChange(row.id, e.target.value)
-                        }
-                        style={{
-                          fontSize: "11px",
-                          width: "70px",
-                          margin: "auto",
-                          textAlign: "center",
-                          padding: "2px 4px",
-                        }}
-                      />
-                    </td>
-                  </tr>
-                ))
-              ) : (
-                <tr>
-                  <td
-                    colSpan="4"
-                    className="text-center text-muted py-2"
-                    style={{ fontSize: "11px" }}
-                  >
-                    {selectedSupplier
-                      ? "No price data found for this supplier."
-                      : "Please select a supplier."}
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </Table>
+       <Table bordered hover responsive className="table-sm mb-0 text-center price-table">
+  <thead className="table-light">
+    <tr>
+      <th className="table-header" style={{ width: "60px" }}>Sl.No</th>
+      <th className="table-header">Material</th>
+      <th className="table-header">Supplier</th>
+      <th className="table-header" style={{ width: "100px" }}>Price</th>
+    </tr>
+  </thead>
+  <tbody>
+    {priceList.length > 0 ? (
+      priceList.map((row, idx) => (
+        <tr key={row.id} className="compact-row">
+          <td>{idx + 1}</td>
+          <td>{row.material}</td>
+          <td>{row.supplier}</td>
+          <td>
+            <Form.Control
+              type="text"
+              size="sm"
+              value={row.price}
+              onKeyDown={isNumberKey}
+              onChange={(e) => handlePriceChange(row.id, e.target.value)}
+              className="price-input"
+            />
+          </td>
+        </tr>
+      ))
+    ) : (
+      <tr>
+        <td colSpan="4" className="text-center text-muted py-2 no-data">
+          {selectedSupplier
+            ? "No price data found for this supplier."
+            : "Please select a supplier."}
+        </td>
+      </tr>
+    )}
+  </tbody>
+</Table>
         </Card.Body>
       </Card>
     </div>
