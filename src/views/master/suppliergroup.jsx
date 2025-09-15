@@ -1,4 +1,4 @@
-import { useState } from "react";
+import React, { useState, useEffect } from "react";   // ✅ added useEffect
 import "bootstrap/dist/css/bootstrap.min.css";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
@@ -14,22 +14,53 @@ const SupplierGroup = () => {
     description: "",
   });
 
+  // ✅ Load data from localStorage when component mounts
+  useEffect(() => {
+    const stored = localStorage.getItem("supplierGroupData");
+    if (stored) {
+      setGroups(JSON.parse(stored));
+    }
+  }, []);
 
-const isNumberKey = (e) => {
-  const char = e.key;
-  const allowedChars = "0123456789";
-  const controlKeys = ["Backspace", "Delete", "ArrowLeft", "ArrowRight", "Tab"];
+  // ✅ Save to localStorage whenever groups change
+  useEffect(() => {
+    localStorage.setItem("supplierGroupData", JSON.stringify(groups));
+  }, [groups]);
 
-  // Allow control keys
-  if (controlKeys.includes(char)) return;
+  const isNumberKey = (e) => {
+    const char = e.key;
+    const allowedChars = "0123456789";
+    const controlKeys = ["Backspace", "Delete", "ArrowLeft", "ArrowRight", "Tab"];
 
-  // Block non-numeric input
-  if (!allowedChars.includes(char)) {
-    e.preventDefault();
-  }
-};
+    if (controlKeys.includes(char)) return;
+    if (!allowedChars.includes(char)) {
+      e.preventDefault();
+    }
+  };
 
+  const isIntegerKey = (e) => {
+    const char = e.key;
+    const allowedChars = "0123456789";
+    const controlKeys = ["Backspace", "Delete", "ArrowLeft", "ArrowRight", "Tab"];
+    if (controlKeys.includes(char)) return;
+    if (!allowedChars.includes(char)) {
+      e.preventDefault();
+    }
+  };
 
+  const isDecimalKey = (e) => {
+    const char = e.key;
+    const allowedChars = "0123456789.";
+    const controlKeys = ["Backspace", "Delete", "ArrowLeft", "ArrowRight", "Tab"];
+    if (controlKeys.includes(char)) return;
+    if (!allowedChars.includes(char)) {
+      e.preventDefault();
+      return;
+    }
+    if (char === "." && e.target.value.includes(".")) {
+      e.preventDefault();
+    }
+  };
 
   // Open modal for new group
   const handleNewGroup = () => {
@@ -166,361 +197,362 @@ const isNumberKey = (e) => {
   return (
     <div className="container">
       {/* Toolbar */}
-<div className="d-flex justify-content-between align-items-center mb-1">
-  {/* ✅ Action Buttons */}
-  <div className="d-flex flex-wrap gap-1 mb-3">
-    {/* New Group */}
-    <button
-      className="btn btn-sm btn-success py-1 px-2 d-flex align-items-center"
-      style={{ borderRadius: "8px", fontSize: "13px" }}
-      onClick={handleNewGroup}
-    >
-      <span
-        className="material-icons-two-tone me-1"
-        style={{ fontSize: "12px" }}
-      >
-        add
-      </span>
-      New
-    </button>
-
-    {/* PDF */}
-    <button
-      className="btn btn-sm btn-danger py-1 px-2 d-flex align-items-center"
-      style={{ borderRadius: "8px", fontSize: "13px" }}
-      onClick={exportPDF}
-    >
-      <span
-        className="material-icons-two-tone me-1"
-        style={{ fontSize: "14px" }}
-      >
-        picture_as_pdf
-      </span>
-      PDF
-    </button>
-
-    {/* Excel */}
-    <button
-      className="btn btn-sm text-white py-1 px-2 d-flex align-items-center"
-      style={{
-        backgroundColor: "#1D6F42",
-        borderColor: "#1D6F42",
-        borderRadius: "8px",
-        fontSize: "13px",
-      }}
-      onClick={exportExcel}
-    >
-      <span
-        className="material-icons-two-tone me-1"
-        style={{ fontSize: "14px" }}
-      >
-        grid_on
-      </span>
-      Excel
-    </button>
-
-    {/* Print */}
-    <button
-      className="btn btn-sm btn-primary py-1 px-2 d-flex align-items-center"
-      style={{ borderRadius: "8px", fontSize: "13px" }}
-      onClick={handlePrint}
-    >
-      <span
-        className="material-icons-two-tone me-1"
-        style={{ fontSize: "14px" }}
-      >
-        print
-      </span>
-      Print
-    </button>
-  </div>
-
-  {/* ✅ Search Box */}
-<div style={{ width: "250px" }}>
-  <input
-    type="text"
-    className="form-control form-control-sm"
-    placeholder="🔍 Search group..."
-    value={search}
-    onChange={(e) => setSearch(e.target.value)}
-    style={{ borderRadius: "8px" }}
-  />
-</div>
-
-</div> 
-
-      {/* ✅ Table */}
-<div className="table-responsive">
-  <table
-    className="table table-bordered table-striped align-middle"
-    style={{ fontSize: "12px" }}
-  >
-    <thead className="table-primary" style={{ fontSize: "12px" }}>
-      <tr className="text-center">
-        <th className="py-1 px-1">Group Name</th>
-        <th className="py-1 px-1">Supplier</th>
-        <th className="py-1 px-1">Material</th>
-        <th className="py-1 px-1">Prize</th>
-            <th className="py-1 px-1">Pieces</th>
-                <th className="py-1 px-1"> Weight </th>
-        <th className="py-1 px-1" style={{ minWidth: "100px" }}>
-          Action
-        </th>
-      </tr>
-    </thead>
-
-<tbody>
-  {filteredGroups.map((group) => (
-    <tr className="text-center" key={group.id}>
-      {/* Group Name */}
-      <td className="py-1 px-1">{group.groupName}</td>
-
-      {/* Supplier Dropdown */}
-      <td className="py-1 px-1">
-        <select className="form-select form-select-sm">
-          <option value="">Select Supplier</option>
-          <option value="supplier">Supplier</option>
-          <option value="supplierGroup">Supplier Group</option>
-        </select>
-      </td>
-
-      {/* Material Dropdown */}
-      <td className="py-1 px-1">
-        <select className="form-select form-select-sm">
-          <option value="">Select Material</option>
-          <option value="material1">Material 1</option>
-          <option value="material2">Material 2</option>
-        </select>
-      </td>
-
-      {/* Price Manual Entry */}
-      <td className="py-1 px-1">
-        <input
-          type="text"
-          className="form-control form-control-sm"
-          placeholder="Enter Price"
-        />
-      </td>
-
-      {/* No. of Pieces */}
-      <td className="py-1 px-1">
-        <input
-          type="number"
-          className="form-control form-control-sm"
-          placeholder="Pieces"
-          min="0"
-        />
-      </td>
-
-      {/* Weight */}
-      <td className="py-1 px-1">
-        <input
-          type="number"
-          className="form-control form-control-sm"
-          placeholder="Weight (Kg)"
-          step="0.01"
-          min="0"
-        />
-      </td>
-
-      {/* Action */}
-      <td className="py-1 px-1">
-        {/* Edit */}
-        <button
-          className="btn btn-sm p-0 me-1"
-          style={{ background: "transparent", border: "none", cursor: "pointer" }}
-          onClick={() => handleEditGroup(group)}
-          title="Edit"
-        >
-          <span
-            className="material-icons-two-tone text-warning"
-            style={{ fontSize: "16px", cursor: "pointer" }}
-          >
-            edit
-          </span>
-        </button>
-
-        {/* Delete */}
-        <button
-          className="btn btn-sm p-0"
-          style={{ background: "transparent", border: "none", cursor: "pointer" }}
-          onClick={() => deleteRow(group.id)}
-          title="Delete"
-        >
-          <span
-            className="material-icons-two-tone text-danger"
-            style={{ fontSize: "16px", cursor: "pointer" }}
-          >
-            delete
-          </span>
-        </button>
-      </td>
-    </tr>
-  ))}
-
-  {filteredGroups.length === 0 && (
-    <tr>
-      <td
-        colSpan="7"  // 👈 increased because of 2 new columns
-        className="text-center text-muted py-1"
-        style={{ fontSize: "12px" }}
-      >
-        No supplier groups found
-      </td>
-    </tr>
-  )}
-</tbody>
-
-  </table>
-</div>
-
-      {/* ✅ Modal */}
-{showModal && (
-  <div className="modal fade show d-block" tabIndex="-1">
-    <div className="modal-dialog modal-sm">
-      
-      <div className="modal-content">
-        <div className="modal-header py-2 px-3">
-          <h5 className="modal-title" style={{ fontSize: "14px" }}>
-            {editingGroup ? "Edit Entry" : "Add Entry"}
-          </h5>
+      <div className="d-flex justify-content-between align-items-center mb-1">
+        {/* ✅ Action Buttons */}
+        <div className="d-flex flex-wrap gap-1 mb-3">
+          {/* New Group */}
           <button
-            type="button"
-            className="btn-close btn-sm"
-            onClick={() => setShowModal(false)}
-          ></button>
-        </div>
-
-        <div className="modal-body p-2" style={{ fontSize: "13px" }}>
-          {/* Type */}
-          <div className="mb-2">
-            <label className="form-label" style={{ fontSize: "13px" }}>
-              Type
-            </label>
-            <select
-              className="form-select form-select-sm"
-              value={formData.type || ""}
-              onChange={(e) =>
-                setFormData({ ...formData, type: e.target.value })
-              }
-            >
-              <option value="">Select Type</option>
-              <option value="supplier">Supplier</option>
-              <option value="supplierGroup">Supplier Group</option>
-            </select>
-          </div>
-
-          {/* Supplier */}
-          {formData.type === "supplier" && (
-            <>
-              <div className="mb-2">
-                <label className="form-label" style={{ fontSize: "13px" }}>
-                  Supplier Name
-                </label>
-                <input
-                  type="text"
-                  className="form-control form-control-sm"
-                  value={formData.supplierName || ""}
-                  onChange={(e) =>
-                    setFormData({ ...formData, supplierName: e.target.value })
-                  }
-                />
-              </div>
-              <div className="mb-2">
-                <label className="form-label" style={{ fontSize: "13px" }}>
-                  Supplier Code
-                </label>
-                <input
-                  type="text"
-                  className="form-control form-control-sm"
-                  value={formData.supplierCode || ""}
-                  onChange={(e) =>
-                    setFormData({ ...formData, supplierCode: e.target.value })
-                  }
-                />
-              </div>
-            </>
-          )}
-
-          {/* Supplier Group */}
-          {formData.type === "supplierGroup" && (
-            <div className="mb-2">
-              <label className="form-label" style={{ fontSize: "13px" }}>
-                Group Name
-              </label>
-              <input
-                type="text"
-                className="form-control form-control-sm"
-                value={formData.groupName || ""}
-                onChange={(e) =>
-                  setFormData({ ...formData, groupName: e.target.value })
-                }
-              />
-            </div>
-          )}
-
-          {/* Material Dropdown */}
-          <div className="mb-2">
-            <label className="form-label" style={{ fontSize: "13px" }}>
-              Material
-            </label>
-            <select
-              className="form-select form-select-sm"
-              value={formData.material || ""}
-              onChange={(e) =>
-                setFormData({ ...formData, material: e.target.value })
-              }
-            >
-              <option value="">Select Material</option>
-              <option value="material1">Material 1</option>
-              <option value="material2">Material 2</option>
-              <option value="material3">Material 3</option>
-            </select>
-          </div>
-
-          {/* Prize Entry */}
-
-
-<div className="mb-2">
-  <label className="form-label" style={{ fontSize: "13px" }}>
-    Price
-  </label>
-  <input
-    type="text"   // 👈 use text instead of number (number bypasses keyDown filtering)
-    className="form-control form-control-sm"
-    value={formData.prize || ""}
-    onKeyDown={isNumberKey}   // 👈 attach validation
-    onChange={(e) =>
-      setFormData({ ...formData, prize: e.target.value })
-    }
-  />
-</div>
-        </div>
-
-        <div className="modal-footer py-2 px-3">
-        
-          <button
-            className="btn btn-sm btn-primary"
-            onClick={handleSaveGroup}
+            className="btn btn-sm btn-success py-1 px-2 d-flex align-items-center"
+            style={{ borderRadius: "8px", fontSize: "13px" }}
+            onClick={handleNewGroup}
           >
-            {editingGroup ? "Update" : "Add"}
+            <span
+              className="material-icons-two-tone me-1"
+              style={{ fontSize: "12px" }}
+            >
+              add
+            </span>
+            New
           </button>
 
+          {/* PDF */}
           <button
-            className="btn btn-sm btn-secondary"
-            onClick={() => setShowModal(false)}
+            className="btn btn-sm btn-danger py-1 px-2 d-flex align-items-center"
+            style={{ borderRadius: "8px", fontSize: "13px" }}
+            onClick={exportPDF}
           >
-            Cancel
+            <span
+              className="material-icons-two-tone me-1"
+              style={{ fontSize: "14px" }}
+            >
+              picture_as_pdf
+            </span>
+            PDF
           </button>
 
+          {/* Excel */}
+          <button
+            className="btn btn-sm text-white py-1 px-2 d-flex align-items-center"
+            style={{
+              backgroundColor: "#1D6F42",
+              borderColor: "#1D6F42",
+              borderRadius: "8px",
+              fontSize: "13px",
+            }}
+            onClick={exportExcel}
+          >
+            <span
+              className="material-icons-two-tone me-1"
+              style={{ fontSize: "14px" }}
+            >
+              grid_on
+            </span>
+            Excel
+          </button>
+
+          {/* Print */}
+          <button
+            className="btn btn-sm btn-primary py-1 px-2 d-flex align-items-center"
+            style={{ borderRadius: "8px", fontSize: "13px" }}
+            onClick={handlePrint}
+          >
+            <span
+              className="material-icons-two-tone me-1"
+              style={{ fontSize: "14px" }}
+            >
+              print
+            </span>
+            Print
+          </button>
+        </div>
+
+        {/* ✅ Search Box */}
+        <div style={{ width: "250px" }}>
+          <input
+            type="text"
+            className="form-control form-control-sm"
+            placeholder="🔍 Search group..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            style={{ borderRadius: "8px" }}
+          />
         </div>
       </div>
 
+      {/* ✅ Table */}
+      <div className="table-responsive">
+        <table
+          className="table table-bordered table-striped align-middle"
+          style={{ fontSize: "12px" }}
+        >
+          <thead className="table-primary" style={{ fontSize: "12px" }}>
+            <tr className="text-center">
+              <th className="py-1 px-1">Group Name</th>
+              <th className="py-1 px-1">Supplier</th>
+              <th className="py-1 px-1">Material</th>
+              <th className="py-1 px-1">Prize</th>
+              <th className="py-1 px-1">Pieces</th>
+              <th className="py-1 px-1"> Weight </th>
+              <th className="py-1 px-1" style={{ minWidth: "100px" }}>
+                Action
+              </th>
+            </tr>
+          </thead>
 
-    </div>
-  </div>
-)}
+          <tbody>
+            {filteredGroups.map((group) => (
+              <tr className="text-center" key={group.id}>
+                {/* Group Name */}
+                <td className="py-1 px-1">{group.groupName}</td>
 
+                {/* Supplier Dropdown */}
+                <td className="py-1 px-1">
+                  <select className="form-select form-select-sm">
+                    <option value="">Select Supplier</option>
+                    <option value="supplier">Supplier</option>
+                    <option value="supplierGroup">Supplier Group</option>
+                  </select>
+                </td>
+
+                {/* Material Dropdown */}
+                <td className="py-1 px-1">
+                  <select className="form-select form-select-sm">
+                    <option value="">Select Material</option>
+                    <option value="material1">Material 1</option>
+                    <option value="material2">Material 2</option>
+                  </select>
+                </td>
+
+                {/* Price Manual Entry */}
+                <td className="py-1 px-1">
+                  <input
+                    type="text"
+                    className="form-control form-control-sm"
+                    placeholder="Enter Price"
+                  />
+                </td>
+
+                {/* No. of Pieces */}
+                <td className="py-1 px-1">
+                  <input
+                    type="text"
+                    className="form-control form-control-sm"
+                    placeholder="Pieces"
+                    min="0"
+                    onKeyDown={isIntegerKey} // 👈 only integers
+                  />
+                </td>
+
+                {/* Weight */}
+                <td className="py-1 px-1">
+                  <input
+                    type="text"
+                    className="form-control form-control-sm"
+                    placeholder="Weight (Kg)"
+                    onKeyDown={isDecimalKey} // 👈 allows decimals
+                  />
+                </td>
+
+                {/* Action */}
+                <td className="py-1 px-1">
+                  {/* Edit */}
+                  <button
+                    className="btn btn-sm p-0 me-1"
+                    style={{
+                      background: "transparent",
+                      border: "none",
+                      cursor: "pointer",
+                    }}
+                    onClick={() => handleEditGroup(group)}
+                    title="Edit"
+                  >
+                    <span
+                      className="material-icons-two-tone text-warning"
+                      style={{ fontSize: "16px", cursor: "pointer" }}
+                    >
+                      edit
+                    </span>
+                  </button>
+
+                  {/* Delete */}
+                  <button
+                    className="btn btn-sm p-0"
+                    style={{
+                      background: "transparent",
+                      border: "none",
+                      cursor: "pointer",
+                    }}
+                    onClick={() => deleteRow(group.id)}
+                    title="Delete"
+                  >
+                    <span
+                      className="material-icons-two-tone text-danger"
+                      style={{ fontSize: "16px", cursor: "pointer" }}
+                    >
+                      delete
+                    </span>
+                  </button>
+                </td>
+              </tr>
+            ))}
+
+            {filteredGroups.length === 0 && (
+              <tr>
+                <td
+                  colSpan="7"
+                  className="text-center text-muted py-1"
+                  style={{ fontSize: "12px" }}
+                >
+                  No supplier groups found
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
+      </div>
+
+      {/* ✅ Modal */}
+      {showModal && (
+        <div className="modal fade show d-block" tabIndex="-1">
+          <div className="modal-dialog modal-sm">
+            <div className="modal-content">
+              <div className="modal-header py-2 px-3">
+                <h5 className="modal-title" style={{ fontSize: "14px" }}>
+                  {editingGroup ? "Edit Entry" : "Add Entry"}
+                </h5>
+                <button
+                  type="button"
+                  className="btn-close btn-sm"
+                  onClick={() => setShowModal(false)}
+                ></button>
+              </div>
+
+              <div className="modal-body p-2" style={{ fontSize: "13px" }}>
+                {/* Type */}
+                <div className="mb-2">
+                  <label className="form-label" style={{ fontSize: "13px" }}>
+                    Type
+                  </label>
+                  <select
+                    className="form-select form-select-sm"
+                    value={formData.type || ""}
+                    onChange={(e) =>
+                      setFormData({ ...formData, type: e.target.value })
+                    }
+                  >
+                    <option value="">Select Type</option>
+                    <option value="supplier">Supplier</option>
+                    <option value="supplierGroup">Supplier Group</option>
+                  </select>
+                </div>
+
+                {/* Supplier */}
+                {formData.type === "supplier" && (
+                  <>
+                    <div className="mb-2">
+                      <label className="form-label" style={{ fontSize: "13px" }}>
+                        Supplier Name
+                      </label>
+                      <input
+                        type="text"
+                        className="form-control form-control-sm"
+                        value={formData.supplierName || ""}
+                        onChange={(e) =>
+                          setFormData({
+                            ...formData,
+                            supplierName: e.target.value,
+                          })
+                        }
+                      />
+                    </div>
+                    <div className="mb-2">
+                      <label className="form-label" style={{ fontSize: "13px" }}>
+                        Supplier Code
+                      </label>
+                      <input
+                        type="text"
+                        className="form-control form-control-sm"
+                        value={formData.supplierCode || ""}
+                        onChange={(e) =>
+                          setFormData({
+                            ...formData,
+                            supplierCode: e.target.value,
+                          })
+                        }
+                      />
+                    </div>
+                  </>
+                )}
+
+                {/* Supplier Group */}
+                {formData.type === "supplierGroup" && (
+                  <div className="mb-2">
+                    <label className="form-label" style={{ fontSize: "13px" }}>
+                      Group Name
+                    </label>
+                    <input
+                      type="text"
+                      className="form-control form-control-sm"
+                      value={formData.groupName || ""}
+                      onChange={(e) =>
+                        setFormData({ ...formData, groupName: e.target.value })
+                      }
+                    />
+                  </div>
+                )}
+
+                {/* Material Dropdown */}
+                <div className="mb-2">
+                  <label className="form-label" style={{ fontSize: "13px" }}>
+                    Material
+                  </label>
+                  <select
+                    className="form-select form-select-sm"
+                    value={formData.material || ""}
+                    onChange={(e) =>
+                      setFormData({ ...formData, material: e.target.value })
+                    }
+                  >
+                    <option value="">Select Material</option>
+                    <option value="material1">Material 1</option>
+                    <option value="material2">Material 2</option>
+                    <option value="material3">Material 3</option>
+                  </select>
+                </div>
+
+                {/* Prize Entry */}
+                <div className="mb-2">
+                  <label className="form-label" style={{ fontSize: "13px" }}>
+                    Price
+                  </label>
+                  <input
+                    type="text"
+                    className="form-control form-control-sm"
+                    value={formData.prize || ""}
+                    onKeyDown={isNumberKey}
+                    onChange={(e) =>
+                      setFormData({ ...formData, prize: e.target.value })
+                    }
+                  />
+                </div>
+              </div>
+
+              <div className="modal-footer py-2 px-3">
+                <button className="btn btn-sm btn-primary" onClick={handleSaveGroup}>
+                  {editingGroup ? "Update" : "Add"}
+                </button>
+
+                <button
+                  className="btn btn-sm btn-secondary"
+                  onClick={() => setShowModal(false)}
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

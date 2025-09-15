@@ -11,6 +11,7 @@ import StockAdjustment from '../views/Stock/Stockadjustment';
 import InwardPage from '../views/transition/inward';
 import DispatchPage from '../views/transition/dispatch';
 import PriceMaster from '../views/master/pricemaster';
+import CategoryWise from '../views/reports/categorywise';
 
 
 const DashboardSales = lazy(() => import('../views/dashboard/DashSales/index'));
@@ -109,6 +110,11 @@ const MainRoutes = {
          {
           path: '/dispatch',
           element: <DispatchPage />
+        },
+
+           {
+          path: '/cateworywise',
+          element: <CategoryWise />
         },
     
       ]

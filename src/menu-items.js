@@ -82,36 +82,50 @@ const menuItems = {
       ]
     },
     
-      {
-      id: 'navigation',
-      title: '',
-      type: 'group',
-      icon: 'icon-navigation',
-      children: [
-        {
-          id: 'Report',
-          title: 'Reports',
-          type: 'collapse',
-          icon: 'material-icons-two-tone',
-        iconname: 'description',
-          children: [
-            {
-              id: 'inward',
-              title: 'Report 1',
-              type: 'item',
-              url: '/dashboard/sales'
-            },
-            {
-    id: 'dispatch',
-    title: 'Report 2',
-    type: 'item',
-    url: '/dashboard/transition'
-  }
-          ]
-        }
-      ]
-    },
-    
+// {
+//   id: 'reports-group',
+//   title: 'Reports',
+//   type: 'group',
+//   icon: 'icon-navigation',
+//   children: [
+//     {
+//       id: 'reports',
+//       title: 'Reports',
+//       type: 'collapse',
+//       icon: 'material-icons-two-tone',
+//       iconname: 'description',
+//       children: [
+//         {
+//           id: 'categorywise',
+//           title: 'Categorywise',
+//           type: 'item',
+//           url: '/categorywise'
+//         },
+//         {
+//           id: 'report-2',
+//           title: 'Report 2',
+//           type: 'item',
+//           url: '/dashboard/transition'
+//         }
+//       ]
+//     }
+//   ]
+// },
+
+          {
+  id: 'navigation',
+  // title: 'Reports',
+  type: 'group',
+  icon: 'material-icons-two-tone',
+ iconname: 'folder',
+  children: [
+    { id: 'supplier', title: 'Reports', type: 'item', url: './cateworywise' },
+    // { id: 'price-master', title: 'Price Master', type: 'item', url: './pricemaster' },
+   
+  ]
+},
+
+
     // {
     //   id: 'pages',
     //   title: 'Pages',
@@ -175,8 +189,7 @@ const menuItems = {
   ]
 },
 
-
-      {
+    {
   id: 'settings',
   title: 'Settings',
   type: 'collapse', // was 'item'
