@@ -493,21 +493,58 @@ const handlePrint = () => {
   />
 </div>
 
+<div className="mb-2">
+  <label className="form-label" style={{ fontSize: "12px" }}>
+    Weight
+  </label>
+  <input
+    type="text"   // ✅ use text so key filtering works
+    className="form-control form-control-sm"
+    placeholder="Enter weight"
+    value={formData.weight}
+    onKeyDown={(e) => {
+      const char = e.key;
+      const allowedchars = "0123456789";
+      const controlKeys = [
+        "Backspace",
+        "Delete",
+        "ArrowLeft",
+        "ArrowRight",
+        "Tab",
+      ];
+
+      // ✅ allow control keys
+      if (controlKeys.includes(char)) return;
+
+      // ✅ allow one decimal point
+      if (char === "." && !e.target.value.includes(".")) return;
+
+      // ❌ block everything else
+      if (!allowedchars.includes(char)) {
+        e.preventDefault();
+      }
+    }}
+    onChange={(e) =>
+      setFormData({ ...formData, weight: e.target.value })
+    }
+  />
+</div>
+
           <div className="mb-2">
-            <label className="form-label" style={{ fontSize: "12px" }}>
-              Material Type
-            </label>
-            <select
-              className="form-select form-select-sm"
-              value={formData.materialType}
-              onChange={(e) =>
-                setFormData({ ...formData, materialType: e.target.value })
-              }
-            >
-              <option value="Raw">Raw</option>
-              <option value="Finished">Finished</option>
-            </select>
-          </div>
+      <label className="form-label" style={{ fontSize: "12px" }}>
+        Material Type
+        </label>
+        <select
+      className="form-select form-select-sm"
+    value={formData.materialType}
+    onChange={(e) =>
+      setFormData({ ...formData, materialType: e.target.value })
+    }
+    >
+    <option value="Bedsheet">Bedsheet</option>
+    <option value="Towel">Towel</option>
+  </select>
+</div>
         </div>
 
         {/* Footer */}

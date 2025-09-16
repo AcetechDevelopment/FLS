@@ -381,10 +381,11 @@ const exportExcel = () => {
       {/* Modal (Add/Edit Supplier) */}
 {showModal && (
   <div className="modal fade show d-block" tabIndex="-1">
-    <div className="modal-dialog modal-sm"> {/* ✅ smaller width */}
-      <div className="modal-content" style={{ fontSize: "13px" }}> {/* ✅ reduced font */}
+    <div className="modal-dialog modal-sm modal-dialog-scrollable">
+      <div className="modal-content" style={{ fontSize: "13px" }}>
+        {/* ✅ Modal Header */}
         <div className="modal-header py-2">
-          <h6 className="modal-title"> {/* ✅ smaller title */}
+          <h6 className="modal-title">
             {editingSupplier ? "Edit Supplier" : "Add Supplier"}
           </h6>
           <button
@@ -395,7 +396,12 @@ const exportExcel = () => {
           ></button>
         </div>
 
-        <div className="modal-body p-2">
+        {/* ✅ Scrollable Modal Body */}
+        <div
+          className="modal-body p-2"
+          style={{ maxHeight: "300px", overflowY: "auto" }}
+        >
+          {/* Supplier Code */}
           <div className="mb-2">
             <label className="form-label" style={{ fontSize: "12px" }}>
               Supplier Code
@@ -408,6 +414,7 @@ const exportExcel = () => {
             />
           </div>
 
+          {/* Supplier Name */}
           <div className="mb-2">
             <label className="form-label" style={{ fontSize: "12px" }}>
               Supplier Name
@@ -422,100 +429,122 @@ const exportExcel = () => {
             />
           </div>
 
-       <div className="mb-2">
-  <label className="form-label" style={{ fontSize: "12px" }}>
-    GST No.
-  </label>
-  <input
-    type="text"
-    className="form-control form-control-sm"
-    value={formData.gst}
-    maxLength={15}  // ✅ restrict typing beyond 15 characters
-    onChange={(e) => {
-      const value = e.target.value.toUpperCase(); // optional: force uppercase
-      if (value.length <= 15) {
-        setFormData({ ...formData, gst: value });
-      }
-    }}
-  />
-</div>
+          {/* Supplier Group */}
+          <div className="mb-2">
+            <label className="form-label" style={{ fontSize: "12px" }}>
+              Supplier Group
+            </label>
+            <select
+              className="form-select form-select-sm"
+              value={formData.group}
+              onChange={(e) =>
+                setFormData({ ...formData, group: e.target.value })
+              }
+            >
+              <option value="Hospital">Hospital</option>
+              <option value="Hotel">Hotel</option>
+            </select>
+          </div>
 
+          {/* GST Number */}
+          <div className="mb-2">
+            <label className="form-label" style={{ fontSize: "12px" }}>
+              GST No.
+            </label>
+            <input
+              type="text"
+              className="form-control form-control-sm"
+              value={formData.gst}
+              maxLength={15}
+              onChange={(e) => {
+                const value = e.target.value.toUpperCase();
+                if (value.length <= 15) {
+                  setFormData({ ...formData, gst: value });
+                }
+              }}
+            />
+          </div>
 
-          {/* ✅ Address Field */}
-<div className="mb-2">
-  <label className="form-label" style={{ fontSize: "12px" }}>
-    Address
-  </label>
-  <textarea
-    className="form-control form-control-sm"
-    rows={3} // adjust height (number of lines)
-    value={formData.address || ""}
-    onChange={(e) =>
-      setFormData({ ...formData, address: e.target.value })
-    }
-  />
-</div>
+          {/* Address */}
+          <div className="mb-2">
+            <label className="form-label" style={{ fontSize: "12px" }}>
+              Address
+            </label>
+            <textarea
+              className="form-control form-control-sm"
+              rows={3}
+              value={formData.address || ""}
+              onChange={(e) =>
+                setFormData({ ...formData, address: e.target.value })
+              }
+            />
+          </div>
 
-    <div className="mb-2">
-      <label className="form-label" style={{ fontSize: "12px" }}>
-        Upload Image
-      </label>
-      <input
-        type="file"
-        className="form-control form-control-sm"
-        accept="image/*"
-        onChange={handleImageUpload}
-        ref={fileInputRef} // ✅ attach ref
-      />
+          {/* Upload Image */}
+          <div className="mb-2">
+            <label className="form-label" style={{ fontSize: "12px" }}>
+              Upload Image
+            </label>
+            <input
+              type="file"
+              className="form-control form-control-sm"
+              accept="image/*"
+              onChange={handleImageUpload}
+              ref={fileInputRef}
+            />
 
-      {formData.image && (
-        <div
-          className="position-relative d-inline-block mt-2"
-          style={{ width: "70px", height: "70px" }}
-        >
-          <img
-            src={formData.image}
-            alt="Preview"
-            width="70"
-            height="70"
-            style={{ borderRadius: "6px", border: "1px solid #ddd" }}
-          />
-          <button
-            type="button"
-            onClick={handleRemoveImage} // ✅ updated to clear preview + input text
-            style={{
-              position: "absolute",
-              top: "-8px",
-              right: "-8px",
-              background: "red",
-              color: "white",
-              border: "none",
-              borderRadius: "50%",
-              width: "20px",
-              height: "20px",
-              fontSize: "12px",
-              lineHeight: "18px",
-              cursor: "pointer",
-            }}
-          >
-            ×
-          </button>
+            {formData.image && (
+              <div
+                className="position-relative d-inline-block mt-2"
+                style={{ width: "70px", height: "70px" }}
+              >
+                <img
+                  src={formData.image}
+                  alt="Preview"
+                  width="70"
+                  height="70"
+                  style={{ borderRadius: "6px", border: "1px solid #ddd" }}
+                />
+                <button
+                  type="button"
+                  onClick={handleRemoveImage}
+                  style={{
+                    position: "absolute",
+                    top: "-8px",
+                    right: "-8px",
+                    background: "red",
+                    color: "white",
+                    border: "none",
+                    borderRadius: "50%",
+                    width: "20px",
+                    height: "20px",
+                    fontSize: "12px",
+                    lineHeight: "18px",
+                    cursor: "pointer",
+                  }}
+                >
+                  ×
+                </button>
+              </div>
+            )}
+          </div>
         </div>
-      )}
-    </div>
-        </div>
+
+        {/* ✅ Modal Footer */}
         <div className="modal-footer py-2">
-          <button className="btn btn-primary btn-sm" onClick={handleSaveSupplier}>
+          <button
+            className="btn btn-primary btn-sm"
+            onClick={handleSaveSupplier}
+          >
             {editingSupplier ? "Update" : "Add"}
           </button>
 
-            <button
+          <button
             className="btn btn-secondary btn-sm"
             onClick={() => setShowModal(false)}
           >
             Cancel
           </button>
-
         </div>
       </div>
     </div>

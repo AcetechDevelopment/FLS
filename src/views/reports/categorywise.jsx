@@ -303,7 +303,7 @@ const exportExcel = () => {
             {/* Overall */}
             <div className="col-md-6">
               <h6 className="text-center bg-info text-white py-1">
-                Overall Processed Linen Details
+                Overall Processed Line Details
               </h6>
               <Table bordered hover size="sm" className="text-center">
                 <thead className="table-info">
