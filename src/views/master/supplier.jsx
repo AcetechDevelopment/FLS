@@ -417,7 +417,7 @@ const exportExcel = () => {
           {/* Supplier Name */}
           <div className="mb-2">
             <label className="form-label" style={{ fontSize: "12px" }}>
-              Supplier Name
+              Customer Name
             </label>
             <input
               type="text"

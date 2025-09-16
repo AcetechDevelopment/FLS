@@ -521,20 +521,36 @@ const SupplierGroup = () => {
                 </div>
 
                 {/* Prize Entry */}
-                <div className="mb-2">
-                  <label className="form-label" style={{ fontSize: "13px" }}>
-                    Price
-                  </label>
-                  <input
-                    type="text"
-                    className="form-control form-control-sm"
-                    value={formData.prize || ""}
-                    onKeyDown={isNumberKey}
-                    onChange={(e) =>
-                      setFormData({ ...formData, prize: e.target.value })
-                    }
-                  />
-                </div>
+              <div className="mb-2">
+  <label className="form-label" style={{ fontSize: "13px" }}>
+    Price
+  </label>
+  <input
+    type="text"   // ✅ use text so filtering works
+    className="form-control form-control-sm"
+    value={formData.prize || ""}
+    placeholder="Enter price"
+    onKeyDown={(e) => {
+      const char = e.key;
+      const allowedchars = "0123456789";
+      const controlKeys = ["Backspace", "Delete", "ArrowLeft", "ArrowRight", "Tab"];
+
+      // ✅ allow control keys
+      if (controlKeys.includes(char)) return;
+
+      // ✅ allow only one decimal point
+      if (char === "." && !e.target.value.includes(".")) return;
+
+      // ❌ block everything else
+      if (!allowedchars.includes(char)) {
+        e.preventDefault();
+      }
+    }}
+    onChange={(e) =>
+      setFormData({ ...formData, prize: e.target.value })
+    }
+  />
+</div>
               </div>
 
               <div className="modal-footer py-2 px-3">
