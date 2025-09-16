@@ -19,8 +19,8 @@ const CategoryWise = () => {
     }
   }, []);
 
-  const calculateTotals = (rows) => {
-    return rows.reduce(
+  const calculateTotals = (rows) =>
+    rows.reduce(
       (acc, row) => {
         acc.pieces += Number(row.pieces || 0);
         acc.weight += Number(row.weight || 0);
@@ -28,7 +28,6 @@ const CategoryWise = () => {
       },
       { pieces: 0, weight: 0 }
     );
-  };
 
   const hospitalTotals = calculateTotals(reportData.hospital || []);
   const hotelTotals = calculateTotals(reportData.hotel || []);
@@ -36,72 +35,84 @@ const CategoryWise = () => {
   const overallTotals = calculateTotals(reportData.overall || []);
 
   // ================== PDF Export ==================
-  const exportPDF = () => {
-    const doc = new jsPDF();
-    doc.setFontSize(16);
-    doc.text("Category Wise Processed Line Details", 14, 15);
+const exportPDF = () => {
+  const doc = new jsPDF();
+  doc.setFontSize(16);
+  doc.text("Category Wise Processed Line Details", 14, 15);
 
-    const addTable = (title, data) => {
-      doc.setFontSize(12);
-      doc.text(title, 14, doc.lastAutoTable ? doc.lastAutoTable.finalY + 10 : 25);
+  const addTable = (title, data) => {
+    const topY = doc.lastAutoTable ? doc.lastAutoTable.finalY + 15 : 25;
 
-      autoTable(doc, {
-        startY: doc.lastAutoTable ? doc.lastAutoTable.finalY + 15 : 25,
-        head: [["Sl No", "Item", "Pieces", "Weight"]],
-        body: data.map((row, idx) => [idx + 1, row.item, row.pieces, row.weight]),
-        theme: "grid",
-        styles: { fontSize: 10 },
-        headStyles: { fillColor: [0, 123, 255] },
-        foot: [["TOTAL", "", 
-          data.reduce((a, r) => a + Number(r.pieces || 0), 0),
-          data.reduce((a, r) => a + Number(r.weight || 0), 0)
-        ]]
-      });
-    };
+    doc.setFontSize(12);
+    doc.text(title, 14, topY);
 
-    addTable("Hospital", reportData.hospital || []);
-    addTable("Others", reportData.others || []);
-    addTable("Hotel", reportData.hotel || []);
-    addTable("Overall Processed Line Details", reportData.overall || []);
-
-    doc.save("CategoryWiseReport.pdf");
+    autoTable(doc, {
+      startY: topY + 5, // add extra 5 units margin before header
+      margin: { top: 5 }, // additional top margin if needed
+      head: [["Sl No", "Item", "Pieces", "Weight"]],
+      body: data.map((row, idx) => [idx + 1, row.item, row.pieces, row.weight]),
+      theme: "grid",
+      styles: { fontSize: 10 },
+      headStyles: { fillColor: [0, 123, 255] },
+      foot: [["TOTAL", "",
+        data.reduce((a, r) => a + Number(r.pieces || 0), 0),
+        data.reduce((a, r) => a + Number(r.weight || 0), 0)
+      ]]
+    });
   };
 
-  // ================== Excel Export ==================
-  const exportExcel = () => {
-    const sheets = [
-      { name: "Hospital", data: reportData.hospital },
-      { name: "Others", data: reportData.others },
-      { name: "Hotel", data: reportData.hotel },
-      { name: "Overall", data: reportData.overall }
-    ];
+  addTable("Hospital", reportData.hospital || []);
+  addTable("Others", reportData.others || []);
+  addTable("Hotel", reportData.hotel || []);
+  addTable("Overall Processed Line Details", reportData.overall || []);
 
-    const workbook = XLSX.utils.book_new();
+  doc.save("CategoryWiseReport.pdf");
+};
 
-    sheets.forEach(sheet => {
-      if (sheet.data && sheet.data.length > 0) {
-        const data = sheet.data.map((row, idx) => ({
-          "Sl No": idx + 1,
-          "Item": row.item,
-          "Pieces": row.pieces,
-          "Weight": row.weight
-        }));
+// ================== Excel Export ==================
+const exportExcel = () => {
+  const workbook = XLSX.utils.book_new();
 
-        // Add totals row
-        data.push({
-          "Sl No": "",
-          "Item": "TOTAL",
-          "Pieces": sheet.data.reduce((a, r) => a + Number(r.pieces || 0), 0),
-          "Weight": sheet.data.reduce((a, r) => a + Number(r.weight || 0), 0)
-        });
+  let worksheetData = [];
 
-        const worksheet = XLSX.utils.json_to_sheet(data);
-        XLSX.utils.book_append_sheet(workbook, worksheet, sheet.name);
-      }
+  // Helper to push table into single sheet
+  const addTable = (title, data) => {
+    worksheetData.push([title]); // Section Title
+    worksheetData.push(["Sl No", "Item", "Pieces", "Weight"]); // Header row
+
+    data.forEach((row, idx) => {
+      worksheetData.push([
+        idx + 1,
+        row.item,
+        row.pieces,
+        row.weight
+      ]);
     });
 
-    XLSX.writeFile(workbook, "CategoryWiseReport.xlsx");
+    // Totals row
+    worksheetData.push([
+      "",
+      "TOTAL",
+      data.reduce((a, r) => a + Number(r.pieces || 0), 0),
+      data.reduce((a, r) => a + Number(r.weight || 0), 0)
+    ]);
+
+    worksheetData.push([]); // Blank row for spacing
   };
+
+  addTable("Hospital", reportData.hospital || []);
+  addTable("Others", reportData.others || []);
+  addTable("Hotel", reportData.hotel || []);
+  addTable("Overall Processed Linen Details", reportData.overall || []);
+
+  // Convert array of arrays to sheet
+  const worksheet = XLSX.utils.aoa_to_sheet(worksheetData);
+  XLSX.utils.book_append_sheet(workbook, worksheet, "Category Wise Report");
+
+  // ✅ Trigger download
+  XLSX.writeFile(workbook, "CategoryWiseReport.xlsx");
+};
+
 
   // ================== Print ==================
   const handlePrint = () => {
@@ -154,49 +165,50 @@ const CategoryWise = () => {
           </span>
         </Card.Header>
         <Card.Body className="p-2">
-<div className="mb-3 d-flex justify-content-start gap-2">
-  {/* PDF */}
-  <Button
-    size="sm"
-    variant="danger"
-    className="d-flex align-items-center px-3 py-1"
-    onClick={exportPDF}
-  >
-    <span className="material-icons-two-tone me-1" style={{ fontSize: "16px" }}>
-      picture_as_pdf
-    </span>
-    PDF
-  </Button>
+          {/* Buttons */}
+          <div className="mb-3 d-flex justify-content-start gap-2">
+            {/* PDF */}
+            <Button
+              size="sm"
+              variant="danger"
+              className="d-flex align-items-center px-3 py-1"
+              onClick={exportPDF}
+            >
+              <span className="material-icons-two-tone me-1" style={{ fontSize: "16px" }}>
+                picture_as_pdf
+              </span>
+              PDF
+            </Button>
 
-  {/* Excel */}
-  {/* <Button
-    size="sm"
-    className="d-flex align-items-center px-3 py-1 text-white"
-    style={{ backgroundColor: "#1D6F42", borderColor: "#1D6F42" }}
-    onClick={exportExcel}
-  >
-    <span className="material-icons-two-tone me-1" style={{ fontSize: "16px" }}>
-      grid_on
-    </span>
-    Excel
-  </Button> */}
+            {/* Excel */}
+            <Button
+              size="sm"
+              className="d-flex align-items-center px-3 py-1 text-white"
+              style={{ backgroundColor: "#1D6F42", borderColor: "#1D6F42" }}
+              onClick={exportExcel}
+            >
+              <span className="material-icons-two-tone me-1" style={{ fontSize: "16px" }}>
+                grid_on
+              </span>
+              Excel
+            </Button>
 
-  {/* Print */}
-  <Button
-    size="sm"
-    variant="primary"
-    className="d-flex align-items-center px-3 py-1"
-    onClick={handlePrint}
-  >
-    <span className="material-icons-two-tone me-1" style={{ fontSize: "16px" }}>
-      print
-    </span>
-    Print
-  </Button>
-</div>
+            {/* Print */}
+            <Button
+              size="sm"
+              style={{ backgroundColor: "#6f42c1", borderColor: "#6f42c1" }}
+              className="d-flex align-items-center px-3 py-1 text-white"
+              onClick={handlePrint}
+            >
+              <span className="material-icons-two-tone me-1" style={{ fontSize: "16px" }}>
+                print
+              </span>
+              Print
+            </Button>
+          </div>
 
           <div className="row">
-            {/* Hospital Table */}
+            {/* Hospital */}
             <div className="col-md-6">
               <h6 className="text-center bg-warning text-dark py-1">Hospital</h6>
               <Table bordered hover size="sm" className="text-center">
@@ -226,7 +238,7 @@ const CategoryWise = () => {
               </Table>
             </div>
 
-            {/* Others Table */}
+            {/* Others */}
             <div className="col-md-6">
               <h6 className="text-center bg-warning text-dark py-1">Others</h6>
               <Table bordered hover size="sm" className="text-center">
@@ -258,7 +270,7 @@ const CategoryWise = () => {
           </div>
 
           <div className="row mt-3">
-            {/* Hotel Table */}
+            {/* Hotel */}
             <div className="col-md-6">
               <h6 className="text-center bg-success text-white py-1">Hotel</h6>
               <Table bordered hover size="sm" className="text-center">
@@ -288,10 +300,10 @@ const CategoryWise = () => {
               </Table>
             </div>
 
-            {/* Overall Processed Linen Table */}
+            {/* Overall */}
             <div className="col-md-6">
               <h6 className="text-center bg-info text-white py-1">
-                Overall Processed Line Details
+                Overall Processed Linen Details
               </h6>
               <Table bordered hover size="sm" className="text-center">
                 <thead className="table-info">
