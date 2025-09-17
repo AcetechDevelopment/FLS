@@ -7,18 +7,36 @@ import * as XLSX from "xlsx";
 const SupplierGroup = () => {
   const [groups, setGroups] = useState([]);
   const [search, setSearch] = useState("");
-  const [showModal, setShowModal] = useState(false);
+  const [showModal, setShowModal] = useState(false); // group modal
   const [editingGroup, setEditingGroup] = useState(null);
   const [formData, setFormData] = useState({
     groupName: "",
     description: "",
+    groupMembers: []   // ✅ added so Group Members checkboxes work
   });
+
+  // ====== NEW: material modal state and form ======
+const [showMaterialModal, setShowMaterialModal] = useState(false);
+const [selectedGroupId, setSelectedGroupId] = useState(null); // which row you’re editing
+const [tempMaterials, setTempMaterials] = useState([]); // temp materials before saving
+const [materialForm, setMaterialForm] = useState({
+  material: "",
+  weight: "",
+  price: "",
+});
 
   // ✅ Load data from localStorage when component mounts
   useEffect(() => {
     const stored = localStorage.getItem("supplierGroupData");
     if (stored) {
-      setGroups(JSON.parse(stored));
+      try {
+        const parsed = JSON.parse(stored);
+        // ensure groups have materials array
+        const safe = parsed.map(g => ({ ...g, materials: g.materials || [] }));
+        setGroups(safe);
+      } catch (err) {
+        setGroups(parsed);
+      }
     }
   }, []);
 
@@ -65,7 +83,7 @@ const SupplierGroup = () => {
   // Open modal for new group
   const handleNewGroup = () => {
     setEditingGroup(null);
-    setFormData({ groupName: "", description: "" });
+    setFormData({ groupName: "", description: "", groupMembers: [] });
     setShowModal(true);
   };
 
@@ -81,11 +99,11 @@ const SupplierGroup = () => {
     if (editingGroup) {
       setGroups(
         groups.map((g) =>
-          g.id === editingGroup.id ? { ...formData, id: editingGroup.id } : g
+          g.id === editingGroup.id ? { ...formData, id: editingGroup.id, materials: g.materials || [] } : g
         )
       );
     } else {
-      setGroups([...groups, { ...formData, id: Date.now() }]);
+      setGroups([...groups, { ...formData, id: Date.now(), materials: [] }]);
     }
     setShowModal(false);
   };
@@ -93,6 +111,30 @@ const SupplierGroup = () => {
   // Delete group
   const deleteRow = (id) => {
     setGroups(groups.filter((group) => group.id !== id));
+  };
+
+  // ====== NEW: open material modal for a group ======
+  const openMaterialModal = (groupId) => {
+    setSelectedGroupId(groupId);
+    setMaterialForm({ supplier: "", material: "", pieces: "" });
+    setShowMaterialModal(true);
+  };
+  // alias for older code that used openModal
+  const openModal = openMaterialModal;
+
+  // ====== NEW: save material into selected group ======
+  const handleSaveMaterial = () => {
+    if (!selectedGroupId) return alert("No group selected.");
+    if (!materialForm.material) return alert("Enter material name.");
+    setGroups(prev =>
+      prev.map(g =>
+        g.id === selectedGroupId
+          ? { ...g, materials: [...(g.materials || []), { ...materialForm, id: Date.now() }] }
+          : g
+      )
+    );
+    setShowMaterialModal(false);
+    setMaterialForm({ supplier: "", material: "", pieces: "" });
   };
 
   // ✅ Export PDF
@@ -191,7 +233,7 @@ const SupplierGroup = () => {
   const filteredGroups = groups.filter(
     (g) =>
       g.groupName.toLowerCase().includes(search.toLowerCase()) ||
-      g.description.toLowerCase().includes(search.toLowerCase())
+      (g.description || "").toLowerCase().includes(search.toLowerCase())
   );
 
   return (
@@ -280,284 +322,219 @@ const SupplierGroup = () => {
       </div>
 
       {/* ✅ Table */}
-      <div className="table-responsive">
-        <table
-          className="table table-bordered table-striped align-middle"
-          style={{ fontSize: "12px" }}
-        >
-          <thead className="table-primary" style={{ fontSize: "12px" }}>
-            <tr className="text-center">
-              <th className="py-1 px-1">Group Name</th>
-              <th className="py-1 px-1">Supplier</th>
-              <th className="py-1 px-1">Material</th>
-              <th className="py-1 px-1">Prize</th>
-              <th className="py-1 px-1">Pieces</th>
-              <th className="py-1 px-1"> Weight </th>
-              <th className="py-1 px-1" style={{ minWidth: "100px" }}>
-                Action
-              </th>
-            </tr>
-          </thead>
+      <table className="table table-bordered table-sm">
+        <thead>
+          <tr>
+            <th>Group Name</th>
+            <th>Supplier</th>
+            <th>Material</th>
+            <th>Materials</th>
+            <th>Pieces</th>
+            <th style={{ minWidth: "100px" }}>Action</th>
+          </tr>
+        </thead>
 
-          <tbody>
-            {filteredGroups.map((group) => (
-              <tr className="text-center" key={group.id}>
-                {/* Group Name */}
-                <td className="py-1 px-1">{group.groupName}</td>
+        <tbody>
+          {filteredGroups.map((group) => (
+            <tr className="text-center" key={group.id}>
+              {/* Group Name */}
+              <td className="py-1 px-1">{group.groupName}</td>
 
-                {/* Supplier Dropdown */}
-                <td className="py-1 px-1">
-                  <select className="form-select form-select-sm">
-                    <option value="">Select Supplier</option>
-                    <option value="supplier">Supplier</option>
-                    <option value="supplierGroup">Supplier Group</option>
-                  </select>
-                </td>
+              {/* Supplier Dropdown */}
+              <td className="py-1 px-1">
+                <select className="form-select form-select-sm">
+                  <option value="">Select Supplier</option>
+                  <option value="supplier">Supplier</option>
+                  <option value="supplierGroup">Supplier Group</option>
+                </select>
+              </td>
 
-                {/* Material Dropdown */}
-                <td className="py-1 px-1">
-                  <select className="form-select form-select-sm">
-                    <option value="">Select Material</option>
-                    <option value="material1">Material 1</option>
-                    <option value="material2">Material 2</option>
-                  </select>
-                </td>
+              {/* Material Dropdown */}
+              <td className="py-1 px-1">
+                <select className="form-select form-select-sm">
+                  <option value="">Select Material</option>
+                  <option value="material1">Material 1</option>
+                  <option value="material2">Material 2</option>
+                </select>
+              </td>
 
-                {/* Price Manual Entry */}
-                <td className="py-1 px-1">
-                  <input
-                    type="text"
-                    className="form-control form-control-sm"
-                    placeholder="Enter Price"
-                  />
-                </td>
-
-                {/* No. of Pieces */}
-                <td className="py-1 px-1">
-                  <input
-                    type="text"
-                    className="form-control form-control-sm"
-                    placeholder="Pieces"
-                    min="0"
-                    onKeyDown={isIntegerKey} // 👈 only integers
-                  />
-                </td>
-
-                {/* Weight */}
-                <td className="py-1 px-1">
-                  <input
-                    type="text"
-                    className="form-control form-control-sm"
-                    placeholder="Weight (Kg)"
-                    onKeyDown={isDecimalKey} // 👈 allows decimals
-                  />
-                </td>
-
-                {/* Action */}
-                <td className="py-1 px-1">
-                  {/* Edit */}
-                  <button
-                    className="btn btn-sm p-0 me-1"
-                    style={{
-                      background: "transparent",
-                      border: "none",
-                      cursor: "pointer",
-                    }}
-                    onClick={() => handleEditGroup(group)}
-                    title="Edit"
-                  >
-                    <span
-                      className="material-icons-two-tone text-warning"
-                      style={{ fontSize: "16px", cursor: "pointer" }}
-                    >
-                      edit
-                    </span>
-                  </button>
-
-                  {/* Delete */}
-                  <button
-                    className="btn btn-sm p-0"
-                    style={{
-                      background: "transparent",
-                      border: "none",
-                      cursor: "pointer",
-                    }}
-                    onClick={() => deleteRow(group.id)}
-                    title="Delete"
-                  >
-                    <span
-                      className="material-icons-two-tone text-danger"
-                      style={{ fontSize: "16px", cursor: "pointer" }}
-                    >
-                      delete
-                    </span>
-                  </button>
-                </td>
-              </tr>
-            ))}
-
-            {filteredGroups.length === 0 && (
-              <tr>
-                <td
-                  colSpan="7"
-                  className="text-center text-muted py-1"
-                  style={{ fontSize: "12px" }}
+              {/* Materials list + + button */}
+              <td>
+                {(group.materials || []).length > 0 ? (
+                  <ul className="mb-0">
+                    {(group.materials || []).map((m) => (
+                      <li key={m.id}>
+                        {m.supplier} | {m.material} | {m.pieces}
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <span className="text-muted">No material</span>
+                )}
+                {/* ➕ button */}
+                <button
+                  className="btn btn-sm btn-success ms-2"
+                  onClick={() => openMaterialModal(group.id)}
                 >
-                  No supplier groups found
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
-      </div>
+                  +
+                </button>
+              </td>
 
-      {/* ✅ Modal */}
+              {/* No. of Pieces */}
+              <td className="py-1 px-1">
+                <input
+                  type="text"
+                  className="form-control form-control-sm"
+                  placeholder="Pieces"
+                  min="0"
+                  defaultValue={1}          // set defaultValue to avoid controlled-warning
+                  onKeyDown={isIntegerKey} // only integers
+                />
+              </td>
+
+              {/* Action */}
+              <td className="py-1 px-1">
+                {/* Edit */}
+                <button
+                  className="btn btn-sm p-0 me-1"
+                  style={{
+                    background: "transparent",
+                    border: "none",
+                    cursor: "pointer",
+                  }}
+                  onClick={() => handleEditGroup(group)}
+                  title="Edit"
+                >
+                  <span
+                    className="material-icons-two-tone text-warning"
+                    style={{ fontSize: "16px", cursor: "pointer" }}
+                  >
+                    edit
+                  </span>
+                </button>
+
+                {/* Delete */}
+                <button
+                  className="btn btn-sm p-0"
+                  style={{
+                    background: "transparent",
+                    border: "none",
+                    cursor: "pointer",
+                  }}
+                  onClick={() => deleteRow(group.id)}
+                  title="Delete"
+                >
+                  <span
+                    className="material-icons-two-tone text-danger"
+                    style={{ fontSize: "16px", cursor: "pointer" }}
+                  >
+                    delete
+                  </span>
+                </button>
+              </td>
+            </tr>
+          ))}
+
+          {filteredGroups.length === 0 && (
+            <tr>
+              <td
+                colSpan="7"
+                className="text-center text-muted py-1"
+                style={{ fontSize: "12px" }}
+              >
+                No supplier groups found
+              </td>
+            </tr>
+          )}
+        </tbody>
+      </table>
+
+      {/* ✅ Group Modal (only keep one version) */}
       {showModal && (
-        <div className="modal fade show d-block" tabIndex="-1">
+        <div
+          className="modal fade show d-block"
+          tabIndex="-1"
+          style={{ backgroundColor: "rgba(0,0,0,0.5)" }}
+        >
           <div className="modal-dialog modal-sm">
             <div className="modal-content">
+              {/* Header */}
               <div className="modal-header py-2 px-3">
                 <h5 className="modal-title" style={{ fontSize: "14px" }}>
-                  {editingGroup ? "Edit Entry" : "Add Entry"}
+                  {editingGroup ? "Edit Group" : "Add Group"}
                 </h5>
                 <button
                   type="button"
-                  className="btn-close btn-sm"
+                  className="btn-close"
+                  aria-label="Close"
                   onClick={() => setShowModal(false)}
                 ></button>
               </div>
 
+              {/* Body */}
               <div className="modal-body p-2" style={{ fontSize: "13px" }}>
-                {/* Type */}
+                {/* Group Name */}
                 <div className="mb-2">
                   <label className="form-label" style={{ fontSize: "13px" }}>
-                    Type
+                    Group Name
                   </label>
-                  <select
-                    className="form-select form-select-sm"
-                    value={formData.type || ""}
+                  <input
+                    type="text"
+                    className="form-control form-control-sm"
+                    value={formData.groupName || ""}
                     onChange={(e) =>
-                      setFormData({ ...formData, type: e.target.value })
+                      setFormData({ ...formData, groupName: e.target.value })
                     }
-                  >
-                    <option value="">Select Type</option>
-                    <option value="supplier">Supplier</option>
-                    <option value="supplierGroup">Supplier Group</option>
-                  </select>
+                    placeholder="Enter Group Name"
+                  />
                 </div>
 
-                {/* Supplier */}
-                {formData.type === "supplier" && (
-                  <>
-                    <div className="mb-2">
-                      <label className="form-label" style={{ fontSize: "13px" }}>
-                        Supplier Name
-                      </label>
-                      <input
-                        type="text"
-                        className="form-control form-control-sm"
-                        value={formData.supplierName || ""}
-                        onChange={(e) =>
-                          setFormData({
-                            ...formData,
-                            supplierName: e.target.value,
-                          })
-                        }
-                      />
-                    </div>
-                    <div className="mb-2">
-                      <label className="form-label" style={{ fontSize: "13px" }}>
-                        Supplier Code
-                      </label>
-                      <input
-                        type="text"
-                        className="form-control form-control-sm"
-                        value={formData.supplierCode || ""}
-                        onChange={(e) =>
-                          setFormData({
-                            ...formData,
-                            supplierCode: e.target.value,
-                          })
-                        }
-                      />
-                    </div>
-                  </>
-                )}
-
-                {/* Supplier Group */}
-                {formData.type === "supplierGroup" && (
-                  <div className="mb-2">
-                    <label className="form-label" style={{ fontSize: "13px" }}>
-                      Group Name
-                    </label>
-                    <input
-                      type="text"
-                      className="form-control form-control-sm"
-                      value={formData.groupName || ""}
-                      onChange={(e) =>
-                        setFormData({ ...formData, groupName: e.target.value })
-                      }
-                    />
+                {/* Group Members */}
+                <div className="mb-2">
+                  <label className="form-label" style={{ fontSize: "13px" }}>
+                    Group Members
+                  </label>
+                  <div
+                    className="border rounded p-2"
+                    style={{ maxHeight: "150px", overflowY: "auto" }}
+                  >
+                    {["Supplier 1", "Supplier 2", "Supplier 3", "Supplier 4"].map(
+                      (supplier, index) => (
+                        <div className="form-check" key={index}>
+                          <input
+                            type="checkbox"
+                            className="form-check-input"
+                            id={`supplier-${index}`}
+                            value={supplier}
+                            checked={formData.groupMembers?.includes(supplier) || false}
+                            onChange={(e) => {
+                              const updated = e.target.checked
+                                ? [...(formData.groupMembers || []), supplier]
+                                : (formData.groupMembers || []).filter((s) => s !== supplier);
+                              setFormData({ ...formData, groupMembers: updated });
+                            }}
+                          />
+                          <label
+                            className="form-check-label"
+                            htmlFor={`supplier-${index}`}
+                          >
+                            {supplier}
+                          </label>
+                        </div>
+                      )
+                    )}
                   </div>
-                )}
-
-                {/* Material Dropdown */}
-                <div className="mb-2">
-                  <label className="form-label" style={{ fontSize: "13px" }}>
-                    Material
-                  </label>
-                  <select
-                    className="form-select form-select-sm"
-                    value={formData.material || ""}
-                    onChange={(e) =>
-                      setFormData({ ...formData, material: e.target.value })
-                    }
-                  >
-                    <option value="">Select Material</option>
-                    <option value="material1">Material 1</option>
-                    <option value="material2">Material 2</option>
-                    <option value="material3">Material 3</option>
-                  </select>
                 </div>
-
-                {/* Prize Entry */}
-              <div className="mb-2">
-  <label className="form-label" style={{ fontSize: "13px" }}>
-    Price
-  </label>
-  <input
-    type="text"   // ✅ use text so filtering works
-    className="form-control form-control-sm"
-    value={formData.prize || ""}
-    placeholder="Enter price"
-    onKeyDown={(e) => {
-      const char = e.key;
-      const allowedchars = "0123456789";
-      const controlKeys = ["Backspace", "Delete", "ArrowLeft", "ArrowRight", "Tab"];
-
-      // ✅ allow control keys
-      if (controlKeys.includes(char)) return;
-
-      // ✅ allow only one decimal point
-      if (char === "." && !e.target.value.includes(".")) return;
-
-      // ❌ block everything else
-      if (!allowedchars.includes(char)) {
-        e.preventDefault();
-      }
-    }}
-    onChange={(e) =>
-      setFormData({ ...formData, prize: e.target.value })
-    }
-  />
-</div>
               </div>
 
+              {/* Footer */}
               <div className="modal-footer py-2 px-3">
-                <button className="btn btn-sm btn-primary" onClick={handleSaveGroup}>
-                  {editingGroup ? "Update" : "Add"}
+                <button
+                  className="btn btn-sm btn-primary"
+                  onClick={handleSaveGroup}
+                >
+                  {editingGroup ? "Update" : "Save"}
                 </button>
-
                 <button
                   className="btn btn-sm btn-secondary"
                   onClick={() => setShowModal(false)}
@@ -569,6 +546,124 @@ const SupplierGroup = () => {
           </div>
         </div>
       )}
+
+      {/* ====== NEW: Material Modal ====== */}
+   {showMaterialModal && (
+  <div
+    className="modal fade show d-block"
+    tabIndex="-1"
+    style={{ backgroundColor: "rgba(0,0,0,0.5)" }}
+  >
+    <div className="modal-dialog modal-lg"> {/* bigger modal for 2 columns */}
+      <div className="modal-content">
+        <div className="modal-header py-2 px-3">
+          <h5 className="modal-title" style={{ fontSize: "14px" }}>Add Material</h5>
+          <button
+            type="button"
+            className="btn-close"
+            aria-label="Close"
+            onClick={() => setShowMaterialModal(false)}
+          ></button>
+        </div>
+
+        <div className="modal-body p-2" style={{ fontSize: "13px" }}>
+          <div className="row">
+            {/* ✅ Left Side - Materials List */}
+            <div className="col-6 border-end">
+              <h6 style={{ fontSize: "13px" }}>Added Materials</h6>
+              {tempMaterials.length > 0 ? (
+                <ul className="list-group list-group-sm">
+                  {tempMaterials.map((m, index) => (
+                    <li
+                      key={index}
+                      className="list-group-item d-flex justify-content-between align-items-center py-1 px-2"
+                      style={{ fontSize: "12px" }}
+                    >
+                      {m.material} | {m.weight} Kg | ₹{m.price}
+                      <button
+                        className="btn btn-sm btn-danger py-0 px-1"
+                        onClick={() => removeTempMaterial(index)}
+                      >
+                        x
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="text-muted" style={{ fontSize: "12px" }}>
+                  No materials added yet
+                </p>
+              )}
+
+              {/* Save Button */}
+              <div className="mt-2">
+                <button
+                  className="btn btn-sm btn-primary"
+                  onClick={handleSaveMaterial}
+                >
+                  Save
+                </button>
+              </div>
+            </div>
+
+            {/* ✅ Right Side - Add New Material */}
+            <div className="col-6">
+              <h6 style={{ fontSize: "13px" }}>New Material</h6>
+              <div className="mb-2">
+                <label className="form-label" style={{ fontSize: "13px" }}>Material</label>
+                <input
+                  type="text"
+                  className="form-control form-control-sm"
+                  value={materialForm.material}
+                  onChange={(e) =>
+                    setMaterialForm({ ...materialForm, material: e.target.value })
+                  }
+                />
+              </div>
+              <div className="mb-2">
+                <label className="form-label" style={{ fontSize: "13px" }}>Weight (Kg)</label>
+                <input
+                  type="number"
+                  className="form-control form-control-sm"
+                  value={materialForm.weight}
+                  onChange={(e) =>
+                    setMaterialForm({ ...materialForm, weight: e.target.value })
+                  }
+                />
+              </div>
+              <div className="mb-2">
+                <label className="form-label" style={{ fontSize: "13px" }}>Price (₹)</label>
+                <input
+                  type="number"
+                  className="form-control form-control-sm"
+                  value={materialForm.price}
+                  onChange={(e) =>
+                    setMaterialForm({ ...materialForm, price: e.target.value })
+                  }
+                />
+              </div>
+              <button
+                className="btn btn-sm btn-success"
+                onClick={addTempMaterial}
+              >
+                Add
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div className="modal-footer py-2 px-3">
+          <button
+            className="btn btn-sm btn-secondary"
+            onClick={() => setShowMaterialModal(false)}
+          >
+            Close
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+)}
     </div>
   );
 };
