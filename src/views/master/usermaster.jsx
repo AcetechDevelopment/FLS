@@ -293,7 +293,11 @@ const handlePrint = () => {
 
     <tbody>
       {filteredUsers.map((user) => (
-        <tr className="text-center" key={user.id} style={{ fontSize: "13px" }}>
+     <tr
+  className="text-center"
+  key={user.id}
+  style={{ fontSize: "13px", lineHeight: "1.2" }}
+>
           <td className="py-1 px-1">{user.name}</td>
           <td className="py-1 px-1">{user.phone}</td>
 

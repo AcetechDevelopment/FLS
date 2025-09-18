@@ -112,16 +112,39 @@ const menuItems = {
 //   ]
 // },
 
-          {
+{
   id: 'navigation',
-  // title: 'Reports',
   type: 'group',
   icon: 'material-icons-two-tone',
- iconname: 'folder',
+  iconname: 'folder',
   children: [
-    { id: 'supplier', title: 'Reports', type: 'item', url: './cateworywise' },
-    // { id: 'price-master', title: 'Price Master', type: 'item', url: './pricemaster' },
-   
+    {
+      id: 'reports',
+      title: 'Reports',
+      type: 'collapse',   // ✅ dropdown
+      icon: 'material-icons-two-tone',
+      iconname: 'bar_chart',
+      children: [
+        {
+          id: 'category-report',
+          title: 'Category Report',
+          type: 'item',
+          url: './cateworywise'
+        },
+        {
+          id: 'inward-report',
+          title: 'Inward Report',
+          type: 'item',
+          url: './inwardreport'
+        },
+        {
+          id: 'dispatch-report',
+          title: 'Dispatch Report',
+          type: 'item',
+          url: './dispatchreport'
+        }
+      ]
+    }
   ]
 },
 

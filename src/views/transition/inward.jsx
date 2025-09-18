@@ -234,45 +234,42 @@ const [newMaterial, setNewMaterial] = useState({ material: "", quantity: "" });
 
   {/* Inward Number */}
   <div className="col-md-3">
-    <input
-      type="text"
-      ref={(el) => (headerRefs.current[2] = el)}
-      onKeyDown={(e) => handleKeyDown(e, 2, headerRefs)}
-      className="form-control form-control-sm"
-      style={{
-        fontSize: "10px",
-        height: "20px",
-        padding: "0 2px",
-        borderRadius: "8px",
-      }}
-      placeholder="Inward Number"
-      value={formData.inwardNo || ""}
-      onChange={(e) =>
-        setFormData({ ...formData, inwardNo: e.target.value })
-      }
-    />
+<input
+  type="text"
+  ref={(el) => (headerRefs.current[2] = el)}
+  onKeyDown={(e) => handleKeyDown(e, 2, headerRefs)}
+  className="form-control form-control-sm"
+  style={{
+    fontSize: "10px",
+    height: "20px",
+    padding: "0 2px",
+    borderRadius: "8px",
+  }}
+  placeholder="Inward Number"
+  value={formData.inwardNo || ""}
+  readOnly   // ✅ blocks typing
+/>
   </div>
 
   {/* Reference No */}
-  <div className="col-md-3">
-    <input
-      type="text"
-      ref={(el) => (headerRefs.current[3] = el)}
-      onKeyDown={(e) => handleKeyDown(e, 3, headerRefs)}
-      className="form-control form-control-sm"
-      style={{
-        fontSize: "10px",
-        height: "20px",
-        padding: "0 2px",
-        borderRadius: "8px",
-      }}
-      placeholder="Reference No."
-      value={formData.referenceNo || ""}
-      onChange={(e) =>
-        setFormData({ ...formData, referenceNo: e.target.value })
-      }
-    />
-  </div>
+<div className="col-md-3">
+  <input
+    type="text"
+    ref={(el) => (headerRefs.current[3] = el)}
+    onKeyDown={(e) => handleKeyDown(e, 3, headerRefs)}
+    className="form-control form-control-sm"
+    style={{
+      fontSize: "10px",
+      height: "20px",
+      padding: "0 2px",
+      borderRadius: "8px",
+    }}
+    placeholder="Reference No."
+    value={formData.referenceNo || ""}
+    readOnly   // ✅ prevents typing
+  />
+</div>
+
 </div>
 
       {/* Materials Table */}
@@ -348,28 +345,30 @@ const [newMaterial, setNewMaterial] = useState({ material: "", quantity: "" });
 <div className="row g-1 align-items-center">
   {/* Left Section: Inputs + Add */}
   <div className="col-md-8 d-flex align-items-center gap-2">
-    <input
-      ref={newMatNameRef}
-      type="text"
-      className="form-control form-control-sm"
-      style={{
-        fontSize: "11px",
-        height: "22px",
-        padding: "0 4px",
-        borderRadius: "8px",
-      }}
-      placeholder="Material"
-      value={newMaterial.material}
-      onChange={(e) =>
-        setNewMaterial({ ...newMaterial, material: e.target.value })
-      }
-      onKeyDown={(e) => {
-        if (e.key === "Enter") {
-          e.preventDefault();
-          newMatQtyRef.current?.focus();
-        }
-      }}
-    />
+  <select
+  ref={newMatNameRef}
+  className="form-select form-select-sm"
+  style={{
+    fontSize: "12px",      // slightly bigger font
+    height: "28px",        // increased height
+    padding: "0 6px",      // adjust padding
+    borderRadius: "8px",
+  }}
+  value={newMaterial.material}
+  onChange={(e) =>
+    setNewMaterial({ ...newMaterial, material: e.target.value })
+  }
+  onKeyDown={(e) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      newMatQtyRef.current?.focus();
+    }
+  }}
+>
+  <option value="">Select Material</option>
+  <option value="Bedsheet">Bedsheet</option>
+  <option value="Towel">Towel</option>
+</select>
 
     <input
       ref={newMatQtyRef}
@@ -377,7 +376,7 @@ const [newMaterial, setNewMaterial] = useState({ material: "", quantity: "" });
       className="form-control form-control-sm"
       style={{
         fontSize: "11px",
-        height: "22px",
+        height: "28px",
         padding: "0 4px",
         borderRadius: "8px",
         width: "100px",

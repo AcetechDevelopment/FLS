@@ -12,6 +12,8 @@ import InwardPage from '../views/transition/inward';
 import DispatchPage from '../views/transition/dispatch';
 import PriceMaster from '../views/master/pricemaster';
 import CategoryWise from '../views/reports/categorywise';
+import InwardReport from '../views/reports/inwardreport';
+import DispatchReport from '../views/reports/dispatchreport';
 
 
 const DashboardSales = lazy(() => import('../views/dashboard/DashSales/index'));
@@ -115,6 +117,16 @@ const MainRoutes = {
            {
           path: '/cateworywise',
           element: <CategoryWise />
+        },
+
+         {
+          path: '/inwardreport',
+          element: <InwardReport />
+        },
+
+         {
+          path: '/dispatchreport',
+          element: <DispatchReport />
         },
     
       ]

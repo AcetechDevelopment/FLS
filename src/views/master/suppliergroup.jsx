@@ -13,7 +13,23 @@ const SupplierGroup = () => {
     groupName: "",
     description: "",
     groupMembers: []   // ✅ added so Group Members checkboxes work
+    
   });
+
+    // ➕ Add material to temp list
+  const addTempMaterial = () => {
+    if (!materialForm.material || !materialForm.weight || !materialForm.price) {
+      alert("Please fill all fields");
+      return;
+    }
+    setTempMaterials([...tempMaterials, materialForm]);
+    setMaterialForm({ material: "", weight: "", price: "" }); // reset form
+  };
+
+  // ❌ Remove material by index
+  const removeTempMaterial = (index) => {
+    setTempMaterials(tempMaterials.filter((_, i) => i !== index));
+  };
 
   // ====== NEW: material modal state and form ======
 const [showMaterialModal, setShowMaterialModal] = useState(false);
@@ -138,96 +154,96 @@ const [materialForm, setMaterialForm] = useState({
   };
 
   // ✅ Export PDF
-  const exportPDF = () => {
-    if (groups.length === 0) {
-      alert("No supplier groups available to export.");
-      return;
-    }
+  // const exportPDF = () => {
+  //   if (groups.length === 0) {
+  //     alert("No supplier groups available to export.");
+  //     return;
+  //   }
 
-    const doc = new jsPDF();
-    doc.setFontSize(16);
-    doc.text("Supplier Groups", 14, 15);
+  //   const doc = new jsPDF();
+  //   doc.setFontSize(16);
+  //   doc.text("Supplier Groups", 14, 15);
 
-    autoTable(doc, {
-      startY: 25,
-      head: [["Group Name", "Description"]],
-      body: groups.map((g) => [g.groupName, g.description]),
-      theme: "grid",
-      styles: { fontSize: 10 },
-      headStyles: { fillColor: [0, 123, 255] },
-    });
+  //   autoTable(doc, {
+  //     startY: 25,
+  //     head: [["Group Name", "Description"]],
+  //     body: groups.map((g) => [g.groupName, g.description]),
+  //     theme: "grid",
+  //     styles: { fontSize: 10 },
+  //     headStyles: { fillColor: [0, 123, 255] },
+  //   });
 
-    doc.save("SupplierGroups.pdf");
-  };
+  //   doc.save("SupplierGroups.pdf");
+  // };
 
   // ✅ Export Excel
-  const exportExcel = () => {
-    if (groups.length === 0) {
-      alert("No supplier groups available to export.");
-      return;
-    }
+  // const exportExcel = () => {
+  //   if (groups.length === 0) {
+  //     alert("No supplier groups available to export.");
+  //     return;
+  //   }
 
-    const data = groups.map((g) => ({
-      "Group Name": g.groupName,
-      Description: g.description,
-    }));
+  //   const data = groups.map((g) => ({
+  //     "Group Name": g.groupName,
+  //     Description: g.description,
+  //   }));
 
-    const worksheet = XLSX.utils.json_to_sheet(data);
-    const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, "SupplierGroups");
-    XLSX.writeFile(workbook, "SupplierGroups.xlsx");
-  };
+  //   const worksheet = XLSX.utils.json_to_sheet(data);
+  //   const workbook = XLSX.utils.book_new();
+  //   XLSX.utils.book_append_sheet(workbook, worksheet, "SupplierGroups");
+  //   XLSX.writeFile(workbook, "SupplierGroups.xlsx");
+  // };
 
   // ✅ Print Table
-  const handlePrint = () => {
-    if (groups.length === 0) {
-      alert("No supplier groups available to print.");
-      return;
-    }
+  // const handlePrint = () => {
+  //   if (groups.length === 0) {
+  //     alert("No supplier groups available to print.");
+  //     return;
+  //   }
 
-    const tableHTML = `
-      <table>
-        <thead>
-          <tr>
-            <th>Group Name</th>
-            <th>Description</th>
-          </tr>
-        </thead>
-        <tbody>
-          ${groups
-            .map(
-              (g) => `
-            <tr>
-              <td>${g.groupName}</td>
-              <td>${g.description}</td>
-            </tr>
-          `
-            )
-            .join("")}
-        </tbody>
-      </table>
-    `;
+  //   const tableHTML = `
+  //     <table>
+  //       <thead>
+  //         <tr>
+  //           <th>Group Name</th>
+  //           <th>Description</th>
+  //         </tr>
+  //       </thead>
+  //       <tbody>
+  //         ${groups
+  //           .map(
+  //             (g) => `
+  //           <tr>
+  //             <td>${g.groupName}</td>
+  //             <td>${g.description}</td>
+  //           </tr>
+  //         `
+  //           )
+  //           .join("")}
+  //       </tbody>
+  //     </table>
+  //   `;
 
-    const printWindow = window.open("", "", "width=900,height=600");
-    printWindow.document.write(`
-      <html>
-        <head>
-          <title>Supplier Groups</title>
-          <style>
-            table { width: 100%; border-collapse: collapse; }
-            th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
-            th { background-color: #0d6efd; color: white; }
-          </style>
-        </head>
-        <body>
-          <h2>Supplier Groups</h2>
-          ${tableHTML}
-        </body>
-      </html>
-    `);
-    printWindow.document.close();
-    printWindow.print();
-  };
+  //   const printWindow = window.open("", "", "width=900,height=600");
+  //   printWindow.document.write(`
+  //     <html>
+  //       <head>
+  //         <title>Supplier Groups</title>
+  //         <style>
+  //           table { width: 100%; border-collapse: collapse; }
+  //           th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+  //           th { background-color: #0d6efd; color: white; }
+  //         </style>
+  //       </head>
+  //       <body>
+  //         <h2>Supplier Groups</h2>
+  //         ${tableHTML}
+  //       </body>
+  //     </html>
+  //   `);
+  //   printWindow.document.close();
+  //   printWindow.print();
+  // };
 
   // ✅ Filtered groups
   const filteredGroups = groups.filter(
@@ -258,7 +274,7 @@ const [materialForm, setMaterialForm] = useState({
           </button>
 
           {/* PDF */}
-          <button
+          {/* <button
             className="btn btn-sm btn-danger py-1 px-2 d-flex align-items-center"
             style={{ borderRadius: "8px", fontSize: "13px" }}
             onClick={exportPDF}
@@ -270,10 +286,10 @@ const [materialForm, setMaterialForm] = useState({
               picture_as_pdf
             </span>
             PDF
-          </button>
+          </button> */}
 
           {/* Excel */}
-          <button
+          {/* <button
             className="btn btn-sm text-white py-1 px-2 d-flex align-items-center"
             style={{
               backgroundColor: "#1D6F42",
@@ -290,10 +306,10 @@ const [materialForm, setMaterialForm] = useState({
               grid_on
             </span>
             Excel
-          </button>
+          </button> */}
 
           {/* Print */}
-          <button
+          {/* <button
             className="btn btn-sm btn-primary py-1 px-2 d-flex align-items-center"
             style={{ borderRadius: "8px", fontSize: "13px" }}
             onClick={handlePrint}
@@ -305,7 +321,7 @@ const [materialForm, setMaterialForm] = useState({
               print
             </span>
             Print
-          </button>
+          </button> */}
         </div>
 
         {/* ✅ Search Box */}
@@ -322,132 +338,128 @@ const [materialForm, setMaterialForm] = useState({
       </div>
 
       {/* ✅ Table */}
-      <table className="table table-bordered table-sm">
-        <thead>
-          <tr>
-            <th>Group Name</th>
-            <th>Supplier</th>
-            <th>Material</th>
-            <th>Materials</th>
-            <th>Pieces</th>
-            <th style={{ minWidth: "100px" }}>Action</th>
-          </tr>
-        </thead>
+<div className="table-responsive">
+  <table className="table table-bordered table-sm align-middle">
+    <thead className="table-light">
+    <tr className="text-center">
+  <th>Group Name</th>
+  {/* <th>Supplier</th> */}
+  {/* <th>Material</th> */}
+  <th>Materials</th>
+  {/* <th>Pieces</th> */}
+  <th style={{ minWidth: "100px" }}>Action</th>
+</tr>
+    </thead>
 
-        <tbody>
-          {filteredGroups.map((group) => (
-            <tr className="text-center" key={group.id}>
-              {/* Group Name */}
-              <td className="py-1 px-1">{group.groupName}</td>
+    <tbody style={{ lineHeight: "1.05" }}>
+      {filteredGroups.map((group) => (
+        <tr className="text-center" key={group.id}>
+          {/* Group Name */}
+          <td className="py-1 px-1">{group.groupName}</td>
 
-              {/* Supplier Dropdown */}
-              <td className="py-1 px-1">
-                <select className="form-select form-select-sm">
-                  <option value="">Select Supplier</option>
-                  <option value="supplier">Supplier</option>
-                  <option value="supplierGroup">Supplier Group</option>
-                </select>
-              </td>
+          {/* Supplier Dropdown */}
+          {/* <td className="py-1 px-1">
+            <select className="form-select form-select-sm">
+              <option value="">Select Supplier</option>
+              <option value="supplier">Supplier</option>
+              <option value="supplierGroup">Supplier Group</option>
+            </select>
+          </td> */}
 
-              {/* Material Dropdown */}
-              <td className="py-1 px-1">
-                <select className="form-select form-select-sm">
-                  <option value="">Select Material</option>
-                  <option value="material1">Material 1</option>
-                  <option value="material2">Material 2</option>
-                </select>
-              </td>
+          {/* Material Dropdown */}
+          {/* <td className="py-1 px-1">
+            <select className="form-select form-select-sm">
+              <option value="">Select Material</option>
+              <option value="material1">Material 1</option>
+              <option value="material2">Material 2</option>
+            </select>
+          </td> */}
 
-              {/* Materials list + + button */}
-              <td>
-                {(group.materials || []).length > 0 ? (
-                  <ul className="mb-0">
-                    {(group.materials || []).map((m) => (
-                      <li key={m.id}>
-                        {m.supplier} | {m.material} | {m.pieces}
-                      </li>
-                    ))}
-                  </ul>
-                ) : (
-                  <span className="text-muted">No material</span>
-                )}
-                {/* ➕ button */}
-                <button
-                  className="btn btn-sm btn-success ms-2"
-                  onClick={() => openMaterialModal(group.id)}
-                >
-                  +
-                </button>
-              </td>
+          {/* Materials list + + button */}
+<td>
+  {(group.materials || []).length > 0 && (
+    <ul className="mb-0">
+      {(group.materials || []).map((m) => (
+        <li key={m.id}>
+          {m.supplier} | {m.material} | {m.pieces}
+        </li>
+      ))}
+    </ul>
+  )}
 
-              {/* No. of Pieces */}
-              <td className="py-1 px-1">
-                <input
-                  type="text"
-                  className="form-control form-control-sm"
-                  placeholder="Pieces"
-                  min="0"
-                  defaultValue={1}          // set defaultValue to avoid controlled-warning
-                  onKeyDown={isIntegerKey} // only integers
-                />
-              </td>
+<button
+  className="btn btn-success ms-2"
+  style={{
+    padding: "0.15rem 0.35rem", // smaller padding
+    fontSize: "12px",           // smaller font
+    lineHeight: "1",            // compact line-height
+    height: "22px",              // optional fixed height
+    minWidth: "22px"             // optional fixed width for a square look
+  }}
+  onClick={() => openMaterialModal(group.id)}
+>
+  +
+</button> 
+</td>
 
-              {/* Action */}
-              <td className="py-1 px-1">
-                {/* Edit */}
-                <button
-                  className="btn btn-sm p-0 me-1"
-                  style={{
-                    background: "transparent",
-                    border: "none",
-                    cursor: "pointer",
-                  }}
-                  onClick={() => handleEditGroup(group)}
-                  title="Edit"
-                >
-                  <span
-                    className="material-icons-two-tone text-warning"
-                    style={{ fontSize: "16px", cursor: "pointer" }}
-                  >
-                    edit
-                  </span>
-                </button>
 
-                {/* Delete */}
-                <button
-                  className="btn btn-sm p-0"
-                  style={{
-                    background: "transparent",
-                    border: "none",
-                    cursor: "pointer",
-                  }}
-                  onClick={() => deleteRow(group.id)}
-                  title="Delete"
-                >
-                  <span
-                    className="material-icons-two-tone text-danger"
-                    style={{ fontSize: "16px", cursor: "pointer" }}
-                  >
-                    delete
-                  </span>
-                </button>
-              </td>
-            </tr>
-          ))}
+          {/* No. of Pieces */}
+          {/* <td className="py-1 px-1">
+            <input
+              type="text"
+              className="form-control form-control-sm"
+              placeholder="Pieces"
+              min="0"
+              defaultValue={1}
+              onKeyDown={isIntegerKey}
+            />
+          </td> */}
 
-          {filteredGroups.length === 0 && (
-            <tr>
-              <td
-                colSpan="7"
-                className="text-center text-muted py-1"
-                style={{ fontSize: "12px" }}
+          {/* Action */}
+          <td className="py-1 px-1">
+            {/* Edit */}
+            <button
+              className="btn btn-sm p-0 me-1"
+              style={{ background: "transparent", border: "none" }}
+              onClick={() => handleEditGroup(group)}
+              title="Edit"
+            >
+              <span
+                className="material-icons-two-tone text-warning"
+                style={{ fontSize: "16px", cursor: "pointer" }}
               >
-                No supplier groups found
-              </td>
-            </tr>
-          )}
-        </tbody>
-      </table>
+                edit
+              </span>
+            </button>
+
+            {/* Delete */}
+            <button
+              className="btn btn-sm p-0"
+              style={{ background: "transparent", border: "none" }}
+              onClick={() => deleteRow(group.id)}
+              title="Delete"
+            >
+              <span
+                className="material-icons-two-tone text-danger"
+                style={{ fontSize: "16px", cursor: "pointer" }}
+              >
+                delete
+              </span>
+            </button>
+          </td>
+        </tr>
+      ))}
+
+      {filteredGroups.length === 0 && (
+        <tr>
+          <td colSpan="6" className="text-center text-muted py-1" style={{ fontSize: "12px" }}>
+            No supplier groups found
+          </td>
+        </tr>
+      )}
+    </tbody>
+  </table>
+</div>
 
       {/* ✅ Group Modal (only keep one version) */}
       {showModal && (
@@ -542,19 +554,20 @@ const [materialForm, setMaterialForm] = useState({
                   Cancel
                 </button>
               </div>
+
             </div>
           </div>
         </div>
       )}
 
       {/* ====== NEW: Material Modal ====== */}
-   {showMaterialModal && (
+{showMaterialModal && (
   <div
     className="modal fade show d-block"
     tabIndex="-1"
     style={{ backgroundColor: "rgba(0,0,0,0.5)" }}
   >
-    <div className="modal-dialog modal-lg"> {/* bigger modal for 2 columns */}
+    <div className="modal-dialog modal-lg">
       <div className="modal-content">
         <div className="modal-header py-2 px-3">
           <h5 className="modal-title" style={{ fontSize: "14px" }}>Add Material</h5>
@@ -566,82 +579,105 @@ const [materialForm, setMaterialForm] = useState({
           ></button>
         </div>
 
-        <div className="modal-body p-2" style={{ fontSize: "13px" }}>
+     <div
+  className="modal-body p-2"
+  style={{
+    fontSize: "13px",
+    maxHeight: "400px",
+    overflowY: "auto",   // vertical scroll
+    overflowX: "hidden", // no horizontal scroll
+  }}
+>
           <div className="row">
             {/* ✅ Left Side - Materials List */}
-            <div className="col-6 border-end">
-              <h6 style={{ fontSize: "13px" }}>Added Materials</h6>
-              {tempMaterials.length > 0 ? (
-                <ul className="list-group list-group-sm">
-                  {tempMaterials.map((m, index) => (
-                    <li
-                      key={index}
-                      className="list-group-item d-flex justify-content-between align-items-center py-1 px-2"
-                      style={{ fontSize: "12px" }}
-                    >
-                      {m.material} | {m.weight} Kg | ₹{m.price}
-                      <button
-                        className="btn btn-sm btn-danger py-0 px-1"
-                        onClick={() => removeTempMaterial(index)}
-                      >
-                        x
-                      </button>
-                    </li>
-                  ))}
-                </ul>
-              ) : (
-                <p className="text-muted" style={{ fontSize: "12px" }}>
-                  No materials added yet
-                </p>
-              )}
+          <div className="col-6 border-end">
+  <h6 style={{ fontSize: "13px" }}>Added Materials</h6>
+  {tempMaterials.length > 0 ? (
+    <ul className="list-group list-group-sm">
+      {tempMaterials.map((m, index) => (
+        <li
+          key={index}
+          className="list-group-item d-flex justify-content-between align-items-center py-1 px-2"
+          style={{ fontSize: "12px" }}
+        >
+          <span className="me-2 flex-grow-1">
+            {m.material} | {m.weight} Kg | ₹{m.price}
+          </span>
+          <button
+            className="btn btn-sm btn-danger py-0 px-2"
+            onClick={() => removeTempMaterial(index)}
+          >
+            x
+          </button>
+        </li>
+      ))}
+    </ul>
+  ) : (
+    <p className="text-muted" style={{ fontSize: "12px" }}>
+      No materials added yet
+    </p>
+  )}
 
-              {/* Save Button */}
-              <div className="mt-2">
-                <button
-                  className="btn btn-sm btn-primary"
-                  onClick={handleSaveMaterial}
-                >
-                  Save
-                </button>
-              </div>
-            </div>
+  <div className="modal-footer py-2 px-3">
+    <button
+      className="btn btn-sm btn-primary"
+      onClick={handleSaveMaterial}
+    >
+      Save
+    </button>
+    <button
+      className="btn btn-sm btn-secondary"
+      onClick={() => setShowMaterialModal(false)}
+    >
+      Close
+    </button>
+  </div>
+</div>
 
             {/* ✅ Right Side - Add New Material */}
             <div className="col-6">
               <h6 style={{ fontSize: "13px" }}>New Material</h6>
-              <div className="mb-2">
-                <label className="form-label" style={{ fontSize: "13px" }}>Material</label>
-                <input
-                  type="text"
-                  className="form-control form-control-sm"
-                  value={materialForm.material}
-                  onChange={(e) =>
-                    setMaterialForm({ ...materialForm, material: e.target.value })
-                  }
-                />
-              </div>
-              <div className="mb-2">
-                <label className="form-label" style={{ fontSize: "13px" }}>Weight (Kg)</label>
-                <input
-                  type="number"
-                  className="form-control form-control-sm"
-                  value={materialForm.weight}
-                  onChange={(e) =>
-                    setMaterialForm({ ...materialForm, weight: e.target.value })
-                  }
-                />
-              </div>
-              <div className="mb-2">
-                <label className="form-label" style={{ fontSize: "13px" }}>Price (₹)</label>
-                <input
-                  type="number"
-                  className="form-control form-control-sm"
-                  value={materialForm.price}
-                  onChange={(e) =>
-                    setMaterialForm({ ...materialForm, price: e.target.value })
-                  }
-                />
-              </div>
+
+<div className="mb-2">
+  <label className="form-label" style={{ fontSize: "13px" }}>Material</label>
+  <select
+    className="form-select form-select-sm"
+    value={materialForm.material}
+    onChange={(e) =>
+      setMaterialForm({ ...materialForm, material: e.target.value })
+    }
+  >
+    <option value="">Select Material</option>
+    <option value="Bedsheet">Bedsheet</option>
+    <option value="Towel">Towel</option>
+  </select>
+</div>
+
+           <div className="mb-2">
+  <label className="form-label" style={{ fontSize: "13px" }}>Weight (Kg)</label>
+  <input
+    type="text"   // ✅ use text so filtering works
+    className="form-control form-control-sm"
+    value={materialForm.weight}
+    onKeyDown={isNumberKey}  // ✅ restrict keys
+    onChange={(e) =>
+      setMaterialForm({ ...materialForm, weight: e.target.value })
+    }
+  />
+</div>
+
+<div className="mb-2">
+  <label className="form-label" style={{ fontSize: "13px" }}>Price (₹)</label>
+  <input
+    type="text"   // ✅ use text so filtering works
+    className="form-control form-control-sm"
+    value={materialForm.price}
+    onKeyDown={isNumberKey}  // ✅ restrict keys
+    onChange={(e) =>
+      setMaterialForm({ ...materialForm, price: e.target.value })
+    }
+  />
+</div>
               <button
                 className="btn btn-sm btn-success"
                 onClick={addTempMaterial}
