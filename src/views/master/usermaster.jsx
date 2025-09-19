@@ -3,6 +3,7 @@ import "bootstrap/dist/css/bootstrap.min.css";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";   // ✅ Correct way
 import * as XLSX from "xlsx";
+import React, { useRef } from "react";
 
 const UserMaster = () => {
   const [users, setUsers] = useState([]);
@@ -16,6 +17,21 @@ const UserMaster = () => {
     password: "",
     role: "User",
   });
+
+// Enter Key navigation  
+  
+const inputRefs = useRef([]);
+
+const handleKeyDown = (e, index) => {
+  if (e.key === "Enter") {
+    e.preventDefault();
+    const next = inputRefs.current[index + 1];
+    if (next) {
+      next.focus();
+    }
+  }
+};
+
 
   // Open modal for new user
   const handleNewUser = () => {
@@ -353,7 +369,6 @@ const handlePrint = () => {
   />
 </td>
 
-
           <td className="py-1 px-1">{user.role}</td>
         <td className="py-1 px-1">
   <button
@@ -423,6 +438,8 @@ const handlePrint = () => {
               onChange={(e) =>
                 setFormData({ ...formData, name: e.target.value })
               }
+              ref={(el) => (inputRefs.current[0] = el)}
+              onKeyDown={(e) => handleKeyDown(e, 0)}
             />
           </div>
 
@@ -443,6 +460,8 @@ const handlePrint = () => {
               }}
               inputMode="numeric"
               maxLength="10"
+              ref={(el) => (inputRefs.current[1] = el)}
+              onKeyDown={(e) => handleKeyDown(e, 1)}
             />
           </div>
 
@@ -452,7 +471,7 @@ const handlePrint = () => {
               Password
             </label>
             <input
-              type={formData.showPassword ? "text" : "password"} 
+              type={formData.showPassword ? "text" : "password"}
               className="form-control form-control-sm"
               value={formData.password}
               onChange={(e) =>
@@ -464,49 +483,55 @@ const handlePrint = () => {
               onBlur={() =>
                 setFormData({ ...formData, showPassword: false })
               }
+              ref={(el) => (inputRefs.current[2] = el)}
+              onKeyDown={(e) => handleKeyDown(e, 2)}
             />
           </div>
 
           {/* Role */}
-          <div className="mb-2">
-            <label className="form-label" style={{ fontSize: "13px" }}>
-              Role
-            </label>
-            <select
-              className="form-select form-select-sm"
-              value={formData.role}
-              onChange={(e) =>
-                setFormData({ ...formData, role: e.target.value })
-              }
-            >
-              <option value="Admin">Admin</option>
-              <option value="Manager">Manager</option>
-              <option value="User">User</option>
-            </select>
-          </div>
+   <div className="mb-2">
+  <label className="form-label" style={{ fontSize: "13px" }}>
+    Role
+  </label>
+  <select
+    className="form-select form-select-sm"
+    value={formData.role || ""} // ensure no uncontrolled warning
+    onChange={(e) =>
+      setFormData({ ...formData, role: e.target.value })
+    }
+    ref={(el) => (inputRefs.current[3] = el)}
+    onKeyDown={(e) => handleKeyDown(e, 3)}
+  >
+        <option value="">  Select Role </option>   {/* ✅ placeholder */}
+    <option value="Admin">Admin</option>
+    <option value="Manager">Manager</option>
+    <option value="User">User</option>
+  </select>
+</div>
+
         </div>
 
         <div className="modal-footer py-2 px-3">
-          
           <button
             className="btn btn-sm btn-primary"
             onClick={handleSaveUser}
+            ref={(el) => (inputRefs.current[4] = el)}
           >
             {editingUser ? "Update" : "Add"}
           </button>
 
-           <button
+          <button
             className="btn btn-sm btn-secondary"
             onClick={() => setShowModal(false)}
           >
             Cancel
           </button>
-
         </div>
       </div>
     </div>
   </div>
 )}
+
     </div>
   );
 };

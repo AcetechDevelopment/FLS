@@ -4,6 +4,7 @@ import "bootstrap/dist/css/bootstrap.min.css";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import * as XLSX from "xlsx";
+import React, { useRef } from "react";
 
 const MaterialMaster = () => {
   const { materials, setMaterials } = useContext(MaterialContext);
@@ -16,6 +17,22 @@ const MaterialMaster = () => {
     defaultPrice: "",
     materialType: "Raw",
   });
+
+
+  // on key navigation 
+  // put these at the top of your component
+const inputRefs = useRef([]);
+
+const handleKeyDown = (e, index) => {
+  if (e.key === "Enter") {
+    e.preventDefault();
+    if (inputRefs.current[index + 1]) {
+      inputRefs.current[index + 1].focus();
+    } else {
+      document.getElementById("saveMaterialBtn")?.focus();
+    }
+  }
+};
 
 
   // const MaterialModalBody = ({ formData, setFormData }) => {
@@ -45,7 +62,7 @@ const MaterialMaster = () => {
       materialName: "",
       materialCode: generateMaterialCode(),
       defaultPrice: "",
-      materialType: "Raw",
+      materialType: "",
     });
     setShowModal(true);
   };
@@ -430,7 +447,8 @@ const handlePrint = () => {
         </div>
       )} */}
 
-      {showModal && (
+
+{showModal && (
   <div className="modal fade show d-block" tabIndex="-1">
     <div className="modal-dialog modal-sm"> {/* ✅ smaller width */}
       <div className="modal-content" style={{ fontSize: "13px" }}> {/* ✅ reduced font */}
@@ -462,9 +480,12 @@ const handlePrint = () => {
               onChange={(e) =>
                 setFormData({ ...formData, materialName: e.target.value })
               }
+              ref={(el) => (inputRefs.current[0] = el)}
+              onKeyDown={(e) => handleKeyDown(e, 0)}
             />
           </div>
           
+
 <div className="mb-2">
   <label className="form-label" style={{ fontSize: "12px" }}>
     Default Price
@@ -477,9 +498,19 @@ const handlePrint = () => {
     onKeyDown={(e) => {
       const char = e.key;
       const allowedChars = "0123456789";
-      const controlKeys = ["Backspace", "Delete", "ArrowLeft", "ArrowRight", "Tab"];
+      const controlKeys = ["Backspace", "Delete", "ArrowLeft", "ArrowRight", "Tab", "Enter"];
 
-      if (controlKeys.includes(char)) return;
+      if (controlKeys.includes(char)) {
+        // ✅ handle Enter navigation
+        if (char === "Enter") {
+          e.preventDefault();
+          const nextIndex = 2; // move focus to Weight field
+          if (inputRefs.current[nextIndex]) {
+            inputRefs.current[nextIndex].focus();
+          }
+        }
+        return;
+      }
 
       // ✅ allow one decimal
       if (char === "." && !e.target.value.includes(".")) return;
@@ -490,6 +521,7 @@ const handlePrint = () => {
     onChange={(e) =>
       setFormData({ ...formData, defaultPrice: e.target.value })
     }
+    ref={(el) => (inputRefs.current[1] = el)}
   />
 </div>
 
@@ -505,16 +537,19 @@ const handlePrint = () => {
     onKeyDown={(e) => {
       const char = e.key;
       const allowedchars = "0123456789";
-      const controlKeys = [
-        "Backspace",
-        "Delete",
-        "ArrowLeft",
-        "ArrowRight",
-        "Tab",
-      ];
+      const controlKeys = ["Backspace", "Delete", "ArrowLeft", "ArrowRight", "Tab", "Enter"];
 
-      // ✅ allow control keys
-      if (controlKeys.includes(char)) return;
+      if (controlKeys.includes(char)) {
+        // ✅ handle Enter navigation
+        if (char === "Enter") {
+          e.preventDefault();
+          const nextIndex = 3; // move focus to Material Type (next select box)
+          if (inputRefs.current[nextIndex]) {
+            inputRefs.current[nextIndex].focus();
+          }
+        }
+        return;
+      }
 
       // ✅ allow one decimal point
       if (char === "." && !e.target.value.includes(".")) return;
@@ -527,43 +562,47 @@ const handlePrint = () => {
     onChange={(e) =>
       setFormData({ ...formData, weight: e.target.value })
     }
+    ref={(el) => (inputRefs.current[2] = el)}
   />
 </div>
 
+
           <div className="mb-2">
-      <label className="form-label" style={{ fontSize: "12px" }}>
-        Material Type
-        </label>
-        <select
-      className="form-select form-select-sm"
-    value={formData.materialType}
-    onChange={(e) =>
-      setFormData({ ...formData, materialType: e.target.value })
-    }
-    >
-    <option value="Bedsheet">Bedsheet</option>
-    <option value="Towel">Towel</option>
-  </select>
-</div>
+            <label className="form-label" style={{ fontSize: "12px" }}>
+              Material Type
+            </label>
+            <select
+              className="form-select form-select-sm"
+              value={formData.materialType}
+              onChange={(e) =>
+                setFormData({ ...formData, materialType: e.target.value })
+              }
+              ref={(el) => (inputRefs.current[3] = el)}
+              onKeyDown={(e) => handleKeyDown(e, 3)}
+            >
+              <option value="">  Select Type </option>   {/* ✅ placeholder */}
+              <option value="Bedsheet">Bedsheet</option>
+              <option value="Towel">Towel</option>
+            </select>
+          </div>
         </div>
 
         {/* Footer */}
         <div className="modal-footer py-2">
-         
           <button
+            id="saveMaterialBtn"  // ✅ add id so we can focus this after last Enter
             className="btn btn-primary btn-sm"
             onClick={handleSaveMaterial}
           >
             {editingMaterial ? "Update" : "Add"}
           </button>
 
-               <button
+          <button
             className="btn btn-secondary btn-sm"
             onClick={() => setShowModal(false)}
           >
             Cancel
           </button>
-
         </div>
 
       </div>

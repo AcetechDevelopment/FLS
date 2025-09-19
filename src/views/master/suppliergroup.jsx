@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from "react";   // ✅ added useEffect
+import React, { useState, useEffect  } from "react";   // ✅ added useEffect
+import { useRef } from "react";
 import "bootstrap/dist/css/bootstrap.min.css";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
@@ -15,6 +16,20 @@ const SupplierGroup = () => {
     groupMembers: []   // ✅ added so Group Members checkboxes work
     
   });
+
+  
+const inputRefs = useRef([]);
+
+  // Enter key handler
+const handleKeyDown = (e, index) => {
+  if (e.key === "Enter") {
+    e.preventDefault();
+    const nextIndex = index + 1;
+    if (inputRefs.current[nextIndex]) {
+      inputRefs.current[nextIndex].focus();
+    }
+  }
+};
 
     // ➕ Add material to temp list
   const addTempMaterial = () => {
@@ -261,7 +276,7 @@ const [materialForm, setMaterialForm] = useState({
           {/* New Group */}
           <button
             className="btn btn-sm btn-success py-1 px-2 d-flex align-items-center"
-            style={{ borderRadius: "8px", fontSize: "13px" }}
+            style={{ borderRadius: "8px", fontSize: "12px" }}
             onClick={handleNewGroup}
           >
             <span
@@ -341,7 +356,7 @@ const [materialForm, setMaterialForm] = useState({
 <div className="table-responsive">
   <table className="table table-bordered table-sm align-middle">
     <thead className="table-light">
-    <tr className="text-center">
+<tr className="text-center" style={{ fontSize: "12px" }}>
   <th>Group Name</th>
   {/* <th>Supplier</th> */}
   {/* <th>Material</th> */}
@@ -462,104 +477,117 @@ const [materialForm, setMaterialForm] = useState({
 </div>
 
       {/* ✅ Group Modal (only keep one version) */}
-      {showModal && (
-        <div
-          className="modal fade show d-block"
-          tabIndex="-1"
-          style={{ backgroundColor: "rgba(0,0,0,0.5)" }}
-        >
-          <div className="modal-dialog modal-sm">
-            <div className="modal-content">
-              {/* Header */}
-              <div className="modal-header py-2 px-3">
-                <h5 className="modal-title" style={{ fontSize: "14px" }}>
-                  {editingGroup ? "Edit Group" : "Add Group"}
-                </h5>
-                <button
-                  type="button"
-                  className="btn-close"
-                  aria-label="Close"
-                  onClick={() => setShowModal(false)}
-                ></button>
-              </div>
+{showModal && (
+  <div
+    className="modal fade show d-block"
+    tabIndex="-1"
+    style={{ backgroundColor: "rgba(0,0,0,0.5)" }}
+  >
+    <div className="modal-dialog modal-sm">
+      <div className="modal-content">
+        {/* Header */}
+        <div className="modal-header py-2 px-3">
+          <h5 className="modal-title" style={{ fontSize: "14px" }}>
+            {editingGroup ? "Edit Group" : "Add Group"}
+          </h5>
+          <button
+            type="button"
+            className="btn-close"
+            aria-label="Close"
+            onClick={() => setShowModal(false)}
+          ></button>
+        </div>
 
-              {/* Body */}
-              <div className="modal-body p-2" style={{ fontSize: "13px" }}>
-                {/* Group Name */}
-                <div className="mb-2">
-                  <label className="form-label" style={{ fontSize: "13px" }}>
-                    Group Name
-                  </label>
-                  <input
-                    type="text"
-                    className="form-control form-control-sm"
-                    value={formData.groupName || ""}
-                    onChange={(e) =>
-                      setFormData({ ...formData, groupName: e.target.value })
-                    }
-                    placeholder="Enter Group Name"
-                  />
-                </div>
+        {/* Body */}
+        <div className="modal-body p-2" style={{ fontSize: "13px" }}>
+          {/* Group Name */}
+          <div className="mb-2">
+            <label className="form-label" style={{ fontSize: "13px" }}>
+              Group Name
+            </label>
+            <input
+              type="text"
+              className="form-control form-control-sm"
+              value={formData.groupName || ""}
+              onChange={(e) =>
+                setFormData({ ...formData, groupName: e.target.value })
+              }
+              placeholder="Enter Group Name"
+              ref={(el) => (inputRefs.current[0] = el)}
+              onKeyDown={(e) => handleKeyDown(e, 0)}
+            />
+          </div>
 
-                {/* Group Members */}
-                <div className="mb-2">
-                  <label className="form-label" style={{ fontSize: "13px" }}>
-                    Group Members
-                  </label>
-                  <div
-                    className="border rounded p-2"
-                    style={{ maxHeight: "150px", overflowY: "auto" }}
-                  >
-                    {["Supplier 1", "Supplier 2", "Supplier 3", "Supplier 4"].map(
-                      (supplier, index) => (
-                        <div className="form-check" key={index}>
-                          <input
-                            type="checkbox"
-                            className="form-check-input"
-                            id={`supplier-${index}`}
-                            value={supplier}
-                            checked={formData.groupMembers?.includes(supplier) || false}
-                            onChange={(e) => {
-                              const updated = e.target.checked
-                                ? [...(formData.groupMembers || []), supplier]
-                                : (formData.groupMembers || []).filter((s) => s !== supplier);
-                              setFormData({ ...formData, groupMembers: updated });
-                            }}
-                          />
-                          <label
-                            className="form-check-label"
-                            htmlFor={`supplier-${index}`}
-                          >
-                            {supplier}
-                          </label>
-                        </div>
-                      )
-                    )}
+          {/* Group Members */}
+          <div className="mb-2">
+            <label className="form-label" style={{ fontSize: "13px" }}>
+              Group Members
+            </label>
+            <div
+              className="border rounded p-2"
+              style={{ maxHeight: "150px", overflowY: "auto" }}
+            >
+              {["Supplier 1", "Supplier 2", "Supplier 3", "Supplier 4"].map(
+                (supplier, index) => (
+                  <div className="form-check" key={index}>
+                    <input
+                      type="checkbox"
+                      className="form-check-input"
+                      id={`supplier-${index}`}
+                      value={supplier}
+                      checked={
+                        formData.groupMembers?.includes(supplier) || false
+                      }
+                      onChange={(e) => {
+                        const updated = e.target.checked
+                          ? [...(formData.groupMembers || []), supplier]
+                          : (formData.groupMembers || []).filter(
+                              (s) => s !== supplier
+                            );
+                        setFormData({ ...formData, groupMembers: updated });
+                      }}
+                      ref={(el) => (inputRefs.current[index + 1] = el)}
+                      onKeyDown={(e) => handleKeyDown(e, index + 1)}
+                    />
+                    <label
+                      className="form-check-label"
+                      htmlFor={`supplier-${index}`}
+                    >
+                      {supplier}
+                    </label>
                   </div>
-                </div>
-              </div>
-
-              {/* Footer */}
-              <div className="modal-footer py-2 px-3">
-                <button
-                  className="btn btn-sm btn-primary"
-                  onClick={handleSaveGroup}
-                >
-                  {editingGroup ? "Update" : "Save"}
-                </button>
-                <button
-                  className="btn btn-sm btn-secondary"
-                  onClick={() => setShowModal(false)}
-                >
-                  Cancel
-                </button>
-              </div>
-
+                )
+              )}
             </div>
           </div>
         </div>
-      )}
 
+        {/* Footer */}
+        <div className="modal-footer py-2 px-3">
+          <button
+            className="btn btn-sm btn-primary"
+            onClick={handleSaveGroup}
+            ref={(el) => (inputRefs.current[5] = el)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                e.preventDefault();
+                handleSaveGroup();
+              }
+            }}
+          >
+            {editingGroup ? "Update" : "Save"}
+          </button>
+          <button
+            className="btn btn-sm btn-secondary"
+            onClick={() => setShowModal(false)}
+          >
+            Cancel
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+)}
       {/* ====== NEW: Material Modal ====== */}
 {showMaterialModal && (
   <div
@@ -579,54 +607,71 @@ const [materialForm, setMaterialForm] = useState({
           ></button>
         </div>
 
-     <div
-  className="modal-body p-2"
-  style={{
-    fontSize: "13px",
-    maxHeight: "400px",
-    overflowY: "auto",   // vertical scroll
-    overflowX: "hidden", // no horizontal scroll
-  }}
->
-          <div className="row">
-            {/* ✅ Left Side - Materials List */}
-          <div className="col-6 border-end">
-  <h6 style={{ fontSize: "13px" }}>Added Materials</h6>
-  {tempMaterials.length > 0 ? (
-    <ul className="list-group list-group-sm">
-      {tempMaterials.map((m, index) => (
-        <li
-          key={index}
-          className="list-group-item d-flex justify-content-between align-items-center py-1 px-2"
-          style={{ fontSize: "12px" }}
+        <div
+          className="modal-body p-2"
+          style={{
+            fontSize: "13px",
+            maxHeight: "400px",
+            overflowY: "auto",
+            overflowX: "hidden",
+          }}
         >
-          <span className="me-2 flex-grow-1">
-            {m.material} | {m.weight} Kg | ₹{m.price}
-          </span>
-          <button
-            className="btn btn-sm btn-danger py-0 px-2"
-            onClick={() => removeTempMaterial(index)}
-          >
-            x
-          </button>
-        </li>
-      ))}
-    </ul>
-  ) : (
-    <p className="text-muted" style={{ fontSize: "12px" }}>
-      No materials added yet
-    </p>
-  )}
+          <div className="row">
+            {/* Left Side - Materials List */}
+<div className="col-6 border-end d-flex flex-column">
+  <h6 style={{ fontSize: "13px" }}>Added Materials</h6>
 
+  {/* Scrollable List */}
+  <div
+    style={{
+      maxHeight: "250px",   // adjust as needed
+      overflowY: "auto",
+      overflowX: "hidden",
+      flexGrow: 1,
+    }}
+    className="mb-2"
+  >
+    {tempMaterials.length > 0 ? (
+      <ul className="list-group list-group-sm">
+        {tempMaterials.map((m, index) => (
+          <li
+            key={index}
+            className="list-group-item d-flex justify-content-between align-items-center py-1 px-2"
+            style={{ fontSize: "12px" }}
+          >
+            <span className="me-2 flex-grow-1">
+              {m.material} | {m.weight} Kg | ₹{m.price}
+            </span>
+            <button
+              className="btn btn-sm btn-danger py-0 px-2"
+              onClick={() => removeTempMaterial(index)}
+            >
+              x
+            </button>
+          </li>
+        ))}
+      </ul>
+    ) : (
+      <p className="text-muted" style={{ fontSize: "12px" }}>
+        No materials added yet
+      </p>
+    )}
+  </div>
+
+  {/* Footer stays fixed below list */}
   <div className="modal-footer py-2 px-3">
     <button
       className="btn btn-sm btn-primary"
+      ref={(el) => (inputRefs.current[0] = el)}
+      onKeyDown={(e) => handleKeyDown(e, 0)}
       onClick={handleSaveMaterial}
     >
       Save
     </button>
     <button
       className="btn btn-sm btn-secondary"
+      ref={(el) => (inputRefs.current[1] = el)}
+      onKeyDown={(e) => handleKeyDown(e, 1)}
       onClick={() => setShowMaterialModal(false)}
     >
       Close
@@ -634,67 +679,82 @@ const [materialForm, setMaterialForm] = useState({
   </div>
 </div>
 
-            {/* ✅ Right Side - Add New Material */}
+            {/* Right Side - Add New Material */}
             <div className="col-6">
               <h6 style={{ fontSize: "13px" }}>New Material</h6>
 
-<div className="mb-2">
-  <label className="form-label" style={{ fontSize: "13px" }}>Material</label>
-  <select
-    className="form-select form-select-sm"
-    value={materialForm.material}
-    onChange={(e) =>
-      setMaterialForm({ ...materialForm, material: e.target.value })
-    }
-  >
-    <option value="">Select Material</option>
-    <option value="Bedsheet">Bedsheet</option>
-    <option value="Towel">Towel</option>
-  </select>
-</div>
+              {/* Material select */}
+              <div className="mb-2">
+                <label className="form-label" style={{ fontSize: "13px" }}>Material</label>
+                <select
+                  className="form-select form-select-sm"
+                  value={materialForm.material}
+                  onChange={(e) =>
+                    setMaterialForm({ ...materialForm, material: e.target.value })
+                  }
+                  ref={(el) => (inputRefs.current[2] = el)}
+                  onKeyDown={(e) => handleKeyDown(e, 2)}
+                >
+                  <option value="">Select Material</option>
+                  <option value="Bedsheet">Bedsheet</option>
+                  <option value="Towel">Towel</option>
+                </select>
+              </div>
 
-           <div className="mb-2">
-  <label className="form-label" style={{ fontSize: "13px" }}>Weight (Kg)</label>
-  <input
-    type="text"   // ✅ use text so filtering works
-    className="form-control form-control-sm"
-    value={materialForm.weight}
-    onKeyDown={isNumberKey}  // ✅ restrict keys
-    onChange={(e) =>
-      setMaterialForm({ ...materialForm, weight: e.target.value })
-    }
-  />
-</div>
+              {/* Weight input */}
+              <div className="mb-2">
+                <label className="form-label" style={{ fontSize: "13px" }}>Weight (Kg)</label>
+                <input
+                  type="text"
+                  className="form-control form-control-sm"
+                  value={materialForm.weight}
+                  onKeyDown={(e) => {
+                    isNumberKey(e);
+                    handleKeyDown(e, 3);
+                  }}
+                  onChange={(e) =>
+                    setMaterialForm({ ...materialForm, weight: e.target.value })
+                  }
+                  ref={(el) => (inputRefs.current[3] = el)}
+                />
+              </div>
 
-<div className="mb-2">
-  <label className="form-label" style={{ fontSize: "13px" }}>Price (₹)</label>
-  <input
-    type="text"   // ✅ use text so filtering works
-    className="form-control form-control-sm"
-    value={materialForm.price}
-    onKeyDown={isNumberKey}  // ✅ restrict keys
-    onChange={(e) =>
-      setMaterialForm({ ...materialForm, price: e.target.value })
+              {/* Price input */}
+              <div className="mb-2">
+                <label className="form-label" style={{ fontSize: "13px" }}>Price (₹)</label>
+                <input
+                  type="text"
+                  className="form-control form-control-sm"
+                  value={materialForm.price}
+                  onKeyDown={(e) => {
+                    isNumberKey(e);
+                    handleKeyDown(e, 4);
+                  }}
+                  onChange={(e) =>
+                    setMaterialForm({ ...materialForm, price: e.target.value })
+                  }
+                  ref={(el) => (inputRefs.current[4] = el)}
+                />
+              </div>
+
+              {/* Add button */}
+       <button
+  className="btn btn-sm btn-success"
+  ref={(el) => (inputRefs.current[5] = el)}
+  onKeyDown={(e) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      addTempMaterial();   // ✅ Add material on Enter
     }
-  />
-</div>
-              <button
-                className="btn btn-sm btn-success"
-                onClick={addTempMaterial}
-              >
-                Add
-              </button>
+  }}
+  onClick={addTempMaterial}
+>
+  Add
+</button>
+
             </div>
+            
           </div>
-        </div>
-
-        <div className="modal-footer py-2 px-3">
-          <button
-            className="btn btn-sm btn-secondary"
-            onClick={() => setShowMaterialModal(false)}
-          >
-            Close
-          </button>
         </div>
       </div>
     </div>

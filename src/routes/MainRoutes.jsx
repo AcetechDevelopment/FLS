@@ -77,7 +77,7 @@ const MainRoutes = {
           path: '/usermaster',
           element: <UserMaster />
         }, {
-          path: '/supplier',
+          path: '/customer',
           element: <SupplierMaster />
         },
          {

@@ -86,7 +86,7 @@ const PriceMaster = () => {
     <tr>
       <th className="table-header" style={{ width: "60px" }}>Sl.No</th>
       <th className="table-header">Material</th>
-      <th className="table-header">Supplier</th>
+      <th className="table-header">  Customer     </th>
       <th className="table-header" style={{ width: "100px" }}>Price</th>
     </tr>
   </thead>

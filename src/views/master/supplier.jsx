@@ -18,6 +18,25 @@ const SupplierMaster = () => {
     image: null,
   });
 
+
+    // on key navigation 
+  // refs for navigation
+const inputRefs = useRef([]);
+
+// Enter key navigation
+const handleKeyDown = (e, index) => {
+  if (e.key === "Enter") {
+    e.preventDefault(); // stop form submit
+    const next = inputRefs.current[index + 1];
+    if (next) {
+      next.focus();
+    } else {
+      // focus Save button if last field
+      document.getElementById("saveSupplierBtn")?.focus();
+    }
+  }
+};
+
   const fileInputRef = useRef(null); // ✅ reference for file input
 
   // ✅ Remove image + clear file input
@@ -255,8 +274,8 @@ const exportExcel = () => {
         <table id="supplier-table" className="table table-bordered table-striped align-middle"   style={{ fontSize: "12px" }}>
           <thead className="table-primary" style={{ fontSize: "12px" }}>
 <tr className="text-center">
-  <th className="py-1 px-1">Supplier Code</th>
-  <th className="py-1 px-1">Supplier Name</th>
+  <th className="py-1 px-1">Customer Code</th>
+  <th className="py-1 px-1">Customer Name</th>
   <th className="py-1 px-1">Address</th> {/* ✅ Added Address */}
   <th className="py-1 px-1">GST No.</th>
   <th className="py-1 px-1">Image</th>
@@ -377,7 +396,6 @@ const exportExcel = () => {
         </table>
       </div>
 
-      {/* Modal (Add/Edit Supplier) */}
 {showModal && (
   <div className="modal fade show d-block" tabIndex="-1">
     <div className="modal-dialog modal-sm modal-dialog-scrollable">
@@ -400,16 +418,23 @@ const exportExcel = () => {
           className="modal-body p-2"
           style={{ maxHeight: "300px", overflowY: "auto" }}
         >
+          {/** ✅ Refs for Enter Navigation */}
+          {(() => {
+            if (!inputRefs.current) inputRefs.current = [];
+          })()}
+
           {/* Supplier Code */}
           <div className="mb-2">
             <label className="form-label" style={{ fontSize: "12px" }}>
-              Supplier Code
+              Customer Code
             </label>
             <input
               type="text"
               className="form-control form-control-sm"
               value={formData.code}
               readOnly
+              ref={(el) => (inputRefs.current[0] = el)}
+              onKeyDown={(e) => handleKeyDown(e, 0)}
             />
           </div>
 
@@ -425,25 +450,30 @@ const exportExcel = () => {
               onChange={(e) =>
                 setFormData({ ...formData, name: e.target.value })
               }
+              ref={(el) => (inputRefs.current[1] = el)}
+              onKeyDown={(e) => handleKeyDown(e, 1)}
             />
           </div>
 
           {/* Supplier Group */}
-          <div className="mb-2">
-            <label className="form-label" style={{ fontSize: "12px" }}>
-              Supplier Group
-            </label>
-            <select
-              className="form-select form-select-sm"
-              value={formData.group}
-              onChange={(e) =>
-                setFormData({ ...formData, group: e.target.value })
-              }
-            >
-              <option value="Hospital">Hospital</option>
-              <option value="Hotel">Hotel</option>
-            </select>
-          </div>
+<div className="mb-2">
+  <label className="form-label" style={{ fontSize: "12px" }}>
+    Customer Group
+  </label>
+  <select
+    className="form-select form-select-sm"
+    value={formData.group}
+    onChange={(e) =>
+      setFormData({ ...formData, group: e.target.value })
+    }
+    ref={(el) => (inputRefs.current[2] = el)}
+    onKeyDown={(e) => handleKeyDown(e, 2)}
+  >
+    <option value="">  Select Type </option>  {/* ✅ placeholder option */}
+    <option value="Hospital">Hospital</option>
+    <option value="Hotel">Hotel</option>
+  </select>
+</div>
 
           {/* GST Number */}
           <div className="mb-2">
@@ -461,6 +491,8 @@ const exportExcel = () => {
                   setFormData({ ...formData, gst: value });
                 }
               }}
+              ref={(el) => (inputRefs.current[3] = el)}
+              onKeyDown={(e) => handleKeyDown(e, 3)}
             />
           </div>
 
@@ -476,6 +508,8 @@ const exportExcel = () => {
               onChange={(e) =>
                 setFormData({ ...formData, address: e.target.value })
               }
+              ref={(el) => (inputRefs.current[4] = el)}
+              onKeyDown={(e) => handleKeyDown(e, 4)}
             />
           </div>
 
@@ -489,7 +523,8 @@ const exportExcel = () => {
               className="form-control form-control-sm"
               accept="image/*"
               onChange={handleImageUpload}
-              ref={fileInputRef}
+              ref={(el) => (inputRefs.current[5] = el)}
+              onKeyDown={(e) => handleKeyDown(e, 5)}
             />
 
             {formData.image && (
@@ -532,6 +567,7 @@ const exportExcel = () => {
         {/* ✅ Modal Footer */}
         <div className="modal-footer py-2">
           <button
+            id="saveSupplierBtn"
             className="btn btn-primary btn-sm"
             onClick={handleSaveSupplier}
           >
@@ -549,7 +585,6 @@ const exportExcel = () => {
     </div>
   </div>
 )}
-
 
       {/* Image Preview Modal */}
       {showImageModal && (

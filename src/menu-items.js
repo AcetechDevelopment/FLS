@@ -204,7 +204,7 @@ const menuItems = {
   icon: 'material-icons-two-tone',
  iconname: 'folder',
   children: [
-    { id: 'supplier', title: 'Supplier', type: 'item', url: './supplier' },
+    { id: 'supplier', title: 'Customer', type: 'item', url: './customer' },
     { id: 'price-master', title: 'Price Master', type: 'item', url: './pricemaster' },
     { id: 'material-master', title: 'Material Master', type: 'item', url: './materialmaster' },
     { id: 'user-master', title: 'User Master', type: 'item', url: './usermaster' },
