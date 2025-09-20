@@ -214,7 +214,7 @@ const exportExcel = () => {
   return (
     <div className="container">
 
-<div className="d-flex flex-wrap gap-1 mb-3">
+<div className="d-flex flex-wrap gap-2 mb-2 px-2">
   {/* New Supplier */}
   <button
     className="btn btn-sm btn-success py-1 px-2 d-flex align-items-center"

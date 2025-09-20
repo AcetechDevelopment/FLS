@@ -211,77 +211,84 @@ const handlePrint = () => {
     <div className="container mt-0">
       {/* Toolbar */}
      {/* Toolbar */}
-      <div className="d-flex justify-content-between align-items-center mb-2 flex-wrap">
-        <div className="d-flex flex-wrap gap-1 mb-2">
+<div className="d-flex justify-content-between align-items-center mb-2 flex-wrap px-2">
+  {/* Left side buttons */}
+  <div className="d-flex flex-wrap gap-2">
+    <button
+      className="btn btn-sm btn-success py-1 px-2 d-flex align-items-center"
+      style={{ borderRadius: "8px", fontSize: "13px" }}
+      onClick={handleNewMaterial}
+    >
+      <span
+        className="material-icons-two-tone me-1"
+        style={{ fontSize: "12px" }}
+      >
+        add
+      </span>
+      New
+    </button>
 
-<button
-  className="btn btn-sm btn-success py-1 px-2 d-flex align-items-center"
-  style={{ borderRadius: "8px", fontSize: "13px" }}
-  onClick={handleNewMaterial}
->
-  <span
-    className="material-icons-two-tone me-1"
-    style={{ fontSize: "12px" }}
-  >
-    add
-  </span>
-  New
-</button>
+    <button
+      className="btn btn-sm btn-danger py-1 px-2 d-flex align-items-center"
+      style={{ borderRadius: "8px", fontSize: "13px" }}
+      onClick={exportPDF}
+    >
+      <span
+        className="material-icons-two-tone me-1"
+        style={{ fontSize: "14px" }}
+      >
+        picture_as_pdf
+      </span>
+      PDF
+    </button>
 
-     <button
-  className="btn btn-sm btn-danger py-1 px-2 d-flex align-items-center"
-  style={{ borderRadius: "8px", fontSize: "13px" }}
-  onClick={exportPDF}
->
-  <span
-    className="material-icons-two-tone me-1"
-    style={{ fontSize: "14px" }}
-  >
-    picture_as_pdf
-  </span>
-  PDF
-</button>
+    <button
+      className="btn btn-sm text-white py-1 px-2 d-flex align-items-center"
+      style={{
+        backgroundColor: "#1D6F42",
+        borderColor: "#1D6F42",
+        borderRadius: "8px",
+        fontSize: "13px",
+      }}
+      onClick={exportExcel}
+    >
+      <span
+        className="material-icons-two-tone me-1"
+        style={{ fontSize: "14px" }}
+      >
+        grid_on
+      </span>
+      Excel
+    </button>
 
-<button
-  className="btn btn-sm text-white py-1 px-2 d-flex align-items-center"
-  style={{ backgroundColor: "#1D6F42", borderColor: "#1D6F42", borderRadius: "8px", fontSize: "13px" }}
-  onClick={exportExcel}
->
-  <span
-    className="material-icons-two-tone me-1"
-    style={{ fontSize: "14px" }}
-  >
-    grid_on
-  </span>
-  Excel
-</button>
+    <button
+      className="btn btn-sm btn-primary py-1 px-2 d-flex align-items-center"
+      style={{ borderRadius: "8px", fontSize: "13px" }}
+      onClick={handlePrint}
+    >
+      <span
+        className="material-icons-two-tone me-1"
+        style={{ fontSize: "14px" }}
+      >
+        print
+      </span>
+      Print
+    </button>
+  </div>
 
-<button
-  className="btn btn-sm btn-primary py-1 px-2 d-flex align-items-center"
-  style={{ borderRadius: "8px", fontSize: "13px" }}
-  onClick={handlePrint}
->
-  <span
-    className="material-icons-two-tone me-1"
-    style={{ fontSize: "14px" }}
-  >
-    print
-  </span>
-  Print
-</button>
- </div>
-
-       <div style={{ width: "250px" }}>
-  <input
-    type="text"
-    className="form-control form-control-sm"
-    placeholder="🔍 Search material..."
-    value={search}
-    onChange={(e) => setSearch(e.target.value)}
-    style={{ borderRadius: "8px" }}
-  />
+  {/* Right side search */}
+  <div style={{ width: "250px" }}>
+    <input
+      type="text"
+      className="form-control form-control-sm"
+      placeholder="🔍 Search material..."
+      value={search}
+      onChange={(e) => setSearch(e.target.value)}
+      style={{ borderRadius: "8px" }}
+    />
+  </div>
 </div>
-      </div>
+
 
       {/* Table */}
     <div className="table-responsive">
@@ -565,7 +572,6 @@ const handlePrint = () => {
     ref={(el) => (inputRefs.current[2] = el)}
   />
 </div>
-
 
           <div className="mb-2">
             <label className="form-label" style={{ fontSize: "12px" }}>

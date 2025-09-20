@@ -2,61 +2,43 @@ export const PrintUtils = {
   Print: (materials) => {
     if (!materials.length) return alert("No materials to print.");
 
-    // ✅ Challan header + company details
+    // ✅ Challan header + company details (as per screenshot)
     const challanHeader = `
-      <div style="border:1px solid black; padding:10px; font-family: Arial, sans-serif; font-size: 10px;">
-        <h4 style="text-align:center; margin:0; font-size: 11px;">THE ACEDIGITAL TECHNOLOGIES PRIVATE LIMITED</h4>
-        <p style="text-align:center; margin:0; font-size: 9px;">
-          Office: No 15, Lalith Towers, Kambar Street, GST Road, Alandur, Chennai-600016<br/>
-          Warehouse: No:100, Murugencherry Village, Aranvoyalk Post, Thiruvallur-602025<br/>
-          Phone: 9842856792
-        </p>
+      <div style="border:1px solid black; padding:10px; font-family: Arial, sans-serif; font-size: 11px;">
+        <h3 style="text-align:center; margin:0; font-size: 14px; font-weight:bold;">
+          DELIVERY CHALLAN
+        </h3>
 
-        <table style="width:100%; margin-top:10px; border-collapse: collapse; font-size: 9px;">
+        <table border="1" cellspacing="0" cellpadding="4" 
+               style="width:100%; margin-top:10px; border-collapse: collapse; font-size: 11px;">
           <tr>
-            <td style="width:33%; vertical-align:top;">
-              <b>PAN</b>: AAHCT2375H<br/>
-              <b>GSTIN</b>: 33AAHCT2375H1ZB<br/>
-              <b>Reference</b>:
+            <td style="width:70%; vertical-align:top;">
+              <b>FROM:</b><br/>
+              FABRIQUE LAUNDROMAT SERVICES PVT. LTD.<br/>
+              No 100, Muruganchery Village<br/>
+              Aranvoyalkuppam<br/>
+              Thiruvallur-602 025<br/>
+              GST No : 33AACCF5181G2ZZ
             </td>
-            <td style="width:34%; vertical-align:top; text-align:center; font-weight:bold;">
-              NOT FOR SALE
+            <td style="width:30%; vertical-align:top;">
+              <b>RECEIVED DATE:</b> 17.09.2025<br/><br/>
+              <b>SENDING DATE:</b> 18.09.2025
             </td>
-            <td style="width:33%; vertical-align:top; text-align:right;">
-              <b>Delivery Challan No</b>: DC20251756961678<br/>
-              <b>Dispatch Date</b>: 04-Sep-2025<br/>
-              <b>541/542 Reference</b>: 541-2025-1004623
+          </tr>
+          <tr>
+            <td colspan="2" style="vertical-align:top;">
+              <b>TO:</b><br/>
+              APOLLO HOSPITALS<br/>
+              <b>TONDAIRPET, CHENNAI</b>
             </td>
           </tr>
         </table>
 
-        <table border="1" cellspacing="0" cellpadding="4" style="width:100%; margin-top:10px; border-collapse: collapse; font-size: 9px;">
+        <table border="1" cellspacing="0" cellpadding="4" 
+               style="width:100%; margin-top:10px; border-collapse: collapse; font-size: 11px;">
           <tr>
-            <td style="width:33%; vertical-align:top;">
-              <b>Bill From</b><br/>
-              ACEDIGITAL<br/>
-              THEACE DIGITAL TECHNOLOGIES PRIVATE LIMITED,<br/>
-              NO 100 THIRUVALLUR HIGH ROAD,<br/>
-              THIRUVALLUR TALUK, CHENNAI, 602025<br/>
-              Tamil Nadu, India.<br/>
-              <b>GSTIN</b>: 33AAHCT2375H1ZB<br/>
-              <b>Vendor Code</b>: C8141N0
-            </td>
-            <td style="width:34%; vertical-align:top;">
-              <b>Bill To</b><br/>
-              WIPRO ENTERPRISES (P) LIMITED<br/>
-              NO.9B/10A, PHASE 1, PEENYA INDUSTRIAL AREA,<br/>
-              BANGALORE<br/>
-              <b>GSTIN</b>: 29AAJCA0072C1Z1<br/>
-              <b>Vendor Code</b>: B5700X0
-            </td>
-            <td style="width:33%; vertical-align:top;">
-              <b>Ship To</b><br/>
-              WIPRO ENTERPRISES (P) LIMITED<br/>
-              NO.9B/10A, PHASE 1, PEENYA INDUSTRIAL AREA,<br/>
-              BANGALORE<br/>
-              <b>Mode Of Transport</b>: Road
-            </td>
+            <td style="width:50px;"><b>Sl.No</b></td>
+            <td><b>1074</b></td>
           </tr>
         </table>
       </div>
@@ -65,12 +47,12 @@ export const PrintUtils = {
     // ✅ Materials Table
     const materialsTable = `
       <table border="1" cellspacing="0" cellpadding="4" 
-             style="width:100%; margin-top:15px; text-align:center; border-collapse:collapse; font-family: Arial, sans-serif; font-size: 9px;">
-        <thead style="background:#f0f0f0; color:black; font-size: 9px; font-weight:bold;">
+             style="width:100%; margin-top:15px; text-align:center; border-collapse:collapse; font-family: Arial, sans-serif; font-size: 11px;">
+        <thead style="background:#f0f0f0; color:black; font-size: 11px; font-weight:bold;">
           <tr>
-            <th style="font-weight:bold;">Sl.No</th>
-            <th style="font-weight:bold;">Material</th>
-            <th style="font-weight:bold;">Qty</th>
+            <th>Sl.No</th>
+            <th>Material</th>
+            <th>Qty</th>
           </tr>
         </thead>
         <tbody>

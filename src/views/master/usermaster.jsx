@@ -205,9 +205,9 @@ const handlePrint = () => {
       </div> */}
 
       {/* Toolbar */}
-<div className="d-flex justify-content-between align-items-center mb-1">
+<div className="d-flex justify-content-between align-items-center mb-2 px-2">
   {/* ✅ Action Buttons */}
-  <div className="d-flex flex-wrap gap-1 mb-3">
+  <div className="d-flex flex-wrap gap-2">
     {/* New User */}
     <button
       className="btn btn-sm btn-success py-1 px-2 d-flex align-items-center"
@@ -275,17 +275,18 @@ const handlePrint = () => {
   </div>
 
   {/* ✅ Search Box */}
-<div style={{ width: "250px" }}>
-  <input
-    type="text"
-    className="form-control form-control-sm"
-    placeholder="🔍 Search user..."
-    value={search}
-    onChange={(e) => setSearch(e.target.value)}
-    style={{ borderRadius: "8px" }}
-  />
+  <div style={{ width: "250px" }}>
+    <input
+      type="text"
+      className="form-control form-control-sm"
+      placeholder="🔍 Search user..."
+      value={search}
+      onChange={(e) => setSearch(e.target.value)}
+      style={{ borderRadius: "8px" }}
+    />
+  </div>
 </div>
-</div>
+
 
 
       {/* ✅ Responsive Table */}

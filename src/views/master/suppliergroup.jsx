@@ -270,87 +270,87 @@ const [materialForm, setMaterialForm] = useState({
   return (
     <div className="container">
       {/* Toolbar */}
-      <div className="d-flex justify-content-between align-items-center mb-1">
-        {/* ✅ Action Buttons */}
-        <div className="d-flex flex-wrap gap-1 mb-3">
-          {/* New Group */}
-          <button
-            className="btn btn-sm btn-success py-1 px-2 d-flex align-items-center"
-            style={{ borderRadius: "8px", fontSize: "12px" }}
-            onClick={handleNewGroup}
-          >
-            <span
-              className="material-icons-two-tone me-1"
-              style={{ fontSize: "12px" }}
-            >
-              add
-            </span>
-            New
-          </button>
+<div className="d-flex justify-content-between align-items-center mb-2 px-2">
+  {/* ✅ Action Buttons */}
+  <div className="d-flex flex-wrap gap-2">
+    {/* New Group */}
+    <button
+      className="btn btn-sm btn-success py-1 px-2 d-flex align-items-center"
+      style={{ borderRadius: "8px", fontSize: "12px" }}
+      onClick={handleNewGroup}
+    >
+      <span
+        className="material-icons-two-tone me-1"
+        style={{ fontSize: "12px" }}
+      >
+        add
+      </span>
+      New
+    </button>
 
-          {/* PDF */}
-          {/* <button
-            className="btn btn-sm btn-danger py-1 px-2 d-flex align-items-center"
-            style={{ borderRadius: "8px", fontSize: "13px" }}
-            onClick={exportPDF}
-          >
-            <span
-              className="material-icons-two-tone me-1"
-              style={{ fontSize: "14px" }}
-            >
-              picture_as_pdf
-            </span>
-            PDF
-          </button> */}
+    {/* PDF */}
+    {/* <button
+      className="btn btn-sm btn-danger py-1 px-2 d-flex align-items-center"
+      style={{ borderRadius: "8px", fontSize: "13px" }}
+      onClick={exportPDF}
+    >
+      <span
+        className="material-icons-two-tone me-1"
+        style={{ fontSize: "14px" }}
+      >
+        picture_as_pdf
+      </span>
+      PDF
+    </button> */}
 
-          {/* Excel */}
-          {/* <button
-            className="btn btn-sm text-white py-1 px-2 d-flex align-items-center"
-            style={{
-              backgroundColor: "#1D6F42",
-              borderColor: "#1D6F42",
-              borderRadius: "8px",
-              fontSize: "13px",
-            }}
-            onClick={exportExcel}
-          >
-            <span
-              className="material-icons-two-tone me-1"
-              style={{ fontSize: "14px" }}
-            >
-              grid_on
-            </span>
-            Excel
-          </button> */}
+    {/* Excel */}
+    {/* <button
+      className="btn btn-sm text-white py-1 px-2 d-flex align-items-center"
+      style={{
+        backgroundColor: "#1D6F42",
+        borderColor: "#1D6F42",
+        borderRadius: "8px",
+        fontSize: "13px",
+      }}
+      onClick={exportExcel}
+    >
+      <span
+        className="material-icons-two-tone me-1"
+        style={{ fontSize: "14px" }}
+      >
+        grid_on
+      </span>
+      Excel
+    </button> */}
 
-          {/* Print */}
-          {/* <button
-            className="btn btn-sm btn-primary py-1 px-2 d-flex align-items-center"
-            style={{ borderRadius: "8px", fontSize: "13px" }}
-            onClick={handlePrint}
-          >
-            <span
-              className="material-icons-two-tone me-1"
-              style={{ fontSize: "14px" }}
-            >
-              print
-            </span>
-            Print
-          </button> */}
-        </div>
+    {/* Print */}
+    {/* <button
+      className="btn btn-sm btn-primary py-1 px-2 d-flex align-items-center"
+      style={{ borderRadius: "8px", fontSize: "13px" }}
+      onClick={handlePrint}
+    >
+      <span
+        className="material-icons-two-tone me-1"
+        style={{ fontSize: "14px" }}
+      >
+        print
+      </span>
+      Print
+    </button> */}
+  </div>
 
-        {/* ✅ Search Box */}
-        <div style={{ width: "250px" }}>
-          <input
-            type="text"
-            className="form-control form-control-sm"
-            placeholder="🔍 Search group..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            style={{ borderRadius: "8px" }}
-          />
-        </div>
-      </div>
+  {/* ✅ Search Box */}
+  <div style={{ width: "250px" }}>
+    <input
+      type="text"
+      className="form-control form-control-sm"
+      placeholder="🔍 Search group..."
+      value={search}
+      onChange={(e) => setSearch(e.target.value)}
+      style={{ borderRadius: "8px" }}
+    />
+  </div>
+</div>
 
       {/* ✅ Table */}
 <div className="table-responsive">
@@ -659,7 +659,7 @@ const [materialForm, setMaterialForm] = useState({
   </div>
 
   {/* Footer stays fixed below list */}
-  <div className="modal-footer py-2 px-3">
+  {/* <div className="modal-footer py-2 px-3">
     <button
       className="btn btn-sm btn-primary"
       ref={(el) => (inputRefs.current[0] = el)}
@@ -676,7 +676,7 @@ const [materialForm, setMaterialForm] = useState({
     >
       Close
     </button>
-  </div>
+  </div> */}
 </div>
 
             {/* Right Side - Add New Material */}

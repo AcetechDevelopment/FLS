@@ -112,15 +112,19 @@ const [newMaterial, setNewMaterial] = useState({ material: "", quantity: "" });
     setMaterials((prev) => prev.filter((m) => m.id !== id));
   };
 
-  // challan print code 
-     const challan = {
-    no: "DC2025175961678",
-    date: new Date().toLocaleDateString(),
-    reference: "541-2025-1004623",
-    billFrom: "AceDigital Technologies Pvt Ltd\nChennai, Tamil Nadu",
-    billTo: "Wipro Enterprises Pvt Ltd\nBangalore, Karnataka",
-  };
-
+const challan = {
+  type: "DELIVERY CHALLAN",
+  from: `FABRIQUE LAUNDROMAT SERVICES PVT. LTD.
+No 100, Muruganchery Village
+Aranvoyalkuppam
+Thiruvallur – 602 025
+GST No: 33AACCF5181G2ZZ`,
+  to: `APOLLO HOSPITALS
+TONDAIRPET, CHENNAI`,
+  receivedDate: "17.09.2025",
+  sendingDate: "18.09.2025",
+  slNo: "1074"
+};
 
   return (
 <div

@@ -10,86 +10,67 @@ export const DispatchPrintUtils = {
       (sum, m) => sum + (Number(m.qty) || 0),
       0
     );
-    const totalAmount = dispatchData.materials.reduce(
-      (sum, m) => sum + ((Number(m.qty) || 0) * (Number(m.price) || 0)),
-      0
-    );
 
-    // ✅ Updated Dispatch Challan header
+    // ✅ Challan Header (as per screenshot)
     const challanHeader = `
-      <div style="border:1px solid black; padding:10px; font-family: Arial, sans-serif; font-size: 10px;">
-        <h4 style="text-align:center; margin:0; font-size: 11px;">THE ACEDIGITAL TECHNOLOGIES PRIVATE LIMITED</h4>
-        <p style="text-align:center; margin:0; font-size: 9px;">
-          Office: No 15, Lalith Towers, Kambar Street, GST Road, Alandur, Chennai-600016<br/>
-          Warehouse: No:100, Murugencherry Village, Aranvoyalk Post, Thiruvallur-602025<br/>
-          Phone: 9842856792
-        </p>
+      <div style="font-family: Arial, sans-serif; font-size: 11px;">
+        <h3 style="text-align:center; margin:0; font-size: 14px; font-weight:bold;">
+          DELIVERY CHALLAN
+        </h3>
 
-        <table style="width:100%; margin-top:10px; border-collapse: collapse; font-size: 9px;">
+        <table border="1" cellspacing="0" cellpadding="4" 
+               style="width:100%; margin-top:5px; border-collapse: collapse; font-size: 11px;">
           <tr>
-            <td style="width:33%; vertical-align:top;">
-              <b>PAN</b>: AAHCT2375H<br/>
-              <b>GSTIN</b>: 33AAHCT2375H1ZB<br/>
-              <b>Reference</b>: ${dispatchData.referenceNo || "-"}
+            <!-- FROM Section -->
+            <td rowspan="2" style="width:65%; vertical-align:top; text-align:left;">
+              <b>FROM:</b><br/>
+              FABRIQUE LAUNDROMAT SERVICES PVT. LTD.<br/>
+              No 100, Muruganchery Village<br/>
+              Aranvoyalkuppam<br/>
+              Thiruvallur-602 025<br/>
+              GST No : 33AACCF5181G2ZZ
             </td>
-            <td style="width:34%; vertical-align:top; text-align:center; font-weight:bold;">
-              NOT FOR SALE
-            </td>
-            <td style="width:33%; vertical-align:top; text-align:right;">
-              <b>Delivery Challan No</b>: ${dispatchData.dispatchNo || "-"}<br/>
-              <b>Dispatch Date</b>: ${
-                dispatchData.date
-                  ? new Date(dispatchData.date).toLocaleDateString()
-                  : "-"
-              }<br/>
-              <b>541/542 Reference</b>: ${dispatchData.ref541 || "-"}
+
+            <!-- RECEIVED DATE -->
+            <td style="width:15%;"><b>RECEIVED DATE:-</b></td>
+            <td style="width:20%; text-align:center;">
+              ${dispatchData.receivedDate || "17.09.2025"}
             </td>
           </tr>
-        </table>
-
-        <table border="1" cellspacing="0" cellpadding="4" style="width:100%; margin-top:10px; border-collapse: collapse; font-size: 9px;">
           <tr>
-            <td style="width:33%; vertical-align:top;">
-              <b>Bill From</b><br/>
-              ACEDIGITAL<br/>
-              THEACE DIGITAL TECHNOLOGIES PRIVATE LIMITED,<br/>
-              NO 100 THIRUVALLUR HIGH ROAD,<br/>
-              THIRUVALLUR TALUK, CHENNAI, 602025<br/>
-              Tamil Nadu, India.<br/>
-              <b>GSTIN</b>: 33AAHCT2375H1ZB<br/>
-              <b>Vendor Code</b>: C8141N0
+            <!-- SENDING DATE -->
+            <td><b>SENDING DATE:-</b></td>
+            <td style="text-align:center;">
+              ${dispatchData.sendingDate || "18.09.2025"}
             </td>
-            <td style="width:34%; vertical-align:top;">
-              <b>Bill To</b><br/>
-              WIPRO ENTERPRISES (P) LIMITED<br/>
-              NO.9B/10A, PHASE 1, PEENYA INDUSTRIAL AREA,<br/>
-              BANGALORE<br/>
-              <b>GSTIN</b>: 29AAJCA0072C1Z1<br/>
-              <b>Vendor Code</b>: B5700X0
+          </tr>
+          <tr>
+            <!-- TO Section -->
+            <td style="vertical-align:top; text-align:left;">
+              <b>TO:</b><br/>
+              APOLLO HOSPITALS<br/>
+              <b>TONDAIRPET, CHENNAI</b>
             </td>
-            <td style="width:33%; vertical-align:top;">
-              <b>Ship To</b><br/>
-              WIPRO ENTERPRISES (P) LIMITED<br/>
-              NO.9B/10A, PHASE 1, PEENYA INDUSTRIAL AREA,<br/>
-              BANGALORE<br/>
-              <b>Mode Of Transport</b>: Road
+
+            <!-- Sl.No -->
+            <td><b>Sl.No</b></td>
+            <td style="text-align:center;">
+              ${dispatchData.slNo || "1074"}
             </td>
           </tr>
         </table>
       </div>
     `;
 
-    // ✅ Materials Table (with Price & Amount)
+    // ✅ Materials Table (like in screenshot, Description + Qty type cols)
     const materialsTable = `
       <table border="1" cellspacing="0" cellpadding="4" 
-             style="width:100%; margin-top:15px; text-align:center; border-collapse:collapse; font-family: Arial, sans-serif; font-size: 9px;">
-        <thead style="background:#f0f0f0; color:black; font-size: 9px; font-weight:bold;">
+             style="width:100%; margin-top:10px; text-align:center; border-collapse:collapse; font-family: Arial, sans-serif; font-size: 11px;">
+        <thead style="background:#f0f0f0; color:black; font-size: 11px; font-weight:bold;">
           <tr>
             <th>Sl.No</th>
-            <th>Material</th>
+            <th>Description</th>
             <th>Qty</th>
-            <th>Price</th>
-            <th>Amount</th>
           </tr>
         </thead>
         <tbody>
@@ -98,10 +79,8 @@ export const DispatchPrintUtils = {
               (m, i) => `
             <tr>
               <td>${i + 1}</td>
-              <td>${m.material || "-"}</td>
-              <td>${m.qty ?? m.quantity ?? "-"}</td>
-              <td>${m.price ?? "-"}</td>
-              <td>${(Number(m.qty) || 0) * (Number(m.price) || 0)}</td>
+              <td> ${m.material || "-"}</td>
+              <td>${m.qty ?? "-"}</td>
             </tr>
           `
             )
@@ -109,8 +88,6 @@ export const DispatchPrintUtils = {
           <tr style="font-weight:bold; background:#f9f9f9;">
             <td colspan="2" style="text-align:right;">TOTAL</td>
             <td>${totalQty}</td>
-            <td>-</td>
-            <td>${totalAmount}</td>
           </tr>
         </tbody>
       </table>
@@ -120,8 +97,8 @@ export const DispatchPrintUtils = {
     const printWindow = window.open("", "_blank");
     printWindow.document.write(`
       <html>
-        <head><title>Dispatch Challan</title></head>
-        <body>${challanHeader}${materialsTable}</body>
+        <head><title>Delivery Challan</title></head>
+        <body style="margin:20px;">${challanHeader}${materialsTable}</body>
       </html>
     `);
     printWindow.document.close();
