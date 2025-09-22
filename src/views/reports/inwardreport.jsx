@@ -150,22 +150,52 @@ const InwardReport = () => {
         </Card.Header>
         <Card.Body className="p-2">
           {/* Buttons */}
-                <div className="mb-3 d-flex justify-content-start gap-2">
-                  <Button size="sm" variant="danger" className="d-flex align-items-center px-3 py-1" onClick={exportPDF}>
-                    <span className="material-icons-two-tone me-1" style={{ fontSize: "16px" }}>picture_as_pdf</span>
-                    PDF
-                  </Button>
-                  <Button size="sm" className="d-flex align-items-center px-3 py-1 text-white"
-                    style={{ backgroundColor: "#1D6F42", borderColor: "#1D6F42" }} onClick={exportExcel}>
-                    <span className="material-icons-two-tone me-1" style={{ fontSize: "16px" }}>grid_on</span>
-                    Excel
-                  </Button>
-                  <Button size="sm" style={{ backgroundColor: "#6f42c1", borderColor: "#6f42c1" }}
-                    className="d-flex align-items-center px-3 py-1 text-white" onClick={handlePrint}>
-                    <span className="material-icons-two-tone me-1" style={{ fontSize: "16px" }}>print</span>
-                    Print
-                  </Button>
-                </div>
+             <div className="mb-3 row g-2 justify-content-center justify-content-md-start">
+  {/* PDF */}
+  <div className="col-12 col-sm-auto">
+    <Button
+      size="sm"
+      variant="danger"
+      className="w-100 d-flex align-items-center justify-content-center gap-1 px-3 py-1"
+      onClick={exportPDF}
+    >
+      <span className="material-icons-two-tone" style={{ fontSize: "16px" }}>
+        picture_as_pdf
+      </span>
+      PDF
+    </Button>
+  </div>
+
+  {/* Excel */}
+  <div className="col-12 col-sm-auto">
+    <Button
+      size="sm"
+      className="w-100 d-flex align-items-center justify-content-center gap-1 px-3 py-1 text-white"
+      style={{ backgroundColor: "#1D6F42", borderColor: "#1D6F42" }}
+      onClick={exportExcel}
+    >
+      <span className="material-icons-two-tone" style={{ fontSize: "16px" }}>
+        grid_on
+      </span>
+      Excel
+    </Button>
+  </div>
+
+  {/* Print */}
+  <div className="col-12 col-sm-auto">
+    <Button
+      size="sm"
+      className="w-100 d-flex align-items-center justify-content-center gap-1 px-3 py-1 text-white"
+      style={{ backgroundColor: "#6f42c1", borderColor: "#6f42c1" }}
+      onClick={handlePrint}
+    >
+      <span className="material-icons-two-tone" style={{ fontSize: "16px" }}>
+        print
+      </span>
+      Print
+    </Button>
+  </div>
+</div>
 
           <div className="row">
             {/* Hospital */}

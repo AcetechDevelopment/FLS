@@ -155,54 +155,48 @@ const DispatchReport = () => {
         <Card.Body className="p-2">
           {/* Buttons */}
 
-<div className="mb-3 d-flex flex-wrap gap-2 justify-content-center justify-content-md-start">
-  {/* PDF */}
-  <Button
-    size="sm"
-    variant="danger"
-    className="d-flex align-items-center px-3 py-1"
-    onClick={exportPDF}
-  >
-    <span
-      className="material-icons-two-tone me-1 d-flex align-items-center"
-      style={{ fontSize: "16px", lineHeight: "1" }}
+<div className="mb-3 row g-2 justify-content-center justify-content-md-start">
+  <div className="col-12 col-sm-auto">
+    <Button
+      size="sm"
+      variant="danger"
+      className="w-100 d-flex align-items-center justify-content-center gap-1"
+      onClick={exportPDF}
     >
-      picture_as_pdf
-    </span>
-    PDF
-  </Button>
+      <span className="material-icons-two-tone" style={{ fontSize: "18px" }}>
+        picture_as_pdf
+      </span>
+      <span>PDF</span>
+    </Button>
+  </div>
 
-  {/* Excel */}
-  <Button
-    size="sm"
-    className="d-flex align-items-center px-3 py-1 text-white"
-    style={{ backgroundColor: "#1D6F42", borderColor: "#1D6F42" }}
-    onClick={exportExcel}
-  >
-    <span
-      className="material-icons-two-tone me-1 d-flex align-items-center"
-      style={{ fontSize: "16px", lineHeight: "1" }}
+  <div className="col-12 col-sm-auto">
+    <Button
+      size="sm"
+      className="w-100 d-flex align-items-center justify-content-center gap-1 text-white"
+      style={{ backgroundColor: "#1D6F42", borderColor: "#1D6F42" }}
+      onClick={exportExcel}
     >
-      grid_on
-    </span>
-    Excel
-  </Button>
+      <span className="material-icons-two-tone" style={{ fontSize: "18px" }}>
+        grid_on
+      </span>
+      <span>Excel</span>
+    </Button>
+  </div>
 
-  {/* Print */}
-  <Button
-    size="sm"
-    style={{ backgroundColor: "#6f42c1", borderColor: "#6f42c1" }}
-    className="d-flex align-items-center px-3 py-1 text-white"
-    onClick={handlePrint}
-  >
-    <span
-      className="material-icons-two-tone me-1 d-flex align-items-center"
-      style={{ fontSize: "16px", lineHeight: "1" }}
+  <div className="col-12 col-sm-auto">
+    <Button
+      size="sm"
+      className="w-100 d-flex align-items-center justify-content-center gap-1 text-white"
+      style={{ backgroundColor: "#6f42c1", borderColor: "#6f42c1" }}
+      onClick={handlePrint}
     >
-      print
-    </span>
-    Print
-  </Button>
+      <span className="material-icons-two-tone" style={{ fontSize: "18px" }}>
+        print
+      </span>
+      <span>Print</span>
+    </Button>
+  </div>
 </div>
 
           <div className="row">
