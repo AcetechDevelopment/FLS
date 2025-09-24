@@ -129,7 +129,7 @@ const menuItems = {
           id: 'category-report',
           title: 'Category Report',
           type: 'item',
-          url: './cateworywise'
+          url: './categorywise'
         },
         {
           id: 'inward-report',
@@ -193,7 +193,7 @@ const menuItems = {
  iconname: 'build',
   children: [
     { id: 'operation-1', title: 'Material Stock', type: 'item', url: '/materialstock' },
-    { id: 'operation-2', title: 'Stock Management', type: 'item', url: '/stockadjustement' }
+    { id: 'operation-2', title: 'Stock Management', type: 'item', url: '/stockadjustment' }
   ]
 },
 
@@ -228,7 +228,23 @@ const menuItems = {
       classes: 'nav-item',
       // icon: 'material-icons-two-tone',
       iconname: 'storefront'
-    }
+    },
+    //  {
+    //   id: 'login',
+    //   title: 'Login',
+    //   type: 'item',
+    //   url: '/login',
+    //   target: true,
+    //   iconname: 'verified_user'
+    // },
+    // {
+    //   id: 'register',
+    //   title: 'Register',
+    //   type: 'item',
+    //   url: '/register',
+    //   target: true,
+    //   iconname: 'person_add_alt_1'
+    // }
   ]
 }
         // {

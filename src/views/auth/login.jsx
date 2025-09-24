@@ -1,59 +1,179 @@
-import { NavLink } from 'react-router-dom';
+import React, { useState } from "react";
+import { Card, Row, Col, Button, Form, InputGroup } from "react-bootstrap";
+import FeatherIcon from "feather-icons-react";
+import axios from "axios";
+import { useNavigate } from "react-router-dom";
+import { toast } from "react-toastify";
 
-// react-bootstrap
-import { Card, Row, Col, Button, Form, InputGroup } from 'react-bootstrap';
+export default function Login({ setIsLoggedIn }) {
+  const [mobile, setMobile] = useState("");
+  const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
 
-// third party
-import FeatherIcon from 'feather-icons-react';
+  const navigate = useNavigate();
 
-// assets
-import logoDark from 'assets/images/logo-dark.svg';
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setLoading(true);
 
-// -----------------------|| SIGNIN 1 ||-----------------------//
+    // ✅ Basic validation
+    if (!mobile || !password) {
+      toast.warning("Please enter both mobile and password");
+      setLoading(false);
+      return;
+    }
 
-export default function SignIn1() {
+    try {
+      const response = await axios.post(
+        "https://10.9.76.62/FLS/public/api/auth/login",
+        { mobile, password },
+        { headers: { "Content-Type": "application/json" } }
+      );
+
+      console.log("Login API Response:", response.data);
+      const result = response.data;
+
+      // ✅ Handle different API response structures
+      const token =
+        result?.token ||
+        result?.access_token ||
+        result?.data?.token ||
+        result?.data?.access_token;
+      const user = result?.user || result?.data?.user;
+
+      if (token && user) {
+        // Save session info
+        sessionStorage.setItem("authToken", token);
+        sessionStorage.setItem("Name", user?.name || "");
+        const encodedRoleId = btoa(user?.role_id ?? "");
+        sessionStorage.setItem("RoleId", encodedRoleId);
+
+        // Update app state
+        setIsLoggedIn(true);
+
+        // Toast success
+        toast.success("Login successful!");
+
+        // Navigate to dashboard
+        navigate("/dashboard");
+      } else {
+        toast.error("Invalid login credentials");
+        console.warn("Login failed: No token or user in response", result);
+      }
+    } catch (err) {
+      console.error("Login Error:", err.response || err.message);
+      toast.error(
+        err.response?.data?.message || "Network error or server not reachable"
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
-    <div className="auth-wrapper">
-      <div className="auth-content text-center">
-        <Card className="borderless">
-          <Row className="align-items-center text-center">
-            <Col>
-              <Card.Body className="card-body">
-                <img src={logoDark} alt="" className="img-fluid mb-4" />
-                <h4 className="mb-3 f-w-400">Signin</h4>
-                <InputGroup className="mb-3">
-                  <InputGroup.Text>
-                    <FeatherIcon icon="mail" />
+    <div
+      className="auth-wrapper d-flex justify-content-center align-items-center"
+      style={{ minHeight: "100vh", background: "#f7f9fc", padding: "10px" }}
+    >
+      <Card
+        className="borderless shadow-sm p-4"
+        style={{
+          maxWidth: "400px",
+          width: "100%",
+          fontSize: "13px",
+          borderRadius: "12px",
+        }}
+      >
+        <Row className="align-items-center text-center">
+          <Col>
+            <Card.Body className="p-0">
+              <h4 className="mb-3 fw-bold text-primary">Login</h4>
+
+              <Form onSubmit={handleSubmit}>
+                {/* Mobile */}
+                <InputGroup className="mb-3" style={{ borderRadius: "10px", overflow: "hidden" }}>
+                  <InputGroup.Text
+                    style={{
+                      padding: "0 10px",
+                      height: "36px",
+                      background: "#e9ecef",
+                      border: "none",
+                      borderRadius: "0",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                    }}
+                  >
+                    <FeatherIcon icon="smartphone" size={16} className="text-secondary" />
                   </InputGroup.Text>
-                  <Form.Control type="email" placeholder="Email address" />
+                  <Form.Control
+                    type="text"
+                    placeholder="Mobile"
+                    value={mobile}
+                    onChange={(e) => setMobile(e.target.value)}
+                    style={{
+                      height: "36px",
+                      fontSize: "13px",
+                      borderRadius: "0 10px 10px 0",
+                      border: "1px solid #ced4da",
+                      outline: "none",
+                      boxShadow: "none",
+                    }}
+                  />
                 </InputGroup>
-                <InputGroup className="mb-3">
-                  <InputGroup.Text>
-                    <FeatherIcon icon="lock" />
+
+                {/* Password */}
+                <InputGroup className="mb-3" style={{ borderRadius: "10px", overflow: "hidden" }}>
+                  <InputGroup.Text
+                    style={{
+                      padding: "0 10px",
+                      height: "36px",
+                      background: "#e9ecef",
+                      border: "none",
+                      borderRadius: "0",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                    }}
+                  >
+                    <FeatherIcon icon="lock" size={16} className="text-secondary" />
                   </InputGroup.Text>
-                  <Form.Control type="password" placeholder="Password" />
+                  <Form.Control
+                    type="password"
+                    placeholder="Password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    style={{
+                      height: "36px",
+                      fontSize: "13px",
+                      borderRadius: "0 10px 10px 0",
+                      border: "1px solid #ced4da",
+                      outline: "none",
+                      boxShadow: "none",
+                    }}
+                  />
                 </InputGroup>
-                <Form.Group>
-                  <Form.Check type="checkbox" className="text-left mb-4 mt-2" label="Save Credentials." defaultChecked />
-                </Form.Group>
-                <Button className="btn btn-block btn-primary mb-4">Signin</Button>
-                <p className="mb-2 text-muted">
-                  Forgot password?{' '}
-                  <NavLink to="#" className="f-w-400">
-                    Reset
-                  </NavLink>
-                </p>
-                <p className="mb-0 text-muted">
-                  Don’t have an account?{' '}
-                  <NavLink to="/register" className="f-w-400">
-                    Signup
-                  </NavLink>
-                </p>
-              </Card.Body>
-            </Col>
-          </Row>
-        </Card>
-      </div>
+
+                {/* Submit Button */}
+                <Button
+                  type="submit"
+                  className="btn-block mb-3"
+                  style={{
+                    fontSize: "14px",
+                    height: "38px",
+                    borderRadius: "10px",
+                    backgroundColor: "#0d6efd",
+                    borderColor: "#0d6efd",
+                  }}
+                  disabled={loading}
+                >
+                  {loading ? "Logging in..." : "Login"}
+                </Button>
+              </Form>
+            </Card.Body>
+          </Col>
+        </Row>
+      </Card>
     </div>
   );
 }

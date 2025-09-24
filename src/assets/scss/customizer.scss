@@ -359,3 +359,61 @@ $sidebar-c-shadow: 0 1px 20px 0 rgba(69, 90, 100, 0.08);
 }
 
 // sidebar color variant end
+
+// responsive for mobile start 
+
+.pc-mob-header {
+  display: none;
+  background: var(--pc-brand-background);
+  height: 32px;        /* ✅ reduced height */
+  min-height: 32px;    /* ✅ ensures consistent min height */
+  align-items: center;
+  justify-content: space-between;
+  position: fixed;
+  z-index: 1024;
+  top: 0;
+  left: 0;
+  right: 0;
+  padding: 0 8px 0 20px; /* ✅ adjusted padding to match smaller height */
+}
+
+/* ✅ Visible only on mobile */
+@media (max-width: 768px) {
+  .pc-mob-header {
+    display: flex;
+  }
+}
+
+
+/* ✅ Extra small devices (portrait phones, <576px) */
+@media (max-width: 575.98px) {
+  .pc-container .pcoded-content {
+    padding: 12px;       /* smaller padding */
+    margin-top: 40px;    /* adjusted for smaller mobile headers */
+  }
+}
+
+/* ✅ Small devices (landscape phones, 576px–767px) */
+@media (min-width: 576px) and (max-width: 767.98px) {
+  .pc-container .pcoded-content {
+    padding: 15px;
+    margin-top: 45px;
+  }
+}
+
+/* ✅ Medium devices (tablets, 768px–991px) */
+@media (min-width: 768px) and (max-width: 991.98px) {
+  .pc-container .pcoded-content {
+    padding: 18px;
+    margin-top: 50px;
+  }
+}
+
+/* ✅ Large devices (default desktop, ≥992px) */
+@media (min-width: 992px) {
+  .pc-container .pcoded-content {
+    padding: 20px;
+  }
+}
+
+// responsive for mobile end 
