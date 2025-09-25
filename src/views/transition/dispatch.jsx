@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
-import "bootstrap/dist/css/bootstrap.min.css";
+// import "bootstrap/dist/css/bootstrap.min.css";
 import { getInwardByNo, saveDispatch } from "../../utils/fakeapi";
 import { DispatchPrintUtils } from "../../utils/printdispatch";
 

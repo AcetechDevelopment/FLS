@@ -2,41 +2,21 @@ import { lazy, useState, useEffect, Suspense } from "react";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import "./index.scss";
 
+
 // Layouts
 import AdminLayout from "layouts/AdminLayout";
 import GuestLayout from "layouts/GuestLayout";
 
 // Toast
 import { ToastContainer } from "react-toastify";
+// import "react-toastify/dist/ReactToastify.css";
 
-// Loading component
-const LoadingSpinner = () => (
-  <div style={{
-    display: 'flex',
-    justifyContent: 'center',
-    alignItems: 'center',
-    height: '100vh',
-    fontSize: '1.5rem'
-  }}>
-    <div>Loading...</div>
-  </div>
-);
-
-// Protected Route component
-const ProtectedRoute = ({ children }) => {
-  const token = sessionStorage.getItem("authToken");
-  
-  if (!token) {
-    return <Navigate to="/login" replace />;
-  }
-  
-  return children;
-};
-
-// Lazy load components
+// Pages
 const Login = lazy(() => import("./views/auth/login"));
 const Register = lazy(() => import("./views/auth/register"));
 const DashboardSales = lazy(() => import("./views/dashboard/DashSales/index"));
+const Transition = lazy(() => import("./views/dashboard/Transition/index"));
+const Typography = lazy(() => import("./views/ui-elements/basic/BasicTypography"));
 const Color = lazy(() => import("./views/ui-elements/basic/BasicColor"));
 const FeatherIcon = lazy(() => import("./views/ui-elements/icons/Feather"));
 const FontAwesome = lazy(() => import("./views/ui-elements/icons/FontAwesome"));
@@ -58,43 +38,45 @@ const InwardReport = lazy(() => import("./views/reports/inwardreport"));
 const DispatchReport = lazy(() => import("./views/reports/dispatchreport"));
 
 export default function App() {
-  const [isLoggedIn, setIsLoggedIn] = useState(!!sessionStorage.getItem("authToken"));
+  const [isLoggedIn, setIsLoggedIn] = useState(!!localStorage.getItem("token"));
   const [isLoading, setIsLoading] = useState(true);
 
+  // Keep login state in sync with localStorage
   useEffect(() => {
-    const checkAuth = () => {
-      const token = sessionStorage.getItem("authToken");
-      setIsLoggedIn(!!token);
-      setIsLoading(false);
+    const handleStorageChange = () => {
+      setIsLoggedIn(!!localStorage.getItem("token"));
     };
-
-    checkAuth();
-
-    const handleStorageChange = (e) => {
-      if (e.key === "authToken") {
-        setIsLoggedIn(!!e.newValue);
-      }
-    };
+    
+    // Check authentication status
+    const token = localStorage.getItem("token");
+    setIsLoggedIn(!!token);
+    setIsLoading(false);
 
     window.addEventListener("storage", handleStorageChange);
     return () => window.removeEventListener("storage", handleStorageChange);
   }, []);
 
-  if (isLoading) {
-    return <LoadingSpinner />;
-  }
-
   return (
     <BrowserRouter>
-      <Suspense fallback={<LoadingSpinner />}>
+      <Suspense fallback={
+        <div style={{
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          height: '100vh',
+          fontSize: '1.5rem'
+        }}>
+          Loading...
+        </div>
+      }>
         <Routes>
-          {/* Root redirect */}
+          {/* Redirect root */}
           <Route
             path="/"
             element={<Navigate to={isLoggedIn ? "/dashboard" : "/login"} replace />}
           />
 
-          {/* Public routes */}
+          {/* Guest Routes */}
           <Route element={<GuestLayout />}>
             <Route
               path="/login"
@@ -109,57 +91,45 @@ export default function App() {
             <Route path="/register" element={<Register />} />
           </Route>
 
-          {/* Protected routes */}
-          <Route
-            element={
-              <ProtectedRoute>
-                <AdminLayout />
-              </ProtectedRoute>
-            }
-          >
-            <Route path="/dashboard" element={<DashboardSales />} />
-            
-            {/* Transition routes */}
-            <Route path="/transition/*">
-              <Route index element={<Navigate to="inward" replace />} />
-              <Route path="inward" element={<InwardPage />} />
-              <Route path="dispatch" element={<DispatchPage />} />
+          {/* Protected Admin Routes */}
+          {isLoggedIn && (
+            <Route element={<AdminLayout />}>
+              <Route path="/dashboard" element={<DashboardSales />} />
+              <Route path="/transition/inward" element={<InwardPage />} />
+              <Route path="/transition/dispatch" element={<DispatchPage />} />
+              <Route path="/settings" element={<Color />} />
+              <Route path="/privilege" element={<FeatherIcon />} />
+              <Route path="/icons/font-awesome-5" element={<FontAwesome />} />
+              <Route path="/icons/material" element={<MaterialIcon />} />
+              <Route path="/sample-page" element={<Sample />} />
+              <Route path="/usermaster" element={<UserMaster />} />
+              <Route path="/customer" element={<SupplierMaster />} />
+              <Route path="/materialmaster" element={<MaterialMaster />} />
+              <Route path="/pricemaster" element={<PriceMaster />} />
+              <Route path="/suppliergroup" element={<SupplierGroup />} />
+              <Route path="/materialstock" element={<MaterialStockMaster />} />
+              <Route path="/stockadjustment" element={<StockAdjustment />} />
+              <Route path="/categorywise" element={<CategoryWise />} />
+              <Route path="/inwardreport" element={<InwardReport />} />
+              <Route path="/dispatchreport" element={<DispatchReport />} />
             </Route>
+          )}
 
-            {/* Settings and UI routes */}
-            <Route path="/settings" element={<Color />} />
-            <Route path="/privilege" element={<FeatherIcon />} />
-            <Route path="/icons/font-awesome-5" element={<FontAwesome />} />
-            <Route path="/icons/material" element={<MaterialIcon />} />
-            <Route path="/sample-page" element={<Sample />} />
-
-            {/* Master routes */}
-            <Route path="/usermaster" element={<UserMaster />} />
-            <Route path="/customer" element={<SupplierMaster />} />
-            <Route path="/materialmaster" element={<MaterialMaster />} />
-            <Route path="/pricemaster" element={<PriceMaster />} />
-            <Route path="/suppliergroup" element={<SupplierGroup />} />
-
-            {/* Stock routes */}
-            <Route path="/materialstock" element={<MaterialStockMaster />} />
-            <Route path="/stockadjustment" element={<StockAdjustment />} />
-
-            {/* Report routes */}
-            <Route path="/categorywise" element={<CategoryWise />} />
-            <Route path="/inwardreport" element={<InwardReport />} />
-            <Route path="/dispatchreport" element={<DispatchReport />} />
-          </Route>
-
-          {/* Catch all route */}
+          {/* Fallback */}
           <Route 
             path="*" 
             element={
-              <Navigate to={isLoggedIn ? "/dashboard" : "/login"} replace />
+              isLoggedIn ? (
+                <Navigate to="/dashboard" replace />
+              ) : (
+                <Navigate to="/login" replace />
+              )
             } 
           />
         </Routes>
       </Suspense>
 
+      {/* Global Toast */}
       <ToastContainer
         position="top-right"
         autoClose={3000}

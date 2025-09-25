@@ -48,14 +48,12 @@ export default function Login({ setIsLoggedIn }) {
         const encodedRoleId = btoa(user?.role_id ?? "");
         sessionStorage.setItem("RoleId", encodedRoleId);
 
-        // Update app state
+        // Update app state and redirect
         setIsLoggedIn(true);
-
-        // Toast success
         toast.success("Login successful!");
-
-        // Navigate to dashboard
-        navigate("/dashboard");
+        
+        // Use replace instead of push to avoid navigation stack issues
+        navigate("/dashboard", { replace: true });
       } else {
         toast.error("Invalid login credentials");
         console.warn("Login failed: No token or user in response", result);
