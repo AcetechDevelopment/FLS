@@ -22,10 +22,14 @@ const LoadingSpinner = () => (
   </div>
 );
 
-// Protected Route
+// Protected Route component
 const ProtectedRoute = ({ children }) => {
   const token = sessionStorage.getItem("authToken");
-  if (!token) return <Navigate to="/login" replace />;
+  
+  if (!token) {
+    return <Navigate to="/login" replace />;
+  }
+  
   return children;
 };
 
@@ -58,41 +62,68 @@ export default function App() {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    const token = sessionStorage.getItem("authToken");
-    setIsLoggedIn(!!token);
-    setIsLoading(false);
+    const checkAuth = () => {
+      const token = sessionStorage.getItem("authToken");
+      setIsLoggedIn(!!token);
+      setIsLoading(false);
+    };
+
+    checkAuth();
 
     const handleStorageChange = (e) => {
-      if (e.key === "authToken") setIsLoggedIn(!!e.newValue);
+      if (e.key === "authToken") {
+        setIsLoggedIn(!!e.newValue);
+      }
     };
+
     window.addEventListener("storage", handleStorageChange);
     return () => window.removeEventListener("storage", handleStorageChange);
   }, []);
 
-  if (isLoading) return <LoadingSpinner />;
+  if (isLoading) {
+    return <LoadingSpinner />;
+  }
 
   return (
     <BrowserRouter>
       <Suspense fallback={<LoadingSpinner />}>
         <Routes>
           {/* Root redirect */}
-          <Route path="/" element={<Navigate to={isLoggedIn ? "/dashboard" : "/login"} replace />} />
+          <Route
+            path="/"
+            element={<Navigate to={isLoggedIn ? "/dashboard" : "/login"} replace />}
+          />
 
           {/* Public routes */}
           <Route element={<GuestLayout />}>
-            <Route path="/login" element={isLoggedIn ? <Navigate to="/dashboard" replace /> : <Login setIsLoggedIn={setIsLoggedIn} />} />
+            <Route
+              path="/login"
+              element={
+                isLoggedIn ? (
+                  <Navigate to="/dashboard" replace />
+                ) : (
+                  <Login setIsLoggedIn={setIsLoggedIn} />
+                )
+              }
+            />
             <Route path="/register" element={<Register />} />
           </Route>
 
           {/* Protected routes */}
-          <Route element={<ProtectedRoute><AdminLayout /></ProtectedRoute>}>
+          <Route
+            element={
+              <ProtectedRoute>
+                <AdminLayout />
+              </ProtectedRoute>
+            }
+          >
             <Route path="/dashboard" element={<DashboardSales />} />
-
+            
             {/* Transition routes */}
-            <Route path="/transition/inward" element={<InwardPage />} />
-            <Route path="/transition/dispatch" element={<DispatchPage />} />
+            <Route path="/transition/inward" element={<Suspense fallback={<LoadingSpinner />}><InwardPage /></Suspense>} />
+            <Route path="/transition/dispatch" element={<Suspense fallback={<LoadingSpinner />}><DispatchPage /></Suspense>} />
 
-            {/* Settings/UI routes */}
+            {/* Settings and UI routes */}
             <Route path="/settings" element={<Color />} />
             <Route path="/privilege" element={<FeatherIcon />} />
             <Route path="/icons/font-awesome-5" element={<FontAwesome />} />
@@ -116,12 +147,28 @@ export default function App() {
             <Route path="/dispatchreport" element={<DispatchReport />} />
           </Route>
 
-          {/* Catch all */}
-          <Route path="*" element={<Navigate to={isLoggedIn ? "/dashboard" : "/login"} replace />} />
+          {/* Catch all route */}
+          <Route 
+            path="*" 
+            element={
+              <Navigate to={isLoggedIn ? "/dashboard" : "/login"} replace />
+            } 
+          />
         </Routes>
       </Suspense>
 
-      <ToastContainer position="top-right" autoClose={3000} theme="colored" />
+      <ToastContainer
+        position="top-right"
+        autoClose={3000}
+        hideProgressBar={false}
+        newestOnTop={false}
+        closeOnClick
+        rtl={false}
+        pauseOnFocusLoss
+        draggable
+        pauseOnHover
+        theme="colored"
+      />
     </BrowserRouter>
   );
 }

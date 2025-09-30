@@ -25,7 +25,7 @@ export default function Login({ setIsLoggedIn }) {
 
     try {
       const response = await axios.post(
-        "https://10.9.76.62/FLS/public/api/auth/login",
+        "https://115.124.111.111/FLS/public/api/auth/login",
         { mobile, password },
         { headers: { "Content-Type": "application/json" } }
       );

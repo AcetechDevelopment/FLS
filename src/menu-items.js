@@ -32,13 +32,13 @@ const menuItems = {
               id: 'inward',
               title: 'Inward',
               type: 'item',
-              url: '/inward'
+              url: '/transition/inward'
             },
             {
               id: 'dispatch',
               title: 'Dispatch',
               type: 'item',
-              url: '/dispatch'
+              url: '/transition/dispatch'
             }
           ]
         }
@@ -91,18 +91,8 @@ const menuItems = {
           icon: 'material-icons-two-tone',
           iconname: 'build',
           children: [
-            {
-              id: 'material-stock',
-              title: 'Material Stock',
-              type: 'item',
-              url: '/materialstock'
-            },
-            {
-              id: 'stock-adjustment',
-              title: 'Stock Adjustment',
-              type: 'item',
-              url: '/stockadjustment'
-            }
+            { id: 'material-stock', title: 'Material Stock', type: 'item', url: '/materialstock' },
+            { id: 'stock-adjustment', title: 'Stock Adjustment', type: 'item', url: '/stockadjustment' }
           ]
         },
         {
@@ -126,13 +116,7 @@ const menuItems = {
           icon: 'material-icons-two-tone',
           iconname: 'settings',
           children: [
-            {
-              id: 'privilege',
-              title: 'Privilege',
-              type: 'item',
-              url: '/privilege',
-              iconname: 'storefront'
-            }
+            { id: 'privilege', title: 'Privilege', type: 'item', url: '/privilege', iconname: 'storefront' }
           ]
         }
       ]

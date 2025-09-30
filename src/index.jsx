@@ -3,6 +3,8 @@ import { ConfigProvider } from "./contexts/ConfigContext";
 import { MaterialProvider } from "./contexts/MaterialContext";
 // import { InwardProvider } from "./contexts/Inward";
 // import { MaterialProvider } from "./contexts/MaterialContext";
+import "bootstrap/dist/css/bootstrap.min.css";
+import "react-toastify/dist/ReactToastify.css";
 
 import App from "./App";
 import reportWebVitals from "./reportWebVitals";

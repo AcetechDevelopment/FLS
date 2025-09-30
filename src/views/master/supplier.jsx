@@ -7,7 +7,7 @@ import axios from "axios";
 import { toast } from "react-toastify";
 
 // API Base URL
-const API_BASE_URL = "https://10.9.76.62/FLS/public/api";
+const API_BASE_URL = "http://115.124.111.111/FLS/public/api";
 
 const SupplierMaster = () => {
   const [suppliers, setSuppliers] = useState([]);
@@ -17,11 +17,16 @@ const SupplierMaster = () => {
   const [previewImage, setPreviewImage] = useState(null);
   const [editingSupplier, setEditingSupplier] = useState(null);
   const [loading, setLoading] = useState(false);
-  
+
+  const inputRefs = useRef([]);
+  const fileInputRef = useRef(null);
+
+  const authToken = sessionStorage.getItem("authToken"); // ✅ Ensure token is fetched
+
   // Return focus to the main container when modal closes
   useEffect(() => {
     if (!showModal && !showImageModal) {
-      document.getElementById('supplier-container')?.focus();
+      document.getElementById("supplier-container")?.focus();
     }
   }, [showModal, showImageModal]);
 
@@ -35,21 +40,16 @@ const SupplierMaster = () => {
     image: null,
   });
 
-  const inputRefs = useRef([]);
-  const fileInputRef = useRef(null);
-
   // ✅ Fetch suppliers
   const fetchSuppliers = async () => {
     try {
       setLoading(true);
-      const response = await axios.get(
-        "https://10.9.76.62/FLS/public/api/customer/list",
-        {
-          headers: {
-            Authorization: `Bearer ${sessionStorage.getItem("authToken")}`,
-          },
-        }
-      );
+      const response = await axios.get(`${API_BASE_URL}/customer/list`, {
+        headers: {
+          Authorization: `Bearer ${authToken}`,
+          "Content-Type": "application/json",
+        },
+      });
       if (response.data.status === "success") {
         setSuppliers(response.data.data || []);
       } else {
@@ -91,6 +91,7 @@ const SupplierMaster = () => {
     if (fileInputRef.current) {
       fileInputRef.current.value = "";
     }
+    setPreviewImage(null);
   };
 
   // ✅ Generate supplier code
@@ -120,11 +121,11 @@ const SupplierMaster = () => {
     setEditingSupplier(null);
     setFormData({
       id: "",
-      name: "",
-      code: generateSupplierCode(),
+      customer_name: "",
+      customer_code: generateSupplierCode(),
+      customer_group: "",
       gst: "",
       address: "",
-      group: "",
       image: null,
     });
     setPreviewImage(null);
@@ -135,27 +136,22 @@ const SupplierMaster = () => {
   // ✅ Edit supplier
   const handleEditSupplier = async (supplier) => {
     try {
-      const response = await axios.get(
-        `https://10.9.76.62/FLS/public/api/customer/edit/${supplier.id}`,
-        {
-          headers: {
-            Authorization: `Bearer ${sessionStorage.getItem("authToken")}`,
-          },
-        }
-      );
+      const response = await axios.get(`${API_BASE_URL}/customer/edit/${supplier.id}`, {
+        headers: { Authorization: `Bearer ${authToken}` },
+      });
 
       if (response.data.status === "success") {
         const data = response.data.data;
         setEditingSupplier(data);
-      setFormData({
-        id: data.id,
-        name: data.customer_name || "",
-        code: data.customer_code || "",
-        gst: data.gst || "",
-        address: data.address || "",
-        group: data.customer_group || "",
-        image: data.image || null,
-      });
+        setFormData({
+          id: data.id,
+          customer_name: data.customer_name || "",
+          customer_code: data.customer_code || "",
+          customer_group: data.customer_group || "",
+          gst: data.gst || "",
+          address: data.address || "",
+          image: data.image || null,
+        });
 
         setPreviewImage(data.image || null);
         setShowModal(true);
@@ -171,89 +167,94 @@ const SupplierMaster = () => {
   // ✅ Save supplier
   const handleSaveSupplier = async () => {
     try {
-      if (!formData.name || !formData.code || !formData.gst) {
+      if (!formData.customer_name || !formData.customer_code || !formData.gst) {
         toast.error("Please fill all required fields");
         return;
       }
 
+      // Log the data being sent
+      console.log("Form Data:", formData);
+
       const formDataToSend = new FormData();
-      formDataToSend.append("id", formData.id);
-      formDataToSend.append("name", formData.name);
-      formDataToSend.append("code", formData.code);
+      // Explicitly set each field with the correct name
+      formDataToSend.append("id", formData.id || "");
+      formDataToSend.append("customer_name", formData.customer_name);
+      formDataToSend.append("customer_code", formData.customer_code);
+      formDataToSend.append("customer_group", formData.customer_group);
       formDataToSend.append("gst", formData.gst);
-      formDataToSend.append("address", formData.address);
-      formDataToSend.append("group", formData.group);
-      if (formData.image instanceof File) {
-        formDataToSend.append("image", formData.image);
+      formDataToSend.append("address", formData.address || "");
+      
+      if (formData.image) {
+        if (formData.image instanceof File) {
+          formDataToSend.append("image", formData.image);
+        } else if (typeof formData.image === 'string' && !formData.image.startsWith('data:')) {
+          // If it's an existing image URL and not a base64 string
+          formDataToSend.append("existing_image", formData.image);
+        }
       }
 
-      if (editingSupplier) {
-        // ✅ Update
-        const response = await axios.post(
-          "https://10.9.76.62/FLS/public/api/customer/update",
-          formDataToSend,
-          {
-            headers: {
-              "Content-Type": "multipart/form-data",
-              Authorization: `Bearer ${sessionStorage.getItem("authToken")}`,
-            },
-          }
-        );
+      // Log the FormData entries
+      for (let pair of formDataToSend.entries()) {
+        console.log(pair[0] + ': ' + pair[1]);
+      }
 
-        if (response.data.status === "success") {
-          toast.success("Customer updated successfully!");
-          fetchSuppliers();
-          setShowModal(false);
-        } else {
-          toast.error(response.data.message || "Failed to update customer");
-        }
+      const url = editingSupplier
+        ? `${API_BASE_URL}/customer/update`
+        : `${API_BASE_URL}/customer/create`;
+
+      console.log("Sending request to:", url);
+
+      const response = await axios.post(url, formDataToSend, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+          Authorization: `Bearer ${sessionStorage.getItem("authToken")}`,
+        },
+        withCredentials: true
+      });
+
+      if (response.data.status === "success") {
+        toast.success(
+          `Customer ${editingSupplier ? "updated" : "created"} successfully!`
+        );
+        fetchSuppliers();
+        setShowModal(false);
       } else {
-        // ✅ Create
-        const response = await axios.post(
-          "https://10.9.76.62/FLS/public/api/customer/create",
-          formDataToSend,
-          {
-            headers: {
-              "Content-Type": "multipart/form-data",
-              Authorization: `Bearer ${sessionStorage.getItem("authToken")}`,
-            },
-          }
-        );
-
-        if (response.data.status === "success") {
-          toast.success("Customer created successfully!");
-          fetchSuppliers();
-          setShowModal(false);
-        } else {
-          toast.error(response.data.message || "Failed to create customer");
-        }
+        toast.error(response.data.message || "Failed to save customer");
       }
     } catch (error) {
       console.error("Error saving supplier:", error);
-      toast.error(
-        error.response?.data?.message ||
-          "An error occurred while saving the customer"
-      );
+      console.log("Error details:", {
+        status: error.response?.status,
+        data: error.response?.data,
+        message: error.message
+      });
+      
+      // More specific error messages
+      if (error.response?.status === 401) {
+        toast.error("Session expired. Please login again.");
+        window.location.href = "/login";
+      } else if (error.response?.status === 413) {
+        toast.error("Image size is too large. Please choose a smaller image.");
+      } else if (error.response?.status === 422) {
+        toast.error(error.response.data.message || "Validation error. Please check your input.");
+      } else {
+        toast.error(
+          error.response?.data?.message ||
+          "An error occurred while saving the customer. Please try again."
+        );
+      }
     }
   };
 
   // ✅ Delete supplier
   const deleteRow = async (id) => {
-    if (!window.confirm("Are you sure you want to delete this customer?")) {
-      return;
-    }
-    try {
-      const token = getAuthToken();
-      if (!token) return;
+    if (!window.confirm("Are you sure you want to delete this customer?")) return;
 
-      const response = await axios.delete(
-        `https://10.9.76.62/FLS/public/api/customer/delete/${id}`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
+    try {
+      const response = await axios.delete(`${API_BASE_URL}/customer/delete/${id}`, {
+        headers: { Authorization: `Bearer ${authToken}` },
+        withCredentials: true,
+      });
 
       if (response.data.status === "success") {
         toast.success("Customer deleted successfully!");
@@ -285,9 +286,9 @@ const SupplierMaster = () => {
       startY: 25,
       head: [["Code", "Name", "Group", "Address", "GST"]],
       body: suppliers.map((s) => [
-        s.code,
-        s.name,
-        s.group || "",
+        s.customer_code,
+        s.customer_name,
+        s.customer_group || "",
         s.address || "",
         s.gst,
       ]),
@@ -307,9 +308,9 @@ const SupplierMaster = () => {
     }
 
     const data = suppliers.map((s) => ({
-      Code: s.code,
-      Name: s.name,
-      Group: s.group || "",
+      Code: s.customer_code,
+      Name: s.customer_name,
+      Group: s.customer_group || "",
       Address: s.address || "",
       "GST No.": s.gst,
     }));
@@ -369,8 +370,9 @@ const SupplierMaster = () => {
   // ✅ Filtered suppliers
   const filteredSuppliers = suppliers.filter(
     (s) =>
-      s.name?.toLowerCase().includes(search.toLowerCase()) ||
-      s.code?.toLowerCase().includes(search.toLowerCase()) ||
+      s.customer_name?.toLowerCase().includes(search.toLowerCase()) ||
+      s.customer_code?.toLowerCase().includes(search.toLowerCase()) ||
+      s.customer_group?.toLowerCase().includes(search.toLowerCase()) ||
       s.gst?.toLowerCase().includes(search.toLowerCase()) ||
       s.address?.toLowerCase().includes(search.toLowerCase())
   );
@@ -379,7 +381,11 @@ const SupplierMaster = () => {
     <Fragment>
       <div className="page-container">
         <div className="main-container">
-          <div className="container-fluid p-3" id="supplier-container" tabIndex="-1">
+          <div
+            className="container-fluid p-3"
+            id="supplier-container"
+            tabIndex="-1"
+          >
             {/* Loading Indicator */}
             {loading && (
               <div className="text-center my-3">
@@ -388,7 +394,7 @@ const SupplierMaster = () => {
                 </div>
               </div>
             )}
-            
+
             {/* Toolbar */}
             <div className="d-flex flex-wrap gap-2 mb-2 px-2">
               <button
@@ -475,9 +481,9 @@ const SupplierMaster = () => {
                   {filteredSuppliers.length > 0 ? (
                     filteredSuppliers.map((supplier) => (
                       <tr key={supplier.id} className="text-center">
-                        <td>{supplier.code}</td>
-                        <td>{supplier.name}</td>
-                        <td>{supplier.group}</td>
+                        <td>{supplier.customer_code}</td>
+                        <td>{supplier.customer_name}</td>
+                        <td>{supplier.customer_group}</td>
                         <td>{supplier.address}</td>
                         <td>{supplier.gst}</td>
                         <td>
@@ -527,7 +533,7 @@ const SupplierMaster = () => {
                               cursor: "pointer",
                             }}
                             onClick={() =>
-                              alert("Open Price List for " + supplier.name)
+                              alert("Open Price List for " + supplier.customer_name)
                             }
                             title="Price List"
                           >
@@ -625,7 +631,8 @@ const SupplierMaster = () => {
                             >
                               <option value="">Select</option>
                               <option value="Hospital">Hospital</option>
-                              <option value="Hotel">Hotel</option>
+                              <option value="Retail">Retail</option>
+                              <option value="Distributor">Distributor</option>
                             </select>
                           </div>
 
@@ -636,10 +643,7 @@ const SupplierMaster = () => {
                               className="form-control form-control-sm"
                               value={formData.gst}
                               onChange={(e) =>
-                                setFormData({
-                                  ...formData,
-                                  gst: e.target.value.toUpperCase(),
-                                })
+                                setFormData({ ...formData, gst: e.target.value })
                               }
                             />
                           </div>
@@ -648,7 +652,6 @@ const SupplierMaster = () => {
                             <label className="form-label">Address</label>
                             <textarea
                               className="form-control form-control-sm"
-                              rows="2"
                               value={formData.address}
                               onChange={(e) =>
                                 setFormData({ ...formData, address: e.target.value })
@@ -658,34 +661,28 @@ const SupplierMaster = () => {
 
                           <div className="mb-2">
                             <label className="form-label">Image</label>
-                            <div className="d-flex align-items-center">
-                              <input
-                                type="file"
-                                className="form-control form-control-sm"
-                                onChange={handleImageUpload}
-                                ref={fileInputRef}
-                              />
-                              {formData.image && (
+                            <input
+                              type="file"
+                              className="form-control form-control-sm"
+                              ref={fileInputRef}
+                              onChange={handleImageUpload}
+                            />
+                            {previewImage && (
+                              <div className="mt-1">
+                                <img
+                                  src={previewImage}
+                                  alt="Preview"
+                                  width="50"
+                                  height="50"
+                                  style={{ objectFit: "cover" }}
+                                />
                                 <button
-                                  className="btn btn-sm btn-outline-danger ms-2"
+                                  type="button"
+                                  className="btn btn-sm btn-outline-danger ms-1"
                                   onClick={handleRemoveImage}
                                 >
                                   Remove
                                 </button>
-                              )}
-                            </div>
-                            {previewImage && (
-                              <div className="mt-2 text-center">
-                                <img
-                                  src={previewImage}
-                                  alt="Preview"
-                                  style={{
-                                    maxWidth: "100px",
-                                    maxHeight: "100px",
-                                    borderRadius: "6px",
-                                    objectFit: "cover",
-                                  }}
-                                />
                               </div>
                             )}
                           </div>
@@ -693,7 +690,6 @@ const SupplierMaster = () => {
 
                         <div className="modal-footer py-2">
                           <button
-                            type="button"
                             className="btn btn-sm btn-secondary"
                             onClick={() => setShowModal(false)}
                           >
@@ -701,7 +697,6 @@ const SupplierMaster = () => {
                           </button>
                           <button
                             id="saveSupplierBtn"
-                            type="button"
                             className="btn btn-sm btn-primary"
                             onClick={handleSaveSupplier}
                           >
@@ -717,37 +712,30 @@ const SupplierMaster = () => {
 
             {/* Image Modal */}
             {showImageModal && (
-              <Fragment>
-                <div className="modal-wrapper">
-                  <div className="modal-backdrop fade show" />
-                  <div className="modal fade show d-block" tabIndex="-1">
-                    <div className="modal-dialog modal-dialog-centered">
-                      <div className="modal-content">
-                        <div className="modal-body text-center">
-                          <img
-                            src={previewImage}
-                            alt="Full Preview"
-                            style={{
-                              maxWidth: "100%",
-                              maxHeight: "80vh",
-                              borderRadius: "6px",
-                            }}
-                          />
-                        </div>
-                        <div className="modal-footer">
-                          <button
-                            type="button"
-                            className="btn btn-secondary btn-sm"
-                            onClick={() => setShowImageModal(false)}
-                          >
-                            Close
-                          </button>
-                        </div>
+              <div className="modal-wrapper">
+                <div className="modal-backdrop fade show"></div>
+                <div className="modal fade show d-block" tabIndex="-1">
+                  <div className="modal-dialog modal-dialog-centered">
+                    <div className="modal-content p-2">
+                      <div className="modal-header py-1">
+                        <h6 className="modal-title">Image Preview</h6>
+                        <button
+                          type="button"
+                          className="btn-close"
+                          onClick={() => setShowImageModal(false)}
+                        ></button>
+                      </div>
+                      <div className="modal-body text-center">
+                        <img
+                          src={previewImage}
+                          alt="Preview"
+                          style={{ maxWidth: "100%", maxHeight: "400px" }}
+                        />
                       </div>
                     </div>
                   </div>
                 </div>
-              </Fragment>
+              </div>
             )}
           </div>
         </div>
