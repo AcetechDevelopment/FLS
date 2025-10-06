@@ -7,7 +7,7 @@ import axios from "axios";
 import { toast } from "react-toastify";
 
 // API Base URL
-const API_BASE_URL = "http://115.124.111.111/FLS/public/api";
+const API_BASE_URL = "https://115.124.111.111/FLS/public/api";
 
 const SupplierMaster = () => {
   const [suppliers, setSuppliers] = useState([]);
@@ -21,6 +21,14 @@ const SupplierMaster = () => {
   const inputRefs = useRef([]);
   const fileInputRef = useRef(null);
 
+    // Create axios instance with default config
+  const axiosInstance = axios.create({
+    timeout: 15000, // 15 seconds timeout
+    headers: {
+      'Accept': 'application/json'
+    }
+  });
+  
   const authToken = sessionStorage.getItem("authToken"); // ✅ Ensure token is fetched
 
   // Return focus to the main container when modal closes
@@ -41,36 +49,72 @@ const SupplierMaster = () => {
   });
 
   // ✅ Fetch suppliers
-  const fetchSuppliers = async () => {
-    try {
-      setLoading(true);
-      const response = await axios.get(`${API_BASE_URL}/customer/list`, {
-        headers: {
-          Authorization: `Bearer ${authToken}`,
-          "Content-Type": "application/json",
-        },
-      });
-      if (response.data.status === "success") {
-        setSuppliers(response.data.data || []);
-      } else {
-        toast.error(response.data.message || "Failed to fetch customers");
-      }
-    } catch (error) {
-      console.error("Error fetching suppliers:", error);
-      if (error.response?.status === 401) {
-        toast.error("Session expired. Please login again");
-        window.location.href = "/login";
-      } else {
-        toast.error(error.response?.data?.message || "Error loading customers");
-      }
-    } finally {
-      setLoading(false);
-    }
-  };
+const fetchSuppliers = async () => {
+  try {
+    setLoading(true);
+    const token = sessionStorage.getItem("authToken");
+    console.log("Auth Token:", token);
 
-  useEffect(() => {
-    fetchSuppliers();
-  }, []);
+    if (!token || token === "undefined" || token === "null") {
+      console.error("Invalid or missing auth token");
+      toast.error("Session expired. Please login again.");
+      sessionStorage.removeItem("authToken");
+      window.location.href = "/login";
+      return;
+    }
+
+    const response = await axiosInstance.get(`${API_BASE_URL}/customer/list`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+      validateStatus: (status) => status < 500,
+    });
+
+    console.log("Raw API response:", response);
+
+    // ✅ Some APIs return data directly, not inside `data.data`
+    const resData = response.data;
+
+    // ✅ Try to handle multiple formats gracefully
+    const list =
+      resData?.data ||
+      resData?.customers ||
+      resData?.list ||
+      (Array.isArray(resData) ? resData : []);
+
+    if (list.length > 0) {
+      console.log("✅ Customers fetched successfully:", list);
+      setSuppliers(list);
+    } else {
+      console.warn("⚠️ No customers found in API response:", resData);
+      toast.warn("No customers found.");
+    }
+  } catch (error) {
+    console.error("❌ Fetch error:", error);
+
+    if (axios.isAxiosError(error)) {
+      if (error.response) {
+        console.log("Response error data:", error.response.data);
+        toast.error(error.response.data?.message || "API returned an error.");
+      } else if (error.request) {
+        console.log("No response received:", error.request);
+        toast.error("No response from server.");
+      } else {
+        console.log("Request setup error:", error.message);
+        toast.error(error.message);
+      }
+    } else {
+      toast.error("Unexpected error occurred.");
+    }
+  } finally {
+    setLoading(false);
+  }
+};
+
+useEffect(() => {
+  fetchSuppliers();
+}, []);
 
   // ✅ Enter key navigation
   const handleKeyDown = (e, index) => {
@@ -134,35 +178,69 @@ const SupplierMaster = () => {
   };
 
   // ✅ Edit supplier
-  const handleEditSupplier = async (supplier) => {
+const handleEditSupplier = async (supplier) => {
+  try {
+    const token = sessionStorage.getItem("authToken");
+    if (!token || token === "undefined" || token === "null") {
+      toast.error("Session expired. Please login again.");
+      window.location.href = "/login";
+      return;
+    }
+
+    // ✅ Log to debug
+    console.log("Editing supplier with ID:", supplier.id);
+
+    // ✅ Try both possible endpoints — fallback if edit fails
+    let response;
     try {
-      const response = await axios.get(`${API_BASE_URL}/customer/edit/${supplier.id}`, {
-        headers: { Authorization: `Bearer ${authToken}` },
+      response = await axios.get(`${API_BASE_URL}/customer/edit/${supplier.id}`, {
+        headers: { Authorization: `Bearer ${token}` },
+        validateStatus: (status) => status < 500,
+      });
+    } catch {
+      console.warn("Fallback to /customer/show endpoint...");
+      response = await axios.get(`${API_BASE_URL}/customer/show/${supplier.id}`, {
+        headers: { Authorization: `Bearer ${token}` },
+        validateStatus: (status) => status < 500,
+      });
+    }
+
+    console.log("Edit API response:", response.data);
+    
+
+    // ✅ Normalize response
+    const resData = response.data;
+    const data = resData?.data || resData?.customer || resData;
+
+    if (data && Object.keys(data).length > 0) {
+      console.log("Supplier data loaded for edit:", data);
+
+      setEditingSupplier(data);
+      setFormData({
+        id: data.id || "",
+        customer_name: data.customer_name || "",
+        customer_code: data.customer_code || "",
+        customer_group: data.customer_group || "",
+        gst: data.gst || "",
+        address: data.address || "",
+        image: data.image || null,
       });
 
-      if (response.data.status === "success") {
-        const data = response.data.data;
-        setEditingSupplier(data);
-        setFormData({
-          id: data.id,
-          customer_name: data.customer_name || "",
-          customer_code: data.customer_code || "",
-          customer_group: data.customer_group || "",
-          gst: data.gst || "",
-          address: data.address || "",
-          image: data.image || null,
-        });
-
-        setPreviewImage(data.image || null);
-        setShowModal(true);
-      } else {
-        toast.error("Failed to fetch supplier details");
-      }
-    } catch (error) {
-      console.error("Error editing supplier:", error);
-      toast.error("Error loading supplier details");
+      setPreviewImage(data.image || null);
+      setShowModal(true);
+    } else {
+      console.error("Invalid supplier data:", resData);
+      toast.error(resData?.message || "Failed to fetch supplier details.");
     }
-  };
+  } catch (error) {
+    console.error("Error editing supplier:", error);
+    if (error.response) {
+      toast.error(error.response.data?.message || "Server error while fetching details.");
+    } else {
+      toast.error("Network error while loading supplier details.");
+    }
+  }
+};
 
   // ✅ Save supplier
   const handleSaveSupplier = async () => {
@@ -172,24 +250,23 @@ const SupplierMaster = () => {
         return;
       }
 
-      // Log the data being sent
-      console.log("Form Data:", formData);
+      console.log("Saving supplier data...");
 
       const formDataToSend = new FormData();
-      // Explicitly set each field with the correct name
       formDataToSend.append("id", formData.id || "");
-      formDataToSend.append("customer_name", formData.customer_name);
-      formDataToSend.append("customer_code", formData.customer_code);
-      formDataToSend.append("customer_group", formData.customer_group);
+      formDataToSend.append("customer_name", formData.customer_name); // Changed to match API expectation
+      formDataToSend.append("customer_code", formData.customer_code); // Changed to match API expectation
+      formDataToSend.append("customer_group", formData.customer_group); // Changed to match API expectation
       formDataToSend.append("gst", formData.gst);
       formDataToSend.append("address", formData.address || "");
       
       if (formData.image) {
         if (formData.image instanceof File) {
           formDataToSend.append("image", formData.image);
-        } else if (typeof formData.image === 'string' && !formData.image.startsWith('data:')) {
-          // If it's an existing image URL and not a base64 string
-          formDataToSend.append("existing_image", formData.image);
+        } else if (typeof formData.image === 'string') {
+          if (!formData.image.startsWith('data:')) {
+            formDataToSend.append("image_url", formData.image); // Changed for existing image
+          }
         }
       }
 
@@ -206,11 +283,11 @@ const SupplierMaster = () => {
 
       const response = await axios.post(url, formDataToSend, {
         headers: {
-          "Content-Type": "multipart/form-data",
           Authorization: `Bearer ${sessionStorage.getItem("authToken")}`,
-        },
-        withCredentials: true
+        }
       });
+
+      
 
       if (response.data.status === "success") {
         toast.success(
@@ -223,54 +300,80 @@ const SupplierMaster = () => {
       }
     } catch (error) {
       console.error("Error saving supplier:", error);
+      
+      if (error.response?.status === 401) {
+        sessionStorage.removeItem("authToken");
+        toast.error("Session expired. Please login again");
+        window.location.href = "/login";
+        return;
+      }
+
+      // Log full error details for debugging
       console.log("Error details:", {
         status: error.response?.status,
         data: error.response?.data,
         message: error.message
       });
-      
-      // More specific error messages
-      if (error.response?.status === 401) {
-        toast.error("Session expired. Please login again.");
-        window.location.href = "/login";
-      } else if (error.response?.status === 413) {
-        toast.error("Image size is too large. Please choose a smaller image.");
-      } else if (error.response?.status === 422) {
-        toast.error(error.response.data.message || "Validation error. Please check your input.");
-      } else {
-        toast.error(
-          error.response?.data?.message ||
-          "An error occurred while saving the customer. Please try again."
-        );
+
+      let errorMessage = "Failed to save customer. ";
+      if (error.response?.data?.message) {
+        errorMessage += error.response.data.message;
+      } else if (error.message) {
+        errorMessage += error.message;
       }
+
+      toast.error(errorMessage);
     }
   };
 
   // ✅ Delete supplier
-  const deleteRow = async (id) => {
-    if (!window.confirm("Are you sure you want to delete this customer?")) return;
+const deleteRow = async (id) => {
+  if (!window.confirm("Are you sure you want to delete this customer?")) return;
 
-    try {
-      const response = await axios.delete(`${API_BASE_URL}/customer/delete/${id}`, {
-        headers: { Authorization: `Bearer ${authToken}` },
-        withCredentials: true,
-      });
+  try {
+    // Get auth token from session storage
+    const token = sessionStorage.getItem("authToken");
 
-      if (response.data.status === "success") {
-        toast.success("Customer deleted successfully!");
-        setSuppliers(suppliers.filter((s) => s.id !== id));
-      } else {
-        toast.error(response.data.message || "Failed to delete customer");
-      }
-    } catch (error) {
-      console.error("Error deleting supplier:", error);
-      toast.error(
-        error.response?.data?.message ||
-          "An error occurred while deleting the customer"
-      );
+    if (!token || token === "undefined" || token === "null") {
+      toast.error("Session expired. Please login again.");
+      sessionStorage.removeItem("authToken");
+      window.location.href = "/login";
+      return;
     }
-  };
 
+    console.log("Deleting customer ID:", id, "with token:", token);
+
+    const response = await axios.delete(
+      `https://115.124.111.111/FLS/public/api/customer/delete/${id}`,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`, // use the auth token
+          "Content-Type": "application/json",
+        },
+        validateStatus: (status) => status < 500,
+      }
+    );
+
+    console.log("Delete API response:", response.data);
+
+    if (response.data?.status === "success") {
+      toast.success("Customer deleted successfully!");
+      setSuppliers((prev) => prev.filter((s) => s.id !== id));
+    } else {
+      toast.error(response.data?.message || "Failed to delete customer");
+    }
+  } catch (error) {
+    console.error("Error deleting supplier:", error);
+
+    if (error.response) {
+      toast.error(error.response.data?.message || "Server error while deleting customer");
+    } else if (error.request) {
+      toast.error("No response from server. Please check your network.");
+    } else {
+      toast.error("Unexpected error occurred while deleting customer.");
+    }
+  }
+};
   // ✅ Export PDF
   const exportPDF = () => {
     if (suppliers.length === 0) {
@@ -507,61 +610,61 @@ const SupplierMaster = () => {
                             <span className="text-muted">No Image</span>
                           )}
                         </td>
-                        <td>
-                          <button
-                            className="btn btn-sm p-0 me-1"
-                            style={{
-                              background: "transparent",
-                              border: "none",
-                              cursor: "pointer",
-                            }}
-                            onClick={() => handleEditSupplier(supplier)}
-                            title="Edit"
-                          >
-                            <span
-                              className="material-icons-two-tone text-warning"
-                              style={{ fontSize: "16px" }}
-                            >
-                              edit
-                            </span>
-                          </button>
-                          <button
-                            className="btn btn-sm p-0 me-1"
-                            style={{
-                              background: "transparent",
-                              border: "none",
-                              cursor: "pointer",
-                            }}
-                            onClick={() =>
-                              alert("Open Price List for " + supplier.customer_name)
-                            }
-                            title="Price List"
-                          >
-                            <span
-                              className="material-icons-two-tone text-info"
-                              style={{ fontSize: "16px" }}
-                            >
-                              list_alt
-                            </span>
-                          </button>
-                          <button
-                            className="btn btn-sm p-0"
-                            style={{
-                              background: "transparent",
-                              border: "none",
-                              cursor: "pointer",
-                            }}
-                            onClick={() => deleteRow(supplier.id)}
-                            title="Delete"
-                          >
-                            <span
-                              className="material-icons-two-tone text-danger"
-                              style={{ fontSize: "16px" }}
-                            >
-                              delete
-                            </span>
-                          </button>
-                        </td>
+                      <td style={{ cursor: "pointer" }}>
+  <button
+    className="btn btn-sm p-0 me-1"
+    style={{
+      background: "transparent",
+      border: "none",
+      cursor: "pointer",
+    }}
+    onClick={() => handleEditSupplier(supplier)}
+    title="Edit"
+  >
+    <span
+      className="material-icons-two-tone text-warning"
+      style={{ fontSize: "16px" }}
+    >
+      edit
+    </span>
+  </button>
+  <button
+    className="btn btn-sm p-0 me-1"
+    style={{
+      background: "transparent",
+      border: "none",
+      cursor: "pointer",
+    }}
+    onClick={() =>
+      alert("Open Price List for " + supplier.customer_name)
+    }
+    title="Price List"
+  >
+    <span
+      className="material-icons-two-tone text-info"
+      style={{ fontSize: "16px" }}
+    >
+      list_alt
+    </span>
+  </button>
+  <button
+    className="btn btn-sm p-0"
+    style={{
+      background: "transparent",
+      border: "none",
+      cursor: "pointer",
+    }}
+    onClick={() => deleteRow(supplier.id)}
+    title="Delete"
+  >
+    <span
+      className="material-icons-two-tone text-danger"
+      style={{ fontSize: "16px" }}
+    >
+      delete
+    </span>
+  </button>
+</td>
                       </tr>
                     ))
                   ) : (
