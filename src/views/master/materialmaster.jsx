@@ -1,24 +1,200 @@
-import { useState, useContext } from "react";
+import { useState, useContext, useEffect } from "react";
 import { MaterialContext } from "../../contexts/MaterialContext";
 import "bootstrap/dist/css/bootstrap.min.css";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import * as XLSX from "xlsx";
 import React, { useRef } from "react";
+import axios from "axios";
+import { toast } from "react-toastify";
+import { getAuthToken, isValidToken, handleAuthError } from "../../utils/authUtils";
+import useAuth from "../../hooks/useAuth";
+
+// API Base URL and endpoints
+const API_BASE_URL = "https://115.124.111.111/FLS/public/api";
+const API_ENDPOINTS = {
+  list: `${API_BASE_URL}/material/list`,
+  create: `${API_BASE_URL}/material/create`,
+  edit: (id) => `${API_BASE_URL}/material/edit/${id}`,
+  update: `${API_BASE_URL}/material/update`,
+  delete: (id) => `${API_BASE_URL}/material/delete/${id}`
+};
+
+// Create axios instance with interceptors
+const axiosInstance = axios.create({
+  baseURL: API_BASE_URL,
+  timeout: 30000, // Increased timeout to 30 seconds
+  headers: {
+    'Accept': 'application/json',
+    'Content-Type': 'application/json'
+  }
+});
+
+// Add request interceptor
+axiosInstance.interceptors.request.use(
+  (config) => {
+    const token = getAuthToken();
+    if (!token) {
+      console.error('No auth token available');
+      throw new Error('Authentication required');
+    }
+
+    if (!isValidToken(token)) {
+      console.error('Invalid token format');
+      throw new Error('Invalid authentication token');
+    }
+
+    // Ensure Authorization header is properly set
+    config.headers.Authorization = `Bearer ${token}`;
+    
+    // Log request details for debugging
+    console.log('Request:', {
+      url: config.url,
+      method: config.method,
+      headers: config.headers
+    });
+
+    return config;
+  },
+  (error) => {
+    console.error('Request interceptor error:', error);
+    return Promise.reject(error);
+  }
+);
+
+// Add response interceptor
+axiosInstance.interceptors.response.use(
+  (response) => {
+    // Log successful responses
+    console.log('Response:', {
+      url: response.config.url,
+      status: response.status,
+      data: response.data
+    });
+    return response;
+  },
+  (error) => {
+    console.error('Response error:', error);
+    
+    if (error.response?.status === 401) {
+      console.log('Unauthorized access - clearing token');
+      handleAuthError();
+      return Promise.reject(new Error('Session expired. Please login again.'));
+    }
+
+    // Handle network errors
+    if (!error.response) {
+      toast.error('Network error. Please check your connection.');
+      return Promise.reject(new Error('Network error'));
+    }
+
+    // Handle other errors
+    const errorMessage = error.response?.data?.message || 'An error occurred';
+    toast.error(errorMessage);
+    return Promise.reject(error);
+  }
+);
 
 const MaterialMaster = () => {
-  const { materials, setMaterials } = useContext(MaterialContext);
+  const { isAuthenticated, handleAuthError } = useAuth();
+  const [materials, setMaterials] = useState([]);
   const [search, setSearch] = useState("");
   const [showModal, setShowModal] = useState(false);
   const [editingMaterial, setEditingMaterial] = useState(null);
+  const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
-    materialName: "",
-    materialCode: "",
-    defaultPrice: "",
-    materialType: "Raw",
+    material_name: "",
+    material_code: "",
+    default_price: "",
+    material_type: "",
+    weight: ""
   });
 
+  // Check auth and fetch materials on component mount
+  useEffect(() => {
+    const checkAuthAndFetch = async () => {
+      const token = getAuthToken();
+      if (!isValidToken(token)) {
+        console.log('No valid token found on mount');
+        handleAuthError();
+        return;
+      }
 
+      try {
+        await fetchMaterials();
+      } catch (error) {
+        console.error('Initial fetch failed:', error);
+      }
+    };
+
+    checkAuthAndFetch();
+  }, []);
+
+const fetchMaterials = async () => {
+  try {
+    setLoading(true);
+    const token = sessionStorage.getItem("authToken");
+    console.log("Auth Token:", token);
+
+    // ✅ Validate token before making API call
+    if (!token || token === "undefined" || token === "null") {
+      console.error("Invalid or missing auth token");
+      toast.error("Session expired. Please login again.");
+      sessionStorage.removeItem("authToken");
+      window.location.href = "/login";
+      return;
+    }
+
+    console.log("Making request to:", API_ENDPOINTS.list);
+
+    const response = await axiosInstance.get(API_ENDPOINTS.list, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+      validateStatus: (status) => status < 500, // handle 4xx manually
+    });
+
+    console.log("Raw API response:", response);
+
+    // ✅ Normalize response format
+    const resData = response.data;
+
+    // ✅ Extract list regardless of response structure
+    const list =
+      resData?.data ||
+      resData?.materials ||
+      resData?.list ||
+      (Array.isArray(resData) ? resData : []);
+
+    if (Array.isArray(list) && list.length > 0) {
+      console.log("✅ Materials fetched successfully:", list);
+      setMaterials(list);
+    } else {
+      console.warn("⚠️ No materials found in API response:", resData);
+      toast.warn("No materials found.");
+    }
+  } catch (error) {
+    console.error("❌ Fetch error:", error);
+
+    if (axios.isAxiosError(error)) {
+      if (error.response) {
+        console.log("Response error data:", error.response.data);
+        toast.error(error.response.data?.message || "API returned an error.");
+      } else if (error.request) {
+        console.log("No response received:", error.request);
+        toast.error("No response from server.");
+      } else {
+        console.log("Request setup error:", error.message);
+        toast.error(error.message);
+      }
+    } else {
+      toast.error("Unexpected error occurred.");
+    }
+  } finally {
+    setLoading(false);
+  }
+};
   // on key navigation 
   // put these at the top of your component
 const inputRefs = useRef([]);
@@ -34,79 +210,156 @@ const handleKeyDown = (e, index) => {
   }
 };
 
-
-  // const MaterialModalBody = ({ formData, setFormData }) => {
-  // const nameRef = useRef(null);
-  // const priceRef = useRef(null);
-  // const typeRef = useRef(null);
-
-  // // helper function: go to next field on Enter
-  // const handleKeyDown = (e, nextRef) => {
-  //   if (e.key === "Enter") {
-  //     e.preventDefault();
-  //     if (nextRef?.current) {
-  //       nextRef.current.focus();
-  //     }
-  //   }
-  // };
-
-  
   const generateMaterialCode = () => {
-    const nextNumber = materials.length + 1;
+    const maxCode = materials.reduce((max, material) => {
+      const codeNum = parseInt(material.material_code?.replace('MAT', '') || '0');
+      return Math.max(max, codeNum);
+    }, 0);
+    const nextNumber = maxCode + 1;
     return `MAT${String(nextNumber).padStart(3, "0")}`;
   };
 
-  const handleNewMaterial = () => {
-    setEditingMaterial(null);
-    setFormData({
-      materialName: "",
-      materialCode: generateMaterialCode(),
-      defaultPrice: "",
-      materialType: "",
-    });
-    setShowModal(true);
-  };
+const handleNewMaterial = () => {
+  setEditingMaterial(null);
+  setFormData({
+    material_name: "",      // ✅ match validation
+    material_code: generateMaterialCode(),
+    defaultPrice: "",       // keep camelCase if you want
+    material_type: "",
+    weight: "",
+  });
+  setShowModal(true);
+};
 
-  const handleEditMaterial = (material) => {
-    setEditingMaterial(material);
-    setFormData(material);
-    setShowModal(true);
-  };
+  const handleEditMaterial = async (material) => {
+    try {
+      const token = getAuthToken();
+      if (!isValidToken(token)) {
+        toast.error("Session expired. Please login again.");
+        handleAuthError();
+        return;
+      }
 
-  const handleSaveMaterial = () => {
-    if (editingMaterial) {
-      setMaterials(
-        materials.map((m) =>
-          m.id === editingMaterial.id
-            ? { ...formData, id: editingMaterial.id }
-            : m
-        )
-      );
-    } else {
-      setMaterials([...materials, { ...formData, id: Date.now() }]);
+      const response = await axiosInstance.get(API_ENDPOINTS.edit(material.id));
+      
+      if (response.data?.status === "success") {
+        setEditingMaterial(material);
+        setFormData(response.data.data || material);
+        setShowModal(true);
+      } else {
+        toast.error(response.data?.message || "Failed to fetch material details");
+      }
+    } catch (error) {
+      console.error("Error fetching material details:", error);
+      toast.error("Error loading material details. Please try again.");
     }
-    setShowModal(false);
   };
 
-  const deleteMaterial = (id) => {
-    setMaterials(materials.filter((m) => m.id !== id));
+  const handleSaveMaterial = async () => {
+    try {
+      // Validate required fields
+     if (!formData.material_name?.trim()) {
+  toast.error("Material Name is required");
+  return;
+}
+
+if (!formData.material_type?.trim()) {
+  toast.error("Material Type is required");
+  return;
+}
+
+if (!formData.default_price) {
+  toast.error("Default Price is required");
+  return;
+}
+
+      setLoading(true);
+      
+      // Prepare request data
+    const materialData = {
+     material_name: formData.material_name.trim(),
+    material_code: formData.material_code.trim(),
+     material_type: formData.material_type,
+     default_price: parseFloat(formData.default_price),
+     weight: formData.weight ? parseFloat(formData.weight) : null
+};
+
+      console.log('Sending material data:', materialData);
+
+      if (editingMaterial) {
+        materialData.id = editingMaterial.id;
+        
+        const response = await axiosInstance.post(API_ENDPOINTS.update, materialData, {
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        });
+
+        console.log('Update response:', response.data);
+
+        if (response.data?.status === "success") {
+          toast.success("Material updated successfully");
+          await fetchMaterials();
+          setShowModal(false);
+        } else {
+          throw new Error(response.data?.message || "Failed to update material");
+        }
+      } else {
+        const response = await axiosInstance.post(API_ENDPOINTS.create, materialData, {
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        });
+
+        console.log('Create response:', response.data);
+
+        if (response.data?.status === "success") {
+          toast.success("Material created successfully");
+          await fetchMaterials();
+          setShowModal(false);
+        } else {
+          throw new Error(response.data?.message || "Failed to create material");
+        }
+      }
+    } catch (error) {
+      console.error("Error saving material:", error);
+      if (error.response) {
+        console.log('Error response:', error.response.data);
+        toast.error(error.response.data?.message || "Failed to save material");
+      } else {
+        toast.error(error.message || "Error saving material. Please try again.");
+      }
+    } finally {
+      setLoading(false);
+    }
   };
 
-  // const exportPDF = () => {
-  //   if (!materials.length) return alert("No materials to export.");
-  //   const doc = new jsPDF();
-  //   doc.text("Material Master", 14, 15);
-  //   autoTable(doc, {
-  //     head: [["Code", "Name", "Price", "Type"]],
-  //     body: materials.map((m) => [
-  //       m.materialCode,
-  //       m.materialName,
-  //       m.defaultPrice,
-  //       m.materialType,
-  //     ]),
-  //   });
-  //   doc.save("MaterialMaster.pdf");
-  // };
+  const deleteMaterial = async (id) => {
+    if (!window.confirm("Are you sure you want to delete this material?")) {
+      return;
+    }
+
+    try {
+      const token = getAuthToken();
+      if (!isValidToken(token)) {
+        toast.error("Session expired. Please login again.");
+        handleAuthError();
+        return;
+      }
+
+      const response = await axiosInstance.delete(API_ENDPOINTS.delete(id));
+      
+      if (response.data?.status === "success") {
+        toast.success("Material deleted successfully");
+        fetchMaterials();
+      } else {
+        toast.error(response.data?.message || "Failed to delete material");
+      }
+    } catch (error) {
+      console.error("Error deleting material:", error);
+      toast.error("Error deleting material. Please try again.");
+    }
+  };
 
 
   const exportPDF = () => {
@@ -199,13 +452,21 @@ const handlePrint = () => {
 };
 
 
-  const filteredMaterials = materials.filter(
-    (m) =>
-      m.materialName.toLowerCase().includes(search.toLowerCase()) ||
-      m.materialCode.toLowerCase().includes(search.toLowerCase()) ||
-      String(m.defaultPrice).toLowerCase().includes(search.toLowerCase()) ||
-      m.materialType.toLowerCase().includes(search.toLowerCase())
+  // Format price for display
+  const formatPrice = (price) => {
+    return typeof price === 'number' 
+      ? price.toFixed(2)
+      : price;
+  };
+
+  // Filter and map materials for display
+  const filteredMaterials = materials.filter((m) =>
+    String(m.material_name || '').toLowerCase().includes(search.toLowerCase()) ||
+    String(m.material_code || '').toLowerCase().includes(search.toLowerCase()) ||
+    String(m.default_price || '').toLowerCase().includes(search.toLowerCase()) ||
+    String(m.material_type || '').toLowerCase().includes(search.toLowerCase())
   );
+  
 
   return (
     <div className="container mt-0">
@@ -291,7 +552,7 @@ const handlePrint = () => {
 
 
       {/* Table */}
-    <div className="table-responsive">
+<div className="table-responsive">
   <table
     id="material-table"
     className="table table-bordered table-striped align-middle"
@@ -301,94 +562,38 @@ const handlePrint = () => {
       <tr className="text-center">
         <th className="py-1 px-1">Material Code</th>
         <th className="py-1 px-1">Material Name</th>
-        <th className="py-1 px-1">  Default Price     </th>
-        <th className="py-1 px-1"> Material Type </th>
+        <th className="py-1 px-1">Default Price</th>
+        <th className="py-1 px-1">Material Type</th>
         <th className="py-1 px-1" style={{ minWidth: "140px" }}>Action</th>
       </tr>
     </thead>
-
-
-<tbody>
-  {filteredMaterials.map((material) => (
-    <tr key={material.id} className="text-center" style={{ fontSize: "12px" }}>
-      <td className="py-0 px-1">{material.materialCode}</td>
-      <td className="py-0 px-1">{material.materialName}</td>
-      <td className="py-0 px-1">{material.defaultPrice}</td>
-      <td className="py-0 px-1">{material.materialType}</td>
-      <td className="py-0 px-1 text-center">
-        {/* Edit */}
-        {/* <button
-          className="btn btn-sm p-0 me-1"
-          style={{ background: "transparent", border: "none",cursor: "pointer" }}
-          onClick={() => handleEditMaterial(material)}
-          title="Edit"
-        >
-          <span
-            className="material-icons-two-tone text-warning"
-            style={{ fontSize: "16px" }}
-          >
-            edit
-          </span>
-        </button> */}
-
-
-      <button
-  className="btn btn-sm p-0 me-1"
-  style={{ background: "transparent", border: "none", cursor: "pointer" }}
-  onClick={() => handleEditMaterial(material)}
-  title="Edit"
->
-  <span
-    className="material-icons-two-tone text-warning"
-    style={{ fontSize: "16px", cursor: "pointer" }}
-  >
-    edit
-  </span>
-</button>
-
-      {/* Delete */}
-        {/* <button
-          className="btn btn-sm p-0"
-          style={{ background: "transparent", border: "none" }}
-          onClick={() => deleteMaterial(material.id)}
-          title="Delete"
-        >
-          <span
-            className="material-icons-two-tone text-danger"
-            style={{ fontSize: "16px" }}
-          >
-            delete
-          </span>
-        </button> */}
-
-          <button
-  className="btn btn-sm p-0"
-  style={{ background: "transparent", border: "none", cursor: "pointer" }}
-  onClick={() => deleteMaterial(material.id)}
-  title="Delete"
->
-  <span
-    className="material-icons-two-tone text-danger"
-    style={{ fontSize: "16px", cursor: "pointer" }}
-  >
-    delete
-  </span>
-</button>
-
-      </td>
-    </tr>
-  ))}
-
-  {filteredMaterials.length === 0 && (
-    <tr>
-      <td colSpan="5" className="text-center text-muted py-2" style={{ fontSize: "12px" }}>
-        No materials found
-      </td>
-    </tr>
-  )}
-</tbody>
-
-
+    <tbody>
+      {loading ? (
+        <tr>
+          {/* <td colSpan="5" className="text-center py-3">
+            <div className="spinner-border spinner-border-sm text-primary me-2" role="status">
+              <span className="visually-hidden">Loading...</span>
+            </div>
+            Loading materials...
+          </td> */}
+        </tr>
+      ) : (
+        <tr className="text-center" style={{ fontSize: "12px" }}>
+          <td className="py-0 px-1">MAT001</td>
+          <td className="py-0 px-1">Sample Material</td>
+          <td className="py-0 px-1">{formatPrice(100)}</td>
+          <td className="py-0 px-1"><span className="badge bg-primary">Bedsheet</span></td>
+          <td className="py-0 px-1 text-center">
+            <button className="btn btn-sm p-0 me-1" style={{ background: "transparent", border: "none", cursor: "pointer" }} title="Edit">
+              <span className="material-icons-two-tone text-warning" style={{ fontSize: "16px", cursor: "pointer" }}>edit</span>
+            </button>
+            <button className="btn btn-sm p-0" style={{ background: "transparent", border: "none", cursor: "pointer" }} title="Delete">
+              <span className="material-icons-two-tone text-danger" style={{ fontSize: "16px", cursor: "pointer" }}>delete</span>
+            </button>
+          </td>
+        </tr>
+      )}
+    </tbody>
   </table>
 </div>
 
@@ -479,36 +684,37 @@ const handlePrint = () => {
             <label className="form-label" style={{ fontSize: "12px" }}>
               Material Name
             </label>
-            <input
-              type="text"
-              className="form-control form-control-sm"
-              placeholder="Material Name"
-              value={formData.materialName}
-              onChange={(e) =>
-                setFormData({ ...formData, materialName: e.target.value })
-              }
-              ref={(el) => (inputRefs.current[0] = el)}
-              onKeyDown={(e) => handleKeyDown(e, 0)}
-            />
+          <input
+  type="text"
+  className="form-control form-control-sm"
+  placeholder="Material Name"
+  value={formData.material_name || ''} // ✅ matches state
+  onChange={(e) =>
+    setFormData({ ...formData, material_name: e.target.value }) // ✅ update same key
+  }
+  ref={(el) => (inputRefs.current[0] = el)}
+  onKeyDown={(e) => handleKeyDown(e, 0)}
+/>
+
+
+
           </div>
           
-
 <div className="mb-2">
   <label className="form-label" style={{ fontSize: "12px" }}>
     Default Price
   </label>
   <input
-    type="text"   // ✅ changed to text so we can fully control input
+    type="text"
     className="form-control form-control-sm"
     placeholder="Default Price"
-    value={formData.defaultPrice}
+    value={formData.default_price || ''}   // ✅ use snake_case
     onKeyDown={(e) => {
       const char = e.key;
       const allowedChars = "0123456789";
       const controlKeys = ["Backspace", "Delete", "ArrowLeft", "ArrowRight", "Tab", "Enter"];
 
       if (controlKeys.includes(char)) {
-        // ✅ handle Enter navigation
         if (char === "Enter") {
           e.preventDefault();
           const nextIndex = 2; // move focus to Weight field
@@ -519,14 +725,12 @@ const handlePrint = () => {
         return;
       }
 
-      // ✅ allow one decimal
       if (char === "." && !e.target.value.includes(".")) return;
 
-      // block everything else
       if (!allowedChars.includes(char)) e.preventDefault();
     }}
     onChange={(e) =>
-      setFormData({ ...formData, defaultPrice: e.target.value })
+      setFormData({ ...formData, default_price: e.target.value })  // ✅ update snake_case
     }
     ref={(el) => (inputRefs.current[1] = el)}
   />
@@ -577,35 +781,44 @@ const handlePrint = () => {
             <label className="form-label" style={{ fontSize: "12px" }}>
               Material Type
             </label>
-            <select
-              className="form-select form-select-sm"
-              value={formData.materialType}
-              onChange={(e) =>
-                setFormData({ ...formData, materialType: e.target.value })
-              }
-              ref={(el) => (inputRefs.current[3] = el)}
-              onKeyDown={(e) => handleKeyDown(e, 3)}
-            >
-              <option value="">  Select Type </option>   {/* ✅ placeholder */}
-              <option value="Bedsheet">Bedsheet</option>
-              <option value="Towel">Towel</option>
-            </select>
+          <select
+  className="form-select form-select-sm"
+  value={formData.material_type || ""} // ✅ matches formData key
+  onChange={(e) =>
+    setFormData({ ...formData, material_type: e.target.value }) // ✅ update same key
+  }
+  ref={(el) => (inputRefs.current[2] = el)} // ✅ index should follow the order of inputs: 0=Name, 1=Default Price, 2=Material Type
+  onKeyDown={(e) => handleKeyDown(e, 2)} // ✅ Enter moves to next input/button
+>
+  <option value="">Select Type</option>   {/* placeholder */}
+  <option value="Bedsheet">Bedsheet</option>
+  <option value="Towel">Towel</option>
+</select>
           </div>
         </div>
 
         {/* Footer */}
         <div className="modal-footer py-2">
           <button
-            id="saveMaterialBtn"  // ✅ add id so we can focus this after last Enter
+            id="saveMaterialBtn"
             className="btn btn-primary btn-sm"
             onClick={handleSaveMaterial}
+            disabled={loading}
           >
-            {editingMaterial ? "Update" : "Add"}
+            {loading ? (
+              <>
+                <span className="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
+                {editingMaterial ? "Updating..." : "Adding..."}
+              </>
+            ) : (
+              editingMaterial ? "Update" : "Add"
+            )}
           </button>
 
           <button
             className="btn btn-secondary btn-sm"
             onClick={() => setShowModal(false)}
+            disabled={loading}
           >
             Cancel
           </button>

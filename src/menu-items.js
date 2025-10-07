@@ -106,19 +106,19 @@ const menuItems = {
             { id: 'price-master', title: 'Price Master', type: 'item', url: '/pricemaster' },
             { id: 'material-master', title: 'Material Master', type: 'item', url: '/materialmaster' },
             { id: 'user-master', title: 'User Master', type: 'item', url: '/usermaster' },
-            { id: 'supplier-group', title: 'Supplier Group', type: 'item', url: '/suppliergroup' }
+            { id: 'customer-group', title: 'Supplier Group', type: 'item', url: '/customergroup' }
           ]
         },
-        {
-          id: 'settings-menu',
-          title: 'Settings',
-          type: 'collapse',
-          icon: 'material-icons-two-tone',
-          iconname: 'settings',
-          children: [
-            { id: 'privilege', title: 'Privilege', type: 'item', url: '/privilege', iconname: 'storefront' }
-          ]
-        }
+        // {
+        //   id: 'settings-menu',
+        //   title: 'Settings',
+        //   type: 'collapse',
+        //   icon: 'material-icons-two-tone',
+        //   iconname: 'settings',
+        //   children: [
+        //     { id: 'privilege', title: 'Privilege', type: 'item', url: '/privilege', iconname: 'storefront' }
+        //   ]
+        // }
       ]
     }
   ]

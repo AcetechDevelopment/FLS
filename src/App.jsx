@@ -32,7 +32,7 @@ const ProtectedRoute = ({ children }) => {
 // Lazy load components
 const Login = lazy(() => import("./views/auth/login"));
 const Register = lazy(() => import("./views/auth/register"));
-const DashboardSales = lazy(() => import("./views/dashboard/DashSales/index"));
+const Dashboard = lazy(() => import("./views/dashboard/dashboard"));
 const Color = lazy(() => import("./views/ui-elements/basic/BasicColor"));
 const FeatherIcon = lazy(() => import("./views/ui-elements/icons/Feather"));
 const FontAwesome = lazy(() => import("./views/ui-elements/icons/FontAwesome"));
@@ -86,7 +86,7 @@ export default function App() {
 
           {/* Protected routes */}
           <Route element={<ProtectedRoute><AdminLayout /></ProtectedRoute>}>
-            <Route path="/dashboard" element={<DashboardSales />} />
+            <Route path="/dashboard" element={<Dashboard />} />
 
             {/* Transition routes */}
             <Route path="/transition/inward" element={<InwardPage />} />
@@ -104,7 +104,7 @@ export default function App() {
             <Route path="/customer" element={<SupplierMaster />} />
             <Route path="/materialmaster" element={<MaterialMaster />} />
             <Route path="/pricemaster" element={<PriceMaster />} />
-            <Route path="/suppliergroup" element={<SupplierGroup />} />
+            <Route path="/customergroup" element={<SupplierGroup />} />
 
             {/* Stock routes */}
             <Route path="/materialstock" element={<MaterialStockMaster />} />

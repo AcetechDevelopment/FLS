@@ -17,30 +17,30 @@ const MaterialStock = () => {
               style={{ fontSize: "12px" }}
             >
               <thead className="table-primary text-center">
-              <tr>
-          <th className="py-2 px-2 text-center">Material Code</th>
-          <th className="py-2 px-2 text-center">Material Name</th>
-          <th className="py-2 px-2 text-center">Default Price</th>
-          <th className="py-2 px-2 text-center">Material Type</th>
-        </tr>
+                <tr>
+                  <th className="py-2 px-2 text-center">Material Code</th>
+                  <th className="py-2 px-2 text-center">Material Name</th>
+                  {/* <th className="py-2 px-2 text-center">Default Price</th> */}
+                  <th className="py-2 px-2 text-center">Material Type</th>
+                  <th className="py-2 px-2 text-center">Fresh</th>
+                  <th className="py-2 px-2 text-center">Soil</th>
+                </tr>
               </thead>
               <tbody>
                 {materials.length > 0 ? (
                   materials.map((m) => (
-                 <tr key={m.id}>
-  <td className="py-1 px-2 text-center">{m.materialCode}</td>
-  <td className="py-1 px-2 text-center">{m.materialName}</td>
-  <td className="py-1 px-2 text-center">{m.defaultPrice || 0}</td>
-  <td className="py-1 px-2 text-center">{m.materialType}</td>
-</tr>
+                    <tr key={m.id}>
+                      <td className="py-1 px-2 text-center">{m.materialCode}</td>
+                      <td className="py-1 px-2 text-center">{m.materialName}</td>
+                      {/* <td className="py-1 px-2 text-center">{m.defaultPrice || 0}</td> */}
+                      <td className="py-1 px-2 text-center">{m.materialType}</td>
+                      <td className="py-1 px-2 text-center">{m.fresh || 0}</td>
+                      <td className="py-1 px-2 text-center">{m.soil || 0}</td>
+                    </tr>
                   ))
                 ) : (
                   <tr>
-                    <td
-                      colSpan="4"
-                      className="text-center text-muted py-2"
-                      style={{ fontSize: "12px" }}
-                    >
+                    <td colSpan="6" className="text-center text-muted py-2" style={{ fontSize: "12px" }}>
                       No materials found
                     </td>
                   </tr>

@@ -3,7 +3,7 @@ import { Card, Table, Form } from "react-bootstrap";
 
 const PriceMaster = () => {
   const [suppliers, setSuppliers] = useState([
-    { id: 1, name: "ABC Suppliers" },
+    { id: 1, name: "ABC Customers" },
     { id: 2, name: "XYZ Traders" },
   ]);
 

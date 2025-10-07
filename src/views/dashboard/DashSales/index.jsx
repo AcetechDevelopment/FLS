@@ -21,37 +21,125 @@ export default function DashSales() {
   return (
     <Row>
       <Col md={12} xl={6}>
-        <Card className="flat-card">
-          <div className="row-table">
-            <Card.Body className="col-sm-6 br">
-              <FlatCard params={{ title: 'Customers', iconClass: 'text-primary mb-1', icon: 'group', value: '1000' }} />
-            </Card.Body>
-            <Card.Body className="col-sm-6 d-none d-md-table-cell d-lg-table-cell d-xl-table-cell card-body br">
-              <FlatCard params={{ title: 'Revenue', iconClass: 'text-primary mb-1', icon: 'language', value: '1252' }} />
-            </Card.Body>
-            <Card.Body className="col-sm-6 card-bod">
-              <FlatCard params={{ title: 'Growth', iconClass: 'text-primary mb-1', icon: 'unarchive', value: '600' }} />
-            </Card.Body>
-          </div>
-          <div className="row-table">
-            <Card.Body className="col-sm-6 br">
-              <FlatCard
-                params={{
-                  title: 'Returns',
-                  iconClass: 'text-primary mb-1',
-                  icon: 'swap_horizontal_circle',
-                  value: '3550'
-                }}
-              />
-            </Card.Body>
-            <Card.Body className="col-sm-6 d-none d-md-table-cell d-lg-table-cell d-xl-table-cell card-body br">
-              <FlatCard params={{ title: 'Downloads', iconClass: 'text-primary mb-1', icon: 'cloud_download', value: '3550' }} />
-            </Card.Body>
-            <Card.Body className="col-sm-6 card-bod">
-              <FlatCard params={{ title: 'Order', iconClass: 'text-primary mb-1', icon: 'shopping_cart', value: '100%' }} />
-            </Card.Body>
-          </div>
-        </Card>
+     <Card
+  className="flat-card"
+  style={{
+    background: "#ffffff",
+    border: "none",
+    borderRadius: "16px",
+    boxShadow: "0 2px 10px rgba(0,0,0,0.08)",
+    padding: "16px",
+    marginBottom: "20px",
+    transition: "all 0.3s ease-in-out",
+  }}
+>
+  <div
+    className="row-table"
+    style={{
+      display: "flex",
+      justifyContent: "space-between",
+      flexWrap: "wrap",
+      gap: "12px",
+    }}
+  >
+    {/* Customer Count */}
+    <Card.Body
+      className="col-sm-4"
+      style={{
+        background: "linear-gradient(135deg, #f9f9f9 0%, #fdfdfd 100%)",
+        borderRadius: "12px",
+        padding: "20px",
+        textAlign: "center",
+        flex: 1,
+        boxShadow: "0 2px 6px rgba(0,0,0,0.05)",
+        transition: "transform 0.2s ease, box-shadow 0.2s ease",
+      }}
+      onMouseEnter={(e) => {
+        e.currentTarget.style.transform = "translateY(-4px)";
+        e.currentTarget.style.boxShadow = "0 4px 14px rgba(0,0,0,0.12)";
+      }}
+      onMouseLeave={(e) => {
+        e.currentTarget.style.transform = "translateY(0)";
+        e.currentTarget.style.boxShadow = "0 2px 6px rgba(0,0,0,0.05)";
+      }}
+    >
+      <FlatCard
+        params={{
+          title: "Customer Count",
+          iconClass: "text-primary mb-1",
+          icon: "group",
+          value: "120", // Replace with dynamic value
+        }}
+      />
+    </Card.Body>
+
+    {/* Material Count - Split into Fresh and Soil */}
+    <Card.Body
+      className="col-sm-4"
+      style={{
+        background: "linear-gradient(135deg, #f9f9f9 0%, #fdfdfd 100%)",
+        borderRadius: "12px",
+        padding: "20px",
+        textAlign: "center",
+        flex: 1,
+        boxShadow: "0 2px 6px rgba(0,0,0,0.05)",
+        transition: "transform 0.2s ease, box-shadow 0.2s ease",
+      }}
+      onMouseEnter={(e) => {
+        e.currentTarget.style.transform = "translateY(-4px)";
+        e.currentTarget.style.boxShadow = "0 4px 14px rgba(0,0,0,0.12)";
+      }}
+      onMouseLeave={(e) => {
+        e.currentTarget.style.transform = "translateY(0)";
+        e.currentTarget.style.boxShadow = "0 2px 6px rgba(0,0,0,0.05)";
+      }}
+    >
+      <div style={{ marginBottom: "8px", fontWeight: "500", fontSize: "14px" }}>Material Count</div>
+      <div style={{ display: "flex", justifyContent: "space-around", gap: "10px" }}>
+        <div style={{ textAlign: "center" }}>
+          <div style={{ fontSize: "12px", color: "#6c757d" }}>Fresh</div>
+          <div style={{ fontSize: "16px", fontWeight: "600", color: "#0d6efd" }}>30</div>
+        </div>
+        <div style={{ textAlign: "center" }}>
+          <div style={{ fontSize: "12px", color: "#6c757d" }}>Soil</div>
+          <div style={{ fontSize: "16px", fontWeight: "600", color: "#dc3545" }}>15</div>
+        </div>
+      </div>
+    </Card.Body>
+
+    {/* Average Price */}
+    <Card.Body
+      className="col-sm-4"
+      style={{
+        background: "linear-gradient(135deg, #f9f9f9 0%, #fdfdfd 100%)",
+        borderRadius: "12px",
+        padding: "20px",
+        textAlign: "center",
+        flex: 1,
+        boxShadow: "0 2px 6px rgba(0,0,0,0.05)",
+        transition: "transform 0.2s ease, box-shadow 0.2s ease",
+      }}
+      onMouseEnter={(e) => {
+        e.currentTarget.style.transform = "translateY(-4px)";
+        e.currentTarget.style.boxShadow = "0 4px 14px rgba(0,0,0,0.12)";
+      }}
+      onMouseLeave={(e) => {
+        e.currentTarget.style.transform = "translateY(0)";
+        e.currentTarget.style.boxShadow = "0 2px 6px rgba(0,0,0,0.05)";
+      }}
+    >
+      <FlatCard
+        params={{
+          title: "Average Price",
+          iconClass: "text-primary mb-1",
+          icon: "attach_money",
+          value: "₹750", // Replace with dynamic average
+        }}
+      />
+    </Card.Body>
+  </div>
+</Card>
+        
         <Row>
           <Col md={6}>
             <Card className="support-bar overflow-hidden">

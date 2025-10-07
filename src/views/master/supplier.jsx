@@ -480,6 +480,21 @@ const deleteRow = async (id) => {
       s.address?.toLowerCase().includes(search.toLowerCase())
   );
 
+
+  // Inside your component
+const dummySupplier = {
+  id: "dummy",
+  customer_code: "SUP001",
+  customer_name: "Dummy Supplier",
+  customer_group: "Retail",
+  address: "123, Main Street",
+  gst: "123456789",
+  image: "https://via.placeholder.com/25",
+};
+
+// Combine dummy with actual filtered suppliers
+const displaySuppliers = [dummySupplier, ...filteredSuppliers];
+
   return (
     <Fragment>
       <div className="page-container">
@@ -490,13 +505,13 @@ const deleteRow = async (id) => {
             tabIndex="-1"
           >
             {/* Loading Indicator */}
-            {loading && (
+            {/* {loading && (
               <div className="text-center my-3">
                 <div className="spinner-border text-primary" role="status">
                   <span className="visually-hidden">Loading...</span>
                 </div>
               </div>
-            )}
+            )} */}
 
             {/* Toolbar */}
             <div className="d-flex flex-wrap gap-2 mb-2 px-2">
@@ -563,120 +578,112 @@ const deleteRow = async (id) => {
             </div>
 
             {/* Table */}
-            <div className="table-responsive">
-              <table
-                id="supplier-table"
-                className="table table-bordered table-striped align-middle"
-                style={{ fontSize: "12px" }}
-              >
-                <thead className="table-primary">
-                  <tr className="text-center">
-                    <th>Code</th>
-                    <th>Name</th>
-                    <th>Group</th>
-                    <th>Address</th>
-                    <th>GST</th>
-                    <th>Image</th>
-                    <th style={{ minWidth: "140px" }}>Action</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {filteredSuppliers.length > 0 ? (
-                    filteredSuppliers.map((supplier) => (
-                      <tr key={supplier.id} className="text-center">
-                        <td>{supplier.customer_code}</td>
-                        <td>{supplier.customer_name}</td>
-                        <td>{supplier.customer_group}</td>
-                        <td>{supplier.address}</td>
-                        <td>{supplier.gst}</td>
-                        <td>
-                          {supplier.image ? (
-                            <img
-                              src={supplier.image}
-                              alt="Supplier"
-                              width="25"
-                              height="25"
-                              style={{
-                                cursor: "pointer",
-                                borderRadius: "4px",
-                                objectFit: "cover",
-                              }}
-                              onClick={() => {
-                                setPreviewImage(supplier.image);
-                                setShowImageModal(true);
-                              }}
-                            />
-                          ) : (
-                            <span className="text-muted">No Image</span>
-                          )}
-                        </td>
-                      <td style={{ cursor: "pointer" }}>
+           <div className="table-responsive">
+    <table
+      id="supplier-table"
+      className="table table-bordered table-striped align-middle"
+      style={{ fontSize: "12px" }}
+    >
+      <thead className="table-primary">
+        <tr className="text-center">
+          <th>Code</th>
+          <th>Name</th>
+          <th>Group</th>
+          <th>Address</th>
+          <th>GST</th>
+          <th>Image</th>
+          <th style={{ minWidth: "140px" }}>Action</th>
+        </tr>
+      </thead>
+        <tbody>
+        {displaySuppliers.length > 0 ? (
+          displaySuppliers.map((supplier) => (
+            <tr key={supplier.id} className="text-center">
+              <td>{supplier.customer_code}</td>
+              <td>{supplier.customer_name}</td>
+              <td>{supplier.customer_group}</td>
+              <td>{supplier.address}</td>
+              <td>{supplier.gst}</td>
+              <td>
+                {supplier.image ? (
+                  <img
+                    src={supplier.image}
+                    alt="Supplier"
+                    width="25"
+                    height="25"
+                    style={{
+                      cursor: "pointer",
+                      borderRadius: "4px",
+                      objectFit: "cover",
+                    }}
+                    onClick={() => {
+                      setPreviewImage(supplier.image);
+                      setShowImageModal(true);
+                    }}
+                  />
+                ) : (
+                  <span className="text-muted">No Image</span>
+                )}
+              </td>
+           <td style={{ cursor: "pointer" }}>
+  {/* Edit Button */}
   <button
     className="btn btn-sm p-0 me-1"
-    style={{
-      background: "transparent",
-      border: "none",
-      cursor: "pointer",
-    }}
+    style={{ background: "transparent", border: "none", cursor: "pointer" }}
     onClick={() => handleEditSupplier(supplier)}
     title="Edit"
   >
     <span
       className="material-icons-two-tone text-warning"
-      style={{ fontSize: "16px" }}
+      style={{ fontSize: "16px", cursor: "pointer" }}
     >
       edit
     </span>
   </button>
+
+  {/* Price List Button */}
   <button
     className="btn btn-sm p-0 me-1"
-    style={{
-      background: "transparent",
-      border: "none",
-      cursor: "pointer",
-    }}
-    onClick={() =>
-      alert("Open Price List for " + supplier.customer_name)
-    }
+    style={{ background: "transparent", border: "none", cursor: "pointer" }}
+    onClick={() => alert("Open Price List for " + supplier.customer_name)}
     title="Price List"
   >
     <span
       className="material-icons-two-tone text-info"
-      style={{ fontSize: "16px" }}
+      style={{ fontSize: "16px", cursor: "pointer" }}
     >
       list_alt
     </span>
   </button>
+
+  {/* Delete Button */}
   <button
     className="btn btn-sm p-0"
-    style={{
-      background: "transparent",
-      border: "none",
-      cursor: "pointer",
-    }}
+    style={{ background: "transparent", border: "none", cursor: "pointer" }}
     onClick={() => deleteRow(supplier.id)}
     title="Delete"
   >
     <span
       className="material-icons-two-tone text-danger"
-      style={{ fontSize: "16px" }}
+      style={{ fontSize: "16px", cursor: "pointer" }}
     >
       delete
     </span>
   </button>
 </td>
-                      </tr>
-                    ))
-                  ) : (
-                    <tr>
-                      <td colSpan="7" className="text-center text-muted">
-                        No suppliers found
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
+            </tr>
+          ))
+        ) : (
+          <tr>
+            <td colSpan="7" className="text-center text-muted">
+              No suppliers found
+            </td>
+          </tr>
+        )}
+      </tbody>
+    </table>
+  </div>
+
 
             {/* Form Modal */}
             {showModal && (
@@ -697,99 +704,101 @@ const deleteRow = async (id) => {
                           ></button>
                         </div>
 
-                        <div
-                          className="modal-body p-2"
-                          style={{ maxHeight: "300px", overflowY: "auto" }}
-                        >
-                          <div className="mb-2">
-                            <label className="form-label">Customer Code</label>
-                            <input
-                              type="text"
-                              className="form-control form-control-sm"
-                              value={formData.customer_code}
-                              readOnly
-                            />
-                          </div>
+                    <div
+  className="modal-body p-2"
+  style={{ maxHeight: "300px", overflowY: "auto" }}
+>
+  {editingSupplier && (
+    <div className="mb-2">
+      <label className="form-label">Customer Code</label>
+      <input
+        type="text"
+        className="form-control form-control-sm"
+        value={formData.customer_code}
+        readOnly
+      />
+    </div>
+  )}
 
-                          <div className="mb-2">
-                            <label className="form-label">Customer Name</label>
-                            <input
-                              type="text"
-                              className="form-control form-control-sm"
-                              value={formData.customer_name}
-                              onChange={(e) =>
-                                setFormData({ ...formData, customer_name: e.target.value })
-                              }
-                            />
-                          </div>
+  <div className="mb-2">
+    <label className="form-label">Customer Name</label>
+    <input
+      type="text"
+      className="form-control form-control-sm"
+      value={formData.customer_name}
+      onChange={(e) =>
+        setFormData({ ...formData, customer_name: e.target.value })
+      }
+    />
+  </div>
 
-                          <div className="mb-2">
-                            <label className="form-label">Customer Group</label>
-                            <select
-                              className="form-select form-select-sm"
-                              value={formData.customer_group}
-                              onChange={(e) =>
-                                setFormData({ ...formData, customer_group: e.target.value })
-                              }
-                            >
-                              <option value="">Select</option>
-                              <option value="Hospital">Hospital</option>
-                              <option value="Retail">Retail</option>
-                              <option value="Distributor">Distributor</option>
-                            </select>
-                          </div>
+  <div className="mb-2">
+    <label className="form-label">Customer Group</label>
+    <select
+      className="form-select form-select-sm"
+      value={formData.customer_group}
+      onChange={(e) =>
+        setFormData({ ...formData, customer_group: e.target.value })
+      }
+    >
+      <option value="">Select</option>
+      <option value="Hospital">Hospital</option>
+      <option value="Retail">Retail</option>
+      <option value="Distributor">Distributor</option>
+    </select>
+  </div>
 
-                          <div className="mb-2">
-                            <label className="form-label">GST</label>
-                            <input
-                              type="text"
-                              className="form-control form-control-sm"
-                              value={formData.gst}
-                              onChange={(e) =>
-                                setFormData({ ...formData, gst: e.target.value })
-                              }
-                            />
-                          </div>
+  <div className="mb-2">
+    <label className="form-label">GST</label>
+    <input
+      type="text"
+      className="form-control form-control-sm"
+      value={formData.gst}
+      onChange={(e) =>
+        setFormData({ ...formData, gst: e.target.value })
+      }
+    />
+  </div>
 
-                          <div className="mb-2">
-                            <label className="form-label">Address</label>
-                            <textarea
-                              className="form-control form-control-sm"
-                              value={formData.address}
-                              onChange={(e) =>
-                                setFormData({ ...formData, address: e.target.value })
-                              }
-                            ></textarea>
-                          </div>
+  <div className="mb-2">
+    <label className="form-label">Address</label>
+    <textarea
+      className="form-control form-control-sm"
+      value={formData.address}
+      onChange={(e) =>
+        setFormData({ ...formData, address: e.target.value })
+      }
+    ></textarea>
+  </div>
 
-                          <div className="mb-2">
-                            <label className="form-label">Image</label>
-                            <input
-                              type="file"
-                              className="form-control form-control-sm"
-                              ref={fileInputRef}
-                              onChange={handleImageUpload}
-                            />
-                            {previewImage && (
-                              <div className="mt-1">
-                                <img
-                                  src={previewImage}
-                                  alt="Preview"
-                                  width="50"
-                                  height="50"
-                                  style={{ objectFit: "cover" }}
-                                />
-                                <button
-                                  type="button"
-                                  className="btn btn-sm btn-outline-danger ms-1"
-                                  onClick={handleRemoveImage}
-                                >
-                                  Remove
-                                </button>
-                              </div>
-                            )}
-                          </div>
-                        </div>
+  <div className="mb-2">
+    <label className="form-label">Image</label>
+    <input
+      type="file"
+      className="form-control form-control-sm"
+      ref={fileInputRef}
+      onChange={handleImageUpload}
+    />
+    {previewImage && (
+      <div className="mt-1">
+        <img
+          src={previewImage}
+          alt="Preview"
+          width="50"
+          height="50"
+          style={{ objectFit: "cover" }}
+        />
+        <button
+          type="button"
+          className="btn btn-sm btn-outline-danger ms-1"
+          onClick={handleRemoveImage}
+        >
+          Remove
+        </button>
+      </div>
+    )}
+  </div>
+</div>
 
                         <div className="modal-footer py-2">
                           <button
