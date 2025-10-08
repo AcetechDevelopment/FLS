@@ -4,7 +4,7 @@ import FeatherIcon from "feather-icons-react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
-
+import logo from "assets/images/strom.svg";
 
 
 export default function Login({ setIsLoggedIn }) {
@@ -71,6 +71,7 @@ export default function Login({ setIsLoggedIn }) {
   };
 
   return (
+
     <div
       className="auth-wrapper d-flex justify-content-center align-items-center"
       style={{ minHeight: "100vh", background: "#f7f9fc", padding: "10px" }}
@@ -87,8 +88,9 @@ export default function Login({ setIsLoggedIn }) {
         <Row className="align-items-center text-center">
           <Col>
             <Card.Body className="p-0">
-              <h4 className="mb-3 fw-bold text-primary">Login</h4>
-
+       <div className="text-center mb-3">
+  <img src={logo} alt="Logo" style={{ maxWidth: "150px" }} />
+</div>
               <Form onSubmit={handleSubmit}>
                 {/* Mobile */}
                 <InputGroup className="mb-3" style={{ borderRadius: "10px", overflow: "hidden" }}>
@@ -175,5 +177,7 @@ export default function Login({ setIsLoggedIn }) {
         </Row>
       </Card>
     </div>
+
+
   );
 }

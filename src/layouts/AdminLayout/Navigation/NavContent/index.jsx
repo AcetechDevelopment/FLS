@@ -1,6 +1,6 @@
 import PropTypes from 'prop-types';
 import { useContext } from 'react';
-import { Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import strom from "assets/images/strom.svg";
 // react-bootstrap
 import { Card, ListGroup } from 'react-bootstrap';
@@ -12,12 +12,21 @@ import { ConfigContext } from 'contexts/ConfigContext';
 // third party
 import SimpleBar from 'simplebar-react';
 
-
 // -----------------------|| NAV CONTENT ||-----------------------//
 
-export default function NavContent({ navigation, activeNav }) {
+export default function NavContent({ navigation, activeNav, setIsLoggedIn }) {
   const configContext = useContext(ConfigContext);
   const { collapseLayout } = configContext.state;
+  const navigate = useNavigate();
+
+  // Handle logout
+const handleLogout = () => {
+  console.log("Logging out..."); // debug
+  sessionStorage.clear();
+  if (setIsLoggedIn) setIsLoggedIn(false);
+  navigate('/login', { replace: true });
+};
+
 
   const navItems = navigation.map((item) => {
     let navItem = <></>;
@@ -44,24 +53,51 @@ export default function NavContent({ navigation, activeNav }) {
         {navItems}
       </ListGroup>
 
-      <Card
-        className="nav-action-card m-3"
-        style={{ background: "transparent", border: "none", boxShadow: "none" }}
-      >
-        <Card.Body>
-          <h6
-            className="m-0 text-center"
-            style={{
-              color: "#0d6efd",
-              fontWeight: "700",
-              textTransform: "uppercase",
-              letterSpacing: "3px"
-            }}
-          >
-            Acetech
-          </h6>
-        </Card.Body>
-      </Card>
+    {/* Logout Card */}
+<Card
+  className="nav-logout-card m-3"
+  style={{ background: "transparent", border: "none", boxShadow: "none" }}
+>
+  <Card.Body style={{ display: "flex", justifyContent: "center" }}>
+    <button
+      onClick={handleLogout}
+      style={{
+        background: "#ff4d4f",
+        color: "#fff",
+        border: "none",
+        borderRadius: "8px",
+        padding: "6px 12px",
+        cursor: "pointer",
+        fontWeight: "600",
+        transition: "0.3s",
+      }}
+      onMouseEnter={(e) => (e.target.style.background = "#e04345")}
+      onMouseLeave={(e) => (e.target.style.background = "#ff4d4f")}
+    >
+      Logout
+    </button>
+  </Card.Body>
+</Card>
+
+{/* Branding Card */}
+<Card
+  className="nav-brand-card m-3"
+  style={{ background: "transparent", border: "none", boxShadow: "none" }}
+>
+  <Card.Body style={{ display: "flex", justifyContent: "center" }}>
+    <h6
+      className="m-0 text-center"
+      style={{
+        color: "#0d6efd",
+        fontWeight: "700",
+        textTransform: "uppercase",
+        letterSpacing: "3px",
+      }}
+    >
+      Acetech
+    </h6>
+  </Card.Body>
+</Card>
     </SimpleBar>
   );
 
@@ -98,5 +134,6 @@ export default function NavContent({ navigation, activeNav }) {
 
 NavContent.propTypes = {
   navigation: PropTypes.any,
-  activeNav: PropTypes.any
+  activeNav: PropTypes.any,
+  setIsLoggedIn: PropTypes.func,
 };

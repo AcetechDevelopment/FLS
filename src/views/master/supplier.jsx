@@ -492,7 +492,7 @@ const dummySupplier = {
   image: "https://via.placeholder.com/25",
 };
 
-// Combine dummy with actual filtered suppliers
+
 const displaySuppliers = [dummySupplier, ...filteredSuppliers];
 
   return (
@@ -578,54 +578,54 @@ const displaySuppliers = [dummySupplier, ...filteredSuppliers];
             </div>
 
             {/* Table */}
-           <div className="table-responsive">
-    <table
-      id="supplier-table"
-      className="table table-bordered table-striped align-middle"
-      style={{ fontSize: "12px" }}
-    >
-      <thead className="table-primary">
-        <tr className="text-center">
-          <th>Code</th>
-          <th>Name</th>
-          <th>Group</th>
-          <th>Address</th>
-          <th>GST</th>
-          <th>Image</th>
-          <th style={{ minWidth: "140px" }}>Action</th>
-        </tr>
-      </thead>
-        <tbody>
-        {displaySuppliers.length > 0 ? (
-          displaySuppliers.map((supplier) => (
-            <tr key={supplier.id} className="text-center">
-              <td>{supplier.customer_code}</td>
-              <td>{supplier.customer_name}</td>
-              <td>{supplier.customer_group}</td>
-              <td>{supplier.address}</td>
-              <td>{supplier.gst}</td>
-              <td>
-                {supplier.image ? (
-                  <img
-                    src={supplier.image}
-                    alt="Supplier"
-                    width="25"
-                    height="25"
-                    style={{
-                      cursor: "pointer",
-                      borderRadius: "4px",
-                      objectFit: "cover",
-                    }}
-                    onClick={() => {
-                      setPreviewImage(supplier.image);
-                      setShowImageModal(true);
-                    }}
-                  />
-                ) : (
-                  <span className="text-muted">No Image</span>
-                )}
-              </td>
-           <td style={{ cursor: "pointer" }}>
+      <div className="table-responsive">
+  <table
+    id="supplier-table"
+    className="table table-bordered table-striped align-middle"
+    style={{ fontSize: "12px" }}
+  >
+    <thead className="table-primary">
+      <tr className="text-center">
+        <th>Code</th>
+        <th>Name</th>
+        <th>Group</th>
+        <th>Address</th>
+        <th>GST</th>
+        <th>Image</th>
+        <th style={{ minWidth: "140px" }}>Action</th>
+      </tr>
+    </thead>
+    <tbody>
+      {displaySuppliers && displaySuppliers.length > 0 ? (
+        displaySuppliers.map((supplier) => (
+          <tr key={supplier.id} className="text-center">
+            <td>{supplier.customer_code}</td>
+            <td>{supplier.customer_name}</td>
+            <td>{supplier.customer_group}</td>
+            <td>{supplier.address}</td>
+            <td>{supplier.gst}</td>
+            <td>
+              {supplier.image ? (
+                <img
+                  src={supplier.image}
+                  alt="Supplier"
+                  width="25"
+                  height="25"
+                  style={{
+                    cursor: "pointer",
+                    borderRadius: "4px",
+                    objectFit: "cover",
+                  }}
+                  onClick={() => {
+                    setPreviewImage(supplier.image);
+                    setShowImageModal(true);
+                  }}
+                />
+              ) : (
+                <span className="text-muted">No Image</span>
+              )}
+            </td>
+<td>
   {/* Edit Button */}
   <button
     className="btn btn-sm p-0 me-1"
@@ -671,18 +671,18 @@ const displaySuppliers = [dummySupplier, ...filteredSuppliers];
     </span>
   </button>
 </td>
-            </tr>
-          ))
-        ) : (
-          <tr>
-            <td colSpan="7" className="text-center text-muted">
-              No suppliers found
-            </td>
           </tr>
-        )}
-      </tbody>
-    </table>
-  </div>
+        ))
+      ) : (
+        <tr>
+          <td colSpan="7" className="text-center text-muted">
+            No suppliers found
+          </td>
+        </tr>
+      )}
+    </tbody>
+  </table>
+</div>
 
 
             {/* Form Modal */}
@@ -799,8 +799,7 @@ const displaySuppliers = [dummySupplier, ...filteredSuppliers];
     )}
   </div>
 </div>
-
-                        <div className="modal-footer py-2">
+                      <div className="modal-footer py-2">
                           <button
                             className="btn btn-sm btn-secondary"
                             onClick={() => setShowModal(false)}

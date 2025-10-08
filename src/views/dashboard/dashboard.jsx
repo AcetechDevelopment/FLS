@@ -6,32 +6,15 @@ import {
   YAxis,
   Tooltip,
   CartesianGrid,
-  BarChart,
-  Bar,
-  Legend,
-  ResponsiveContainer
+  ResponsiveContainer,
 } from "recharts";
 
+// Sample Data
 const kpiData = {
   customers: 120,
   material: { fresh: 30, soil: 15 },
   avgPrice: 750,
 };
-
-const monthlySalesData = [
-  { month: "Jan", sales: 23, avg: 30 },
-  { month: "Feb", sales: 11, avg: 25 },
-  { month: "Mar", sales: 22, avg: 28 },
-  { month: "Apr", sales: 27, avg: 35 },
-  { month: "May", sales: 13, avg: 20 },
-  { month: "Jun", sales: 22, avg: 30 },
-  { month: "Jul", sales: 37, avg: 40 },
-  { month: "Aug", sales: 21, avg: 25 },
-  { month: "Sep", sales: 44, avg: 50 },
-  { month: "Oct", sales: 22, avg: 30 },
-  { month: "Nov", sales: 29, avg: 35 },
-  { month: "Dec", sales: 40, avg: 45 },
-];
 
 const customerData = [
   { name: "Cust A", value: 120 },
@@ -44,179 +27,226 @@ const customerData = [
   { name: "Cust H", value: 80 },
   { name: "Cust I", value: 75 },
   { name: "Cust J", value: 70 },
-  { name: "Cust K", value: 20 },
-  { name: "Cust L", value: 25 },
-  { name: "Cust M", value: 30 },
-  { name: "Cust N", value: 35 },
-  { name: "Cust O", value: 40 },
-  { name: "Cust P", value: 45 },
-  { name: "Cust Q", value: 50 },
-  { name: "Cust R", value: 55 },
-  { name: "Cust S", value: 60 },
-  { name: "Cust T", value: 65 }
 ];
 
-const topCustomers = customerData.slice(0, 10);
-const lowCustomers = customerData.slice(10);
+const topCustomers = customerData.slice(0, 5);
+const lowCustomers = customerData.slice(5, 10);
+
+// Long Stock Pending Data per Customer
+const longStockPending = [
+  { customer: "Cust A", material: "Fresh", pending: 5 },
+  { customer: "Cust B", material: "Soil", pending: 8 },
+  { customer: "Cust C", material: "Fresh", pending: 3 },
+  { customer: "Cust D", material: "Soil", pending: 4 },
+  { customer: "Cust E", material: "Fresh", pending: 6 },
+  { customer: "Cust F", material: "Soil", pending: 2 },
+  { customer: "Cust G", material: "Fresh", pending: 7 },
+  { customer: "Cust H", material: "Soil", pending: 5 },
+  { customer: "Cust I", material: "Fresh", pending: 4 },
+  { customer: "Cust J", material: "Soil", pending: 6 },
+  { customer: "Cust K", material: "Fresh", pending: 3 },
+  { customer: "Cust L", material: "Soil", pending: 2 },
+  { customer: "Cust M", material: "Fresh", pending: 5 },
+  { customer: "Cust N", material: "Soil", pending: 4 },
+  { customer: "Cust O", material: "Fresh", pending: 6 },
+];
 
 export default function Dashboard() {
   const cardStyle = {
     background: "#fff",
-    borderRadius: "16px",
-    padding: "20px",
+    borderRadius: "12px",
+    padding: "12px",
     textAlign: "center",
-    boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
+    boxShadow: "0 2px 8px rgba(0,0,0,0.08)",
   };
 
-  const labelStyle = { fontSize: "12px", color: "#888", marginTop: "5px" };
-  const thTdStyle = { border: "1px solid #e0e0e0", padding: "8px", textAlign: "left" };
+  const labelStyle = { fontSize: "12px", color: "#666", marginTop: "3px" };
+  const thTdStyle = {
+    border: "1px solid #e0e0e0",
+    padding: "6px",
+    textAlign: "left",
+    fontSize: "12px",
+  };
   const headerStyle = { background: "#f0f2f5", fontWeight: "bold" };
 
   return (
-    <div style={{ padding: "20px", fontFamily: "Arial, sans-serif", background: "#f5f6fa", minHeight: "100vh" }}>
-      
-      {/* Top KPI Cards */}
-      <div style={{ display: "flex", gap: "20px", flexWrap: "wrap", marginBottom: "20px" }}>
-        <div style={{ ...cardStyle, flex: 1, minWidth: "180px" }}>
-          <div style={{ fontSize: "24px", fontWeight: "bold" }}>{kpiData.customers}</div>
-          <div style={labelStyle}>CUSTOMER COUNT</div>
-        </div>
-        <div style={{ ...cardStyle, flex: 1, minWidth: "180px" }}>
-          <div style={{ fontSize: "14px", color: "#555" }}>Material Count</div>
-          <div style={{ display: "flex", justifyContent: "center", gap: "10px", marginTop: "10px" }}>
-            <span style={{ color: "#007bff", fontWeight: "600" }}>Fresh {kpiData.material.fresh}</span>
-            <span style={{ color: "#ff4d4f", fontWeight: "600" }}>Soil {kpiData.material.soil}</span>
-          </div>
-        </div>
-        <div style={{ ...cardStyle, flex: 1, minWidth: "180px" }}>
-          <div style={{ fontSize: "24px", fontWeight: "bold" }}>₹{kpiData.avgPrice}</div>
-          <div style={labelStyle}>AVERAGE PRICE</div>
-        </div>
-      </div>
-
-      {/* Top/Low Customers + Chart */}
+    <div
+      style={{
+        padding: "10px",
+        fontFamily: "Arial, sans-serif",
+        display: "flex",
+        flexDirection: "column",
+        gap: "12px",
+      }}
+    >
+      {/* KPI Cards */}
       <div
         style={{
           display: "flex",
-          gap: "20px",
           flexWrap: "wrap",
-          marginBottom: "20px",
-          alignItems: "flex-start",
+          gap: "12px",
+          justifyContent: "space-between",
         }}
       >
-        {/* Line Chart */}
-      <div style={{ ...cardStyle, flex: 2, minWidth: "300px" }}>
-  <div style={{ fontWeight: "bold", marginBottom: "10px" }}>Customer Value Trend</div>
-  <ResponsiveContainer width="100%" height={350}>
-    <LineChart data={customerData}>
-      <CartesianGrid strokeDasharray="3 3" />
-      <XAxis dataKey="name" />
-      <YAxis />
-      <Tooltip />
-      <Line type="monotone" dataKey="value" stroke="#8884d8" strokeWidth={2} />
-    </LineChart>
-  </ResponsiveContainer>
-
-  {/* Stock Long Pending Card below the chart */}
-  <div
-    style={{
-      ...cardStyle,
-      marginTop: "20px",
-      background: "#fff3cd",
-      borderColor: "#ffeeba",
-      textAlign: "center",
-      padding: "15px",
-    }}
-  >
-    <div style={{ fontSize: "22px", fontWeight: "700", color: "#856404" }}>
-      45 {/* Replace with dynamic value */}
-    </div>
-    <div style={{ fontSize: "14px", color: "#856404", fontWeight: "500", marginTop: "5px" }}>
-      STOCK LONG PENDING
-    </div>
-  </div>
-</div>
-        {/* Tables */}
-        <div style={{ flex: 1, minWidth: "250px", display: "flex", flexDirection: "column", gap: "20px" }}>
-          {/* Top 10 */}
-          <div style={{ ...cardStyle }}>
-            <div style={{ fontWeight: "bold", marginBottom: "10px" }}>Top 10 Customers</div>
-            <div style={{ maxHeight: "200px", overflowY: "auto" }}>
-              <table style={{ width: "100%", borderCollapse: "collapse" }}>
-                <thead style={headerStyle}>
-                  <tr>
-                    <th style={thTdStyle}>#</th>
-                    <th style={thTdStyle}>Customer</th>
-                    <th style={thTdStyle}>Value</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {topCustomers.map((c, index) => (
-                    <tr key={index}>
-                      <td style={thTdStyle}>{index + 1}</td>
-                      <td style={thTdStyle}>{c.name}</td>
-                      <td style={thTdStyle}>{c.value}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+        <div style={{ ...cardStyle, flex: "1 1 180px" }}>
+          <div style={{ fontSize: "20px", fontWeight: "bold" }}>
+            {kpiData.customers}
           </div>
+          <div style={labelStyle}>CUSTOMER COUNT</div>
+        </div>
 
-          {/* Low 10 */}
-          <div style={{ ...cardStyle }}>
-            <div style={{ fontWeight: "bold", marginBottom: "10px" }}>Low 10 Customers</div>
-            <div style={{ maxHeight: "200px", overflowY: "auto" }}>
-              <table style={{ width: "100%", borderCollapse: "collapse" }}>
-                <thead style={headerStyle}>
-                  <tr>
-                    <th style={thTdStyle}>#</th>
-                    <th style={thTdStyle}>Customer</th>
-                    <th style={thTdStyle}>Value</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {lowCustomers.map((c, index) => (
-                    <tr key={index}>
-                      <td style={thTdStyle}>{index + 1}</td>
-                      <td style={thTdStyle}>{c.name}</td>
-                      <td style={thTdStyle}>{c.value}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+        <div style={{ ...cardStyle, flex: "1 1 180px" }}>
+          <div style={{ fontSize: "13px", color: "#555" }}>Material Count</div>
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "center",
+              gap: "8px",
+              marginTop: "6px",
+              flexWrap: "wrap",
+            }}
+          >
+            <span style={{ color: "#007bff", fontWeight: "600", fontSize: "13px" }}>
+              Fresh {kpiData.material.fresh}
+            </span>
+            <span style={{ color: "#ff4d4f", fontWeight: "600", fontSize: "13px" }}>
+              Soil {kpiData.material.soil}
+            </span>
           </div>
+        </div>
+
+        <div style={{ ...cardStyle, flex: "1 1 180px" }}>
+          <div style={{ fontSize: "20px", fontWeight: "bold" }}>
+            ₹{kpiData.avgPrice}
+          </div>
+          <div style={labelStyle}>MATERIAL AVERAGE PRICE</div>
         </div>
       </div>
 
-      {/* Monthly Sales */}
-      {/* <div style={{ display: "flex", gap: "20px", flexWrap: "wrap" }}>
-        <div style={{ ...cardStyle, flex: 2, minWidth: "500px" }}>
-          <div style={{ fontWeight: "bold", marginBottom: "10px" }}>Department wise monthly sales report</div>
-          <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "10px" }}>
-            <div>
-              <strong>${monthlySalesData.reduce((sum, d) => sum + d.sales, 0).toLocaleString()}</strong>
-              <br />Total Sales
-            </div>
-            <div>
-              <strong>${(monthlySalesData.reduce((sum, d) => sum + d.avg, 0) / monthlySalesData.length).toFixed(2)}</strong>
-              <br />Average
-            </div>
+      {/* Chart + Tables */}
+      <div style={{ display: "flex", flexWrap: "wrap", gap: "15px", alignItems: "flex-start" }}>
+        {/* Chart Column */}
+        <div style={{ ...cardStyle, flex: "2 1 400px" }}>
+          <div style={{ fontWeight: "bold", marginBottom: "6px", fontSize: "14px" }}>
+            Inward and Dispatch
           </div>
-          <ResponsiveContainer width="100%" height={250}>
-            <BarChart data={monthlySalesData}>
+
+          <ResponsiveContainer width="100%" height={335}>
+            <LineChart data={customerData}>
               <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="month" />
-              <YAxis />
+              <XAxis dataKey="name" fontSize={10} />
+              <YAxis fontSize={10} />
               <Tooltip />
-              <Legend />
-              <Bar dataKey="sales" fill="#8884d8" />
-              <Line type="monotone" dataKey="avg" stroke="#82ca9d" />
-            </BarChart>
+              <Line type="monotone" dataKey="value" stroke="#8884d8" strokeWidth={2} />
+            </LineChart>
           </ResponsiveContainer>
         </div>
-      </div> */}
+
+        {/* Right Column: Top/Low Customers */}
+        <div style={{ display: "flex", flexDirection: "column", gap: "12px", flex: "1 1 250px" }}>
+          {/* Top Customers */}
+{/* Top Customers */}
+<div style={{ ...cardStyle, padding: "8px" }}>
+  <div style={{ fontWeight: "bold", marginBottom: "4px", fontSize: "12px", textAlign: "center" }}>
+    Top 10 Customers
+  </div>
+
+  {/* Table Header */}
+  <table style={{ width: "100%", borderCollapse: "collapse", tableLayout: "fixed", fontSize: "12px" }}>
+    <thead style={headerStyle}>
+      <tr>
+        <th style={{ ...thTdStyle, width: "33.33%", textAlign: "center", padding: "4px" }}>S.No</th>
+        <th style={{ ...thTdStyle, width: "33.33%", textAlign: "center", padding: "4px" }}>Customer</th>
+        <th style={{ ...thTdStyle, width: "33.33%", textAlign: "center", padding: "4px" }}>Value</th>
+      </tr>
+    </thead>
+  </table>
+
+  {/* Table Body */}
+  <div style={{ maxHeight: "120px", overflowY: "auto" }}>
+    <table style={{ width: "100%", borderCollapse: "collapse", tableLayout: "fixed", fontSize: "12px" }}>
+      <tbody>
+        {topCustomers.map((c, index) => (
+          <tr key={index}>
+            <td style={{ ...thTdStyle, textAlign: "center", padding: "4px" }}>{index + 1}</td>
+            <td style={{ ...thTdStyle, textAlign: "center", padding: "4px" }}>{c.name}</td>
+            <td style={{ ...thTdStyle, textAlign: "center", padding: "4px" }}>{c.value}</td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+{/* Low Customers */}
+<div style={{ ...cardStyle, padding: "8px", marginTop: "8px" }}>
+  <div style={{ fontWeight: "bold", marginBottom: "4px", fontSize: "12px", textAlign: "center" }}>
+    Low 10 Customers
+  </div>
+
+  {/* Table Header */}
+  <table style={{ width: "100%", borderCollapse: "collapse", tableLayout: "fixed", fontSize: "12px" }}>
+    <thead style={headerStyle}>
+      <tr>
+        <th style={{ ...thTdStyle, width: "33.33%", textAlign: "center", padding: "4px" }}>S.No</th>
+        <th style={{ ...thTdStyle, width: "33.33%", textAlign: "center", padding: "4px" }}>Customer</th>
+        <th style={{ ...thTdStyle, width: "33.33%", textAlign: "center", padding: "4px" }}>Value</th>
+      </tr>
+    </thead>
+  </table>
+
+  {/* Table Body */}
+  <div style={{ maxHeight: "120px", overflowY: "auto" }}>
+    <table style={{ width: "100%", borderCollapse: "collapse", tableLayout: "fixed", fontSize: "12px" }}>
+      <tbody>
+        {lowCustomers.map((c, index) => (
+          <tr key={index}>
+            <td style={{ ...thTdStyle, textAlign: "center", padding: "4px" }}>{index + 1}</td>
+            <td style={{ ...thTdStyle, textAlign: "center", padding: "4px" }}>{c.name}</td>
+            <td style={{ ...thTdStyle, textAlign: "center", padding: "4px" }}>{c.value}</td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+        </div>
+      </div>
+
+      {/* === Separate Card for Long Stock Pending === */}
+  <div style={{ ...cardStyle, marginTop: "12px" }}>
+  <div style={{ fontWeight: "bold", marginBottom: "6px", fontSize: "14px", textAlign: "center" }}>
+    Long Stock Pending Customers 
+  </div>
+
+  {/* Table Header */}
+  <table style={{ width: "100%", borderCollapse: "collapse", tableLayout: "fixed" }}>
+    <thead style={headerStyle}>
+      <tr>
+        <th style={{ ...thTdStyle, textAlign: "center", width: "33.33%" }}>Customer</th>
+        <th style={{ ...thTdStyle, textAlign: "center", width: "33.33%" }}>Material</th>
+        <th style={{ ...thTdStyle, textAlign: "center", width: "33.33%" }}>Pending Qty</th>
+      </tr>
+    </thead>
+  </table>
+
+  {/* Table Body */}
+  <div style={{ maxHeight: "250px", overflowY: "auto" }}>
+    <table style={{ width: "100%", borderCollapse: "collapse", tableLayout: "fixed" }}>
+      <tbody>
+        {longStockPending.map((item, index) => (
+          <tr key={index}>
+            <td style={{ ...thTdStyle, textAlign: "center", width: "33.33%" }}>{item.customer}</td>
+            <td style={{ ...thTdStyle, textAlign: "center", width: "33.33%" }}>{item.material}</td>
+            <td style={{ ...thTdStyle, textAlign: "center", width: "33.33%" }}>{item.pending}</td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  </div>
+</div>
+
     </div>
   );
 }
