@@ -482,18 +482,18 @@ const deleteRow = async (id) => {
 
 
   // Inside your component
-const dummySupplier = {
-  id: "dummy",
-  customer_code: "SUP001",
-  customer_name: "Dummy Supplier",
-  customer_group: "Retail",
-  address: "123, Main Street",
-  gst: "123456789",
-  image: "https://via.placeholder.com/25",
-};
+// const dummySupplier = {
+//   id: "dummy",
+//   customer_code: "SUP001",
+//   customer_name: "Dummy Supplier",
+//   customer_group: "Retail",
+//   address: "123, Main Street",
+//   gst: "123456789",
+//   image: "https://via.placeholder.com/25",
+// };
 
 
-const displaySuppliers = [dummySupplier, ...filteredSuppliers];
+// const displaySuppliers = [dummySupplier, ...filteredSuppliers];
 
   return (
     <Fragment>
@@ -578,55 +578,50 @@ const displaySuppliers = [dummySupplier, ...filteredSuppliers];
             </div>
 
             {/* Table */}
-      <div className="table-responsive">
+<div className="table-responsive">
   <table
     id="supplier-table"
     className="table table-bordered table-striped align-middle"
-    style={{ fontSize: "12px" }}
+    style={{ fontSize: "12px", marginBottom: "0" }} // smaller font
   >
     <thead className="table-primary">
-      <tr className="text-center">
-        <th>Code</th>
-        <th>Name</th>
-        <th>Group</th>
-        <th>Address</th>
-        <th>GST</th>
-        <th>Image</th>
-        <th style={{ minWidth: "140px" }}>Action</th>
+      <tr className="text-center" style={{ fontSize: "12px" }}>
+        <th className="py-0 px-1">Code</th>
+        <th className="py-0 px-1">Name</th>
+        <th className="py-0 px-1">Group</th>
+        <th className="py-0 px-1">Address</th>
+        <th className="py-0 px-1">GST</th>
+        <th className="py-0 px-1">Image</th>
+        <th className="py-0 px-1" style={{ minWidth: "120px" }}>Action</th>
       </tr>
     </thead>
     <tbody>
-      {displaySuppliers && displaySuppliers.length > 0 ? (
-        displaySuppliers.map((supplier) => (
-          <tr key={supplier.id} className="text-center">
-            <td>{supplier.customer_code}</td>
-            <td>{supplier.customer_name}</td>
-            <td>{supplier.customer_group}</td>
-            <td>{supplier.address}</td>
-            <td>{supplier.gst}</td>
-            <td>
+      {filteredSuppliers && filteredSuppliers.length > 0 ? (
+        filteredSuppliers.map((supplier) => (
+          <tr key={supplier.id} className="text-center" style={{ fontSize: "12px", lineHeight: "1.2" }}>
+            <td className="py-0 px-1">{supplier.customer_code}</td>
+            <td className="py-0 px-1">{supplier.customer_name}</td>
+            <td className="py-0 px-1">{supplier.customer_group}</td>
+            <td className="py-0 px-1">{supplier.address}</td>
+            <td className="py-0 px-1">{supplier.gst}</td>
+            <td className="py-0 px-1">
               {supplier.image ? (
                 <img
                   src={supplier.image}
                   alt="Supplier"
-                  width="25"
-                  height="25"
-                  style={{
-                    cursor: "pointer",
-                    borderRadius: "4px",
-                    objectFit: "cover",
-                  }}
+                  width="18"
+                  height="18"
+                  style={{ cursor: "pointer", borderRadius: "3px", objectFit: "cover" }}
                   onClick={() => {
                     setPreviewImage(supplier.image);
                     setShowImageModal(true);
                   }}
                 />
               ) : (
-                <span className="text-muted">No Image</span>
+                <span className="text-muted" style={{ fontSize: "9px" }}>No Image</span>
               )}
             </td>
-<td>
-  {/* Edit Button */}
+          <td className="py-0 px-1">
   <button
     className="btn btn-sm p-0 me-1"
     style={{ background: "transparent", border: "none", cursor: "pointer" }}
@@ -635,13 +630,12 @@ const displaySuppliers = [dummySupplier, ...filteredSuppliers];
   >
     <span
       className="material-icons-two-tone text-warning"
-      style={{ fontSize: "16px", cursor: "pointer" }}
+      style={{ fontSize: "12px", cursor: "pointer" }}
     >
       edit
     </span>
   </button>
 
-  {/* Price List Button */}
   <button
     className="btn btn-sm p-0 me-1"
     style={{ background: "transparent", border: "none", cursor: "pointer" }}
@@ -650,13 +644,12 @@ const displaySuppliers = [dummySupplier, ...filteredSuppliers];
   >
     <span
       className="material-icons-two-tone text-info"
-      style={{ fontSize: "16px", cursor: "pointer" }}
+      style={{ fontSize: "12px", cursor: "pointer" }}
     >
       list_alt
     </span>
   </button>
 
-  {/* Delete Button */}
   <button
     className="btn btn-sm p-0"
     style={{ background: "transparent", border: "none", cursor: "pointer" }}
@@ -665,7 +658,7 @@ const displaySuppliers = [dummySupplier, ...filteredSuppliers];
   >
     <span
       className="material-icons-two-tone text-danger"
-      style={{ fontSize: "16px", cursor: "pointer" }}
+      style={{ fontSize: "12px", cursor: "pointer" }}
     >
       delete
     </span>
@@ -675,7 +668,7 @@ const displaySuppliers = [dummySupplier, ...filteredSuppliers];
         ))
       ) : (
         <tr>
-          <td colSpan="7" className="text-center text-muted">
+          <td colSpan="7" className="text-center text-muted" style={{ fontSize: "10px" }}>
             No suppliers found
           </td>
         </tr>
@@ -683,8 +676,6 @@ const displaySuppliers = [dummySupplier, ...filteredSuppliers];
     </tbody>
   </table>
 </div>
-
-
             {/* Form Modal */}
             {showModal && (
               <Fragment>

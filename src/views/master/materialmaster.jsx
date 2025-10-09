@@ -111,53 +111,41 @@ const MaterialMaster = () => {
     checkAuthAndFetch();
   }, []);
 
-  const fetchMaterials = async () => {
-    try {
-      setLoading(true);
-      const token = sessionStorage.getItem("authToken");
-      console.log("Auth Token:", token);
-      if (!token || token === "undefined" || token === "null") {
-        console.error("Invalid or missing auth token");
-        toast.error("Session expired. Please login again.");
-        sessionStorage.removeItem("authToken");
-        window.location.href = "/login";
-        return;
-      }
-      console.log("Making request to:", API_ENDPOINTS.list);
-      const response = await axiosInstance.get(API_ENDPOINTS.list, {
-        headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
-        validateStatus: (status) => status < 500,
-      });
-      console.log("Raw API response:", response);
-      const resData = response.data;
-      const list = resData?.data || resData?.materials || resData?.list || (Array.isArray(resData) ? resData : []);
-      if (Array.isArray(list) && list.length > 0) {
-        console.log("✅ Materials fetched successfully:", list);
-        setMaterials(list);
-      } else {
-        console.warn("⚠️ No materials found in API response:", resData);
-        toast.warn("No materials found.");
-      }
-    } catch (error) {
-      console.error("❌ Fetch error:", error);
-      if (axios.isAxiosError(error)) {
-        if (error.response) {
-          console.log("Response error data:", error.response.data);
-          toast.error(error.response.data?.message || "API returned an error.");
-        } else if (error.request) {
-          console.log("No response received:", error.request);
-          toast.error("No response from server.");
-        } else {
-          console.log("Request setup error:", error.message);
-          toast.error(error.message);
-        }
-      } else {
-        toast.error("Unexpected error occurred.");
-      }
-    } finally {
-      setLoading(false);
+const fetchMaterials = async () => {
+  try {
+    setLoading(true);
+    const token = sessionStorage.getItem("authToken");
+    if (!token || token === "undefined" || token === "null") {
+      toast.error("Session expired. Please login again.");
+      sessionStorage.removeItem("authToken");
+      window.location.href = "/login";
+      return;
     }
-  };
+
+    // Single fetch without looping
+    const response = await axiosInstance.get(`${API_ENDPOINTS.list}`, {
+      headers: { Authorization: `Bearer ${token}` },
+      validateStatus: (status) => status < 500,
+    });
+
+    const resData = response.data;
+    const allMaterials = resData?.data || resData?.materials || resData?.list || (Array.isArray(resData) ? resData : []);
+
+    if (allMaterials.length > 0) {
+      console.log("✅ All materials fetched:", allMaterials);
+      setMaterials(allMaterials);
+    } else {
+      toast.warn("No materials found.");
+      setMaterials([]);
+    }
+  } catch (error) {
+    console.error("❌ Fetch error:", error);
+    toast.error("Error fetching materials.");
+  } finally {
+    setLoading(false);
+  }
+};
+
 
   const handleKeyDown = (e, index) => {
     if (e.key === "Enter") {
@@ -231,42 +219,63 @@ const handleEditMaterial = async (material) => {
     } else toast.error("Unexpected error occurred. Please try again.");
   }
 };
+const handleSaveMaterial = async () => {
+  try {
+    setLoading(true);
 
-  const handleSaveMaterial = async () => {
-    try {
-      if (!formData.material_name?.trim()) { toast.error("Material Name is required"); return; }
-      if (!formData.material_type?.trim()) { toast.error("Material Type is required"); return; }
-      if (!formData.default_price) { toast.error("Default Price is required"); return; }
+    // Validation
+    if (!formData.material_name?.trim()) return toast.error("Material Name is required");
+    if (!formData.material_type?.trim()) return toast.error("Material Type is required");
+    if (!formData.default_price) return toast.error("Default Price is required");
 
-      setLoading(true);
-      const materialData = {
-        material_name: formData.material_name.trim(),
-        material_code: formData.material_code.trim(),
-        material_type: formData.material_type,
-        default_price: parseFloat(formData.default_price),
-        weight: formData.weight ? parseFloat(formData.weight) : null
-      };
+    const materialData = {
+      material_name: formData.material_name.trim(),
+      material_code: formData.material_code.trim(),
+      material_type: formData.material_type,
+      default_price: parseFloat(formData.default_price),
+      weight: formData.weight ? parseFloat(formData.weight) : null
+    };
 
-      console.log('Sending material data:', materialData);
+    let response;
 
-      if (editingMaterial) {
-        materialData.id = editingMaterial.id;
-        const response = await axiosInstance.post(API_ENDPOINTS.update, materialData, { headers: { 'Content-Type': 'application/json' } });
-        console.log('Update response:', response.data);
-        if (response.data?.status === "success") { toast.success("Material updated successfully"); await fetchMaterials(); setShowModal(false); }
-        else throw new Error(response.data?.message || "Failed to update material");
+    if (editingMaterial) {
+      // Update existing material
+      materialData.id = editingMaterial.id;
+      response = await axiosInstance.post(API_ENDPOINTS.update, materialData);
+
+      if (response.data?.status === "success") {
+        toast.success("Material updated successfully");
+        // Update local state without refetching entire list
+        setMaterials(prev =>
+          prev.map(m => (m.id === editingMaterial.id ? { ...m, ...materialData } : m))
+        );
+        setShowModal(false);
       } else {
-        const response = await axiosInstance.post(API_ENDPOINTS.create, materialData, { headers: { 'Content-Type': 'application/json' } });
-        console.log('Create response:', response.data);
-        if (response.data?.status === "success") { toast.success("Material created successfully"); await fetchMaterials(); setShowModal(false); }
-        else throw new Error(response.data?.message || "Failed to create material");
+        toast.error(response.data?.message || "Failed to update material");
       }
-    } catch (error) {
-      console.error("Error saving material:", error);
-      if (error.response) toast.error(error.response.data?.message || "Failed to save material");
-      else toast.error(error.message || "Error saving material. Please try again.");
-    } finally { setLoading(false); }
-  };
+
+    } else {
+      // Create new material
+      response = await axiosInstance.post(API_ENDPOINTS.create, materialData);
+
+      if (response.data?.status === "success") {
+        toast.success("Material created successfully");
+        // Add new material to local state immediately
+        const newMaterial = response.data?.data || materialData;
+        setMaterials(prev => [...prev, newMaterial]);
+        setShowModal(false);
+      } else {
+        toast.error(response.data?.message || "Failed to create material");
+      }
+    }
+
+  } catch (error) {
+    console.error("Error saving material:", error);
+    toast.error(error.message || "Error saving material. Please try again.");
+  } finally {
+    setLoading(false);
+  }
+};
 
   const deleteMaterial = async (id) => {
     if (!window.confirm("Are you sure you want to delete this material?")) return;
@@ -375,12 +384,12 @@ const handleEditMaterial = async (material) => {
           <tbody>
             {loading ? (
               <tr>
-                <td colSpan="5" className="text-center py-3">
+                {/* <td colSpan="5" className="text-center py-3">
                   <div className="spinner-border spinner-border-sm text-primary me-2" role="status">
                     <span className="visually-hidden">Loading...</span>
                   </div>
                   Loading materials...
-                </td>
+                </td> */}
               </tr>
             ) : filteredMaterials.length > 0 ? (
               filteredMaterials.map((material) => (
@@ -389,14 +398,34 @@ const handleEditMaterial = async (material) => {
                   <td className="py-0 px-1">{material.material_name}</td>
                   <td className="py-0 px-1">{formatPrice(material.default_price)}</td>
                   <td className="py-0 px-1">{material.material_type}</td>
-                  <td className="py-0 px-1 text-center">
-                    <button className="btn btn-sm p-0 me-1" style={{ background: "transparent", border: "none", cursor: "pointer" }} title="Edit" onClick={() => handleEditMaterial(material)}>
-                      <span className="material-icons-two-tone text-warning" style={{ fontSize: "16px" }}>edit</span>
-                    </button>
-                    <button className="btn btn-sm p-0" style={{ background: "transparent", border: "none", cursor: "pointer" }} title="Delete" onClick={() => deleteMaterial(material.id)}>
-                      <span className="material-icons-two-tone text-danger" style={{ fontSize: "16px" }}>delete</span>
-                    </button>
-                  </td>
+                 <td className="py-0 px-1 text-center">
+  <button
+    className="btn btn-sm p-0 me-1"
+    style={{ background: "transparent", border: "none" }}
+    title="Edit"
+    onClick={() => handleEditMaterial(material)}
+  >
+    <span
+      className="material-icons-two-tone text-warning"
+      style={{ fontSize: "16px", cursor: "pointer" }}
+    >
+      edit
+    </span>
+  </button>
+  <button
+    className="btn btn-sm p-0"
+    style={{ background: "transparent", border: "none" }}
+    title="Delete"
+    onClick={() => deleteMaterial(material.id)}
+  >
+    <span
+      className="material-icons-two-tone text-danger"
+      style={{ fontSize: "16px", cursor: "pointer" }}
+    >
+      delete
+    </span>
+  </button>
+</td>
                 </tr>
               ))
             ) : (
@@ -409,46 +438,173 @@ const handleEditMaterial = async (material) => {
       </div>
 
       {/* Modal */}
-      {showModal && (
-        <div className="modal fade show d-block" tabIndex="-1">
-          <div className="modal-dialog modal-md modal-dialog-centered">
-            <div className="modal-content">
-              <div className="modal-header">
-                <h5 className="modal-title">{editingMaterial ? "Edit Material" : "New Material"}</h5>
-                <button type="button" className="btn-close" onClick={() => setShowModal(false)}></button>
-              </div>
-              <div className="modal-body">
-                <form>
-                  <div className="mb-2">
-                    <label className="form-label">Material Code</label>
-                    <input type="text" className="form-control form-control-sm" value={formData.material_code} readOnly style={{ borderRadius: "6px" }} />
-                  </div>
-                  <div className="mb-2">
-                    <label className="form-label">Material Name</label>
-                    <input type="text" className="form-control form-control-sm" value={formData.material_name} onChange={(e) => setFormData({ ...formData, material_name: e.target.value })} style={{ borderRadius: "6px" }} ref={(el) => (inputRefs.current[0] = el)} onKeyDown={(e) => handleKeyDown(e, 0)} />
-                  </div>
-                  <div className="mb-2">
-                    <label className="form-label">Default Price</label>
-                    <input type="number" className="form-control form-control-sm" value={formData.default_price} onChange={(e) => setFormData({ ...formData, default_price: e.target.value })} style={{ borderRadius: "6px" }} ref={(el) => (inputRefs.current[1] = el)} onKeyDown={(e) => handleKeyDown(e, 1)} />
-                  </div>
-                  <div className="mb-2">
-                    <label className="form-label">Material Type</label>
-                    <input type="text" className="form-control form-control-sm" value={formData.material_type} onChange={(e) => setFormData({ ...formData, material_type: e.target.value })} style={{ borderRadius: "6px" }} ref={(el) => (inputRefs.current[2] = el)} onKeyDown={(e) => handleKeyDown(e, 2)} />
-                  </div>
-                  <div className="mb-2">
-                    <label className="form-label">Weight</label>
-                    <input type="number" className="form-control form-control-sm" value={formData.weight} onChange={(e) => setFormData({ ...formData, weight: e.target.value })} style={{ borderRadius: "6px" }} ref={(el) => (inputRefs.current[3] = el)} onKeyDown={(e) => handleKeyDown(e, 3)} />
-                  </div>
-                </form>
-              </div>
-              <div className="modal-footer">
-                <button type="button" className="btn btn-secondary btn-sm" onClick={() => setShowModal(false)}>Cancel</button>
-                <button type="button" className="btn btn-primary btn-sm" id="saveMaterialBtn" onClick={handleSaveMaterial}>{editingMaterial ? "Update" : "Save"}</button>
-              </div>
-            </div>
+     {showModal && (
+  <div className="modal fade show d-block" tabIndex="-1">
+    <div className="modal-dialog modal-sm"> {/* ✅ smaller width */}
+      <div className="modal-content" style={{ fontSize: "13px" }}> {/* ✅ reduced font */}
+        
+        {/* Header */}
+        <div className="modal-header py-2">
+          <h6 className="modal-title"> {/* ✅ smaller title */}
+            {editingMaterial ? "Edit Material" : "New Material"}
+          </h6>
+          <button
+            type="button"
+            className="btn-close"
+            onClick={() => setShowModal(false)}
+            style={{ fontSize: "10px" }}
+          ></button>
+        </div>
+
+        {/* Body */}
+        <div className="modal-body p-2">
+          <div className="mb-2">
+            <label className="form-label" style={{ fontSize: "12px" }}>
+              Material Name
+            </label>
+          <input
+  type="text"
+  className="form-control form-control-sm"
+  placeholder="Material Name"
+  value={formData.material_name || ''} // ✅ matches state
+  onChange={(e) =>
+    setFormData({ ...formData, material_name: e.target.value }) // ✅ update same key
+  }
+  ref={(el) => (inputRefs.current[0] = el)}
+  onKeyDown={(e) => handleKeyDown(e, 0)}
+/>
+
+          </div>
+          
+<div className="mb-2">
+  <label className="form-label" style={{ fontSize: "12px" }}>
+    Default Price
+  </label>
+  <input
+    type="text"
+    className="form-control form-control-sm"
+    placeholder="Default Price"
+    value={formData.default_price || ''}   // ✅ use snake_case
+    onKeyDown={(e) => {
+      const char = e.key;
+      const allowedChars = "0123456789";
+      const controlKeys = ["Backspace", "Delete", "ArrowLeft", "ArrowRight", "Tab", "Enter"];
+
+      if (controlKeys.includes(char)) {
+        if (char === "Enter") {
+          e.preventDefault();
+          const nextIndex = 2; // move focus to Weight field
+          if (inputRefs.current[nextIndex]) {
+            inputRefs.current[nextIndex].focus();
+          }
+        }
+        return;
+      }
+
+      if (char === "." && !e.target.value.includes(".")) return;
+
+      if (!allowedChars.includes(char)) e.preventDefault();
+    }}
+    onChange={(e) =>
+      setFormData({ ...formData, default_price: e.target.value })  // ✅ update snake_case
+    }
+    ref={(el) => (inputRefs.current[1] = el)}
+  />
+</div>
+
+<div className="mb-2">
+  <label className="form-label" style={{ fontSize: "12px" }}>
+    Weight
+  </label>
+  <input
+    type="text"   // ✅ use text so key filtering works
+    className="form-control form-control-sm"
+    placeholder="Enter weight"
+    value={formData.weight}
+    onKeyDown={(e) => {
+      const char = e.key;
+      const allowedchars = "0123456789";
+      const controlKeys = ["Backspace", "Delete", "ArrowLeft", "ArrowRight", "Tab", "Enter"];
+
+      if (controlKeys.includes(char)) {
+        // ✅ handle Enter navigation
+        if (char === "Enter") {
+          e.preventDefault();
+          const nextIndex = 3; // move focus to Material Type (next select box)
+          if (inputRefs.current[nextIndex]) {
+            inputRefs.current[nextIndex].focus();
+          }
+        }
+        return;
+      }
+
+      // ✅ allow one decimal point
+      if (char === "." && !e.target.value.includes(".")) return;
+
+      // ❌ block everything else
+      if (!allowedchars.includes(char)) {
+        e.preventDefault();
+      }
+    }}
+    onChange={(e) =>
+      setFormData({ ...formData, weight: e.target.value })
+    }
+    ref={(el) => (inputRefs.current[2] = el)}
+  />
+</div>
+
+          <div className="mb-2">
+            <label className="form-label" style={{ fontSize: "12px" }}>
+              Material Type
+            </label>
+          <select
+  className="form-select form-select-sm"
+  value={formData.material_type || ""} // ✅ matches formData key
+  onChange={(e) =>
+    setFormData({ ...formData, material_type: e.target.value }) // ✅ update same key
+  }
+  ref={(el) => (inputRefs.current[2] = el)} // ✅ index should follow the order of inputs: 0=Name, 1=Default Price, 2=Material Type
+  onKeyDown={(e) => handleKeyDown(e, 2)} // ✅ Enter moves to next input/button
+>
+  <option value="">Select Type</option>   {/* placeholder */}
+  <option value="Bedsheet">Bedsheet</option>
+  <option value="Towel">Towel</option>
+</select>
           </div>
         </div>
-      )}
+
+        {/* Footer */}
+        <div className="modal-footer py-2">
+          <button
+            id="saveMaterialBtn"
+            className="btn btn-primary btn-sm"
+            onClick={handleSaveMaterial}
+            disabled={loading}
+          >
+            {loading ? (
+              <>
+                <span className="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
+                {editingMaterial ? "Updating..." : "Adding..."}
+              </>
+            ) : (
+              editingMaterial ? "Update" : "Add"
+            )}
+          </button>
+
+          <button
+            className="btn btn-secondary btn-sm"
+            onClick={() => setShowModal(false)}
+            disabled={loading}
+          >
+            Cancel
+          </button>
+        </div>
+
+      </div>
+    </div>
+  </div>
+)}
+
     </div>
   );
 };

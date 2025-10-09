@@ -1,6 +1,7 @@
 import PropTypes from 'prop-types';
 import { useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { toast } from 'react-toastify';
 import strom from "assets/images/strom.svg";
 // react-bootstrap
 import { Card, ListGroup } from 'react-bootstrap';
@@ -19,15 +20,17 @@ export default function NavContent({ navigation, activeNav, setIsLoggedIn }) {
   const { collapseLayout } = configContext.state;
   const navigate = useNavigate();
 
-  // Handle logout
-const handleLogout = () => {
-  console.log("Logging out..."); // debug
-  sessionStorage.clear();
-  if (setIsLoggedIn) setIsLoggedIn(false);
-  navigate('/login', { replace: true });
-};
+  // ----------------- LOGOUT ----------------- //
+  const handleLogout = () => {
+    console.log("Logging out..."); // debug
+    sessionStorage.clear();
+    localStorage.clear(); // clear local storage too
+    if (setIsLoggedIn) setIsLoggedIn(false);
+    toast.success("Logged out successfully!");
+    navigate('/login', { replace: true });
+  };
 
-
+  // ----------------- NAV ITEMS ----------------- //
   const navItems = navigation.map((item) => {
     let navItem = <></>;
     switch (item.type) {
@@ -47,57 +50,58 @@ const handleLogout = () => {
     }
   });
 
+  // ----------------- NAV CONTENT ----------------- //
   let navContentNode = (
     <SimpleBar style={{ height: 'calc(100vh - 70px)' }}>
       <ListGroup variant="flush" as="ul" bsPrefix=" " className="pc-navbar">
         {navItems}
       </ListGroup>
 
-    {/* Logout Card */}
-<Card
-  className="nav-logout-card m-3"
-  style={{ background: "transparent", border: "none", boxShadow: "none" }}
->
-  <Card.Body style={{ display: "flex", justifyContent: "center" }}>
-    <button
-      onClick={handleLogout}
-      style={{
-        background: "#ff4d4f",
-        color: "#fff",
-        border: "none",
-        borderRadius: "8px",
-        padding: "6px 12px",
-        cursor: "pointer",
-        fontWeight: "600",
-        transition: "0.3s",
-      }}
-      onMouseEnter={(e) => (e.target.style.background = "#e04345")}
-      onMouseLeave={(e) => (e.target.style.background = "#ff4d4f")}
-    >
-      Logout
-    </button>
-  </Card.Body>
-</Card>
+      {/* Logout Card */}
+      <Card
+        className="nav-logout-card m-3"
+        style={{ background: "transparent", border: "none", boxShadow: "none" }}
+      >
+        <Card.Body style={{ display: "flex", justifyContent: "center" }}>
+          <button
+            onClick={handleLogout}
+            style={{
+              background: "#ff4d4f",
+              color: "#fff",
+              border: "none",
+              borderRadius: "8px",
+              padding: "6px 12px",
+              cursor: "pointer",
+              fontWeight: "600",
+              transition: "0.3s",
+            }}
+            onMouseEnter={(e) => (e.target.style.background = "#e04345")}
+            onMouseLeave={(e) => (e.target.style.background = "#ff4d4f")}
+          >
+            Logout
+          </button>
+        </Card.Body>
+      </Card>
 
-{/* Branding Card */}
-<Card
-  className="nav-brand-card m-3"
-  style={{ background: "transparent", border: "none", boxShadow: "none" }}
->
-  <Card.Body style={{ display: "flex", justifyContent: "center" }}>
-    <h6
-      className="m-0 text-center"
-      style={{
-        color: "#0d6efd",
-        fontWeight: "700",
-        textTransform: "uppercase",
-        letterSpacing: "3px",
-      }}
-    >
-      Acetech
-    </h6>
-  </Card.Body>
-</Card>
+      {/* Branding Card */}
+      <Card
+        className="nav-brand-card m-3"
+        style={{ background: "transparent", border: "none", boxShadow: "none" }}
+      >
+        <Card.Body style={{ display: "flex", justifyContent: "center" }}>
+          <h6
+            className="m-0 text-center"
+            style={{
+              color: "#0d6efd",
+              fontWeight: "700",
+              textTransform: "uppercase",
+              letterSpacing: "3px",
+            }}
+          >
+            Acetech
+          </h6>
+        </Card.Body>
+      </Card>
     </SimpleBar>
   );
 
@@ -109,6 +113,7 @@ const handleLogout = () => {
     );
   }
 
+  // ----------------- MOBILE HEADER ----------------- //
   const mHeader = (
     <div className="m-header">
       {/* Logo */}
@@ -122,6 +127,7 @@ const handleLogout = () => {
     </div>
   );
 
+  // ----------------- FINAL CONTENT ----------------- //
   const mainContent = (
     <>
       {mHeader}
