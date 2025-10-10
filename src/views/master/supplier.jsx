@@ -17,6 +17,7 @@ const SupplierMaster = () => {
   const [previewImage, setPreviewImage] = useState(null);
   const [editingSupplier, setEditingSupplier] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
 
   const inputRefs = useRef([]);
   const fileInputRef = useRef(null);
@@ -243,88 +244,89 @@ const handleEditSupplier = async (supplier) => {
 };
 
   // ✅ Save supplier
-  const handleSaveSupplier = async () => {
-    try {
-      if (!formData.customer_name || !formData.customer_code || !formData.gst) {
-        toast.error("Please fill all required fields");
-        return;
-      }
+const handleSaveSupplier = async () => {
+  if (isSaving) return; // Prevent multiple clicks
 
-      console.log("Saving supplier data...");
-
-      const formDataToSend = new FormData();
-      formDataToSend.append("id", formData.id || "");
-      formDataToSend.append("customer_name", formData.customer_name); // Changed to match API expectation
-      formDataToSend.append("customer_code", formData.customer_code); // Changed to match API expectation
-      formDataToSend.append("customer_group", formData.customer_group); // Changed to match API expectation
-      formDataToSend.append("gst", formData.gst);
-      formDataToSend.append("address", formData.address || "");
-      
-      if (formData.image) {
-        if (formData.image instanceof File) {
-          formDataToSend.append("image", formData.image);
-        } else if (typeof formData.image === 'string') {
-          if (!formData.image.startsWith('data:')) {
-            formDataToSend.append("image_url", formData.image); // Changed for existing image
-          }
-        }
-      }
-
-      // Log the FormData entries
-      for (let pair of formDataToSend.entries()) {
-        console.log(pair[0] + ': ' + pair[1]);
-      }
-
-      const url = editingSupplier
-        ? `${API_BASE_URL}/customer/update`
-        : `${API_BASE_URL}/customer/create`;
-
-      console.log("Sending request to:", url);
-
-      const response = await axios.post(url, formDataToSend, {
-        headers: {
-          Authorization: `Bearer ${sessionStorage.getItem("authToken")}`,
-        }
-      });
-
-      
-
-      if (response.data.status === "success") {
-        toast.success(
-          `Customer ${editingSupplier ? "updated" : "created"} successfully!`
-        );
-        fetchSuppliers();
-        setShowModal(false);
-      } else {
-        toast.error(response.data.message || "Failed to save customer");
-      }
-    } catch (error) {
-      console.error("Error saving supplier:", error);
-      
-      if (error.response?.status === 401) {
-        sessionStorage.removeItem("authToken");
-        toast.error("Session expired. Please login again");
-        window.location.href = "/login";
-        return;
-      }
-
-      // Log full error details for debugging
-      console.log("Error details:", {
-        status: error.response?.status,
-        data: error.response?.data,
-        message: error.message
-      });
-
-      let errorMessage = "Failed to save customer. ";
-      if (error.response?.data?.message) {
-        errorMessage += error.response.data.message;
-      } else if (error.message) {
-        errorMessage += error.message;
-      }
-
-      toast.error(errorMessage);
+  try {
+    if (!formData.customer_name || !formData.customer_code || !formData.gst) {
+      toast.error("Please fill all required fields");
+      return;
     }
-  };
+
+    setIsSaving(true); // Start submission
+
+    console.log("Saving supplier data...");
+
+    const formDataToSend = new FormData();
+    formDataToSend.append("id", formData.id || "");
+    formDataToSend.append("customer_name", formData.customer_name);
+    formDataToSend.append("customer_code", formData.customer_code);
+    formDataToSend.append("customer_group", formData.customer_group);
+    formDataToSend.append("gst", formData.gst);
+    formDataToSend.append("address", formData.address || "");
+
+    if (formData.image) {
+      if (formData.image instanceof File) {
+        formDataToSend.append("image", formData.image);
+      } else if (typeof formData.image === 'string') {
+        if (!formData.image.startsWith('data:')) {
+          formDataToSend.append("image_url", formData.image);
+        }
+      }
+    }
+
+    for (let pair of formDataToSend.entries()) {
+      console.log(pair[0] + ': ' + pair[1]);
+    }
+
+    const url = editingSupplier
+      ? `${API_BASE_URL}/customer/update`
+      : `${API_BASE_URL}/customer/create`;
+
+    console.log("Sending request to:", url);
+
+    const response = await axios.post(url, formDataToSend, {
+      headers: {
+        Authorization: `Bearer ${sessionStorage.getItem("authToken")}`,
+      }
+    });
+
+    if (response.data.status === "success") {
+      toast.success(`Customer ${editingSupplier ? "updated" : "created"} successfully!`);
+      fetchSuppliers();
+      setShowModal(false);
+    } else {
+      toast.error(response.data.message || "Failed to save customer");
+    }
+  } catch (error) {
+    console.error("Error saving supplier:", error);
+
+    if (error.response?.status === 401) {
+      sessionStorage.removeItem("authToken");
+      toast.error("Session expired. Please login again");
+      window.location.href = "/login";
+      return;
+    }
+
+    console.log("Error details:", {
+      status: error.response?.status,
+      data: error.response?.data,
+      message: error.message
+    });
+
+    let errorMessage = "Failed to save customer. ";
+    if (error.response?.data?.message) {
+      errorMessage += error.response.data.message;
+    } else if (error.message) {
+      errorMessage += error.message;
+    }
+
+    toast.error(errorMessage);
+  } finally {
+    setIsSaving(false); // Reset submission state
+  }
+};
+
 
   // ✅ Delete supplier
 const deleteRow = async (id) => {
@@ -374,6 +376,8 @@ const deleteRow = async (id) => {
     }
   }
 };
+
+
   // ✅ Export PDF
   const exportPDF = () => {
     if (suppliers.length === 0) {
