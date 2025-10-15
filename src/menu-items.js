@@ -106,7 +106,7 @@ const menuItems = {
             { id: 'price-master', title: 'Price Master', type: 'item', url: '/pricemaster' },
             { id: 'material-master', title: 'Material Master', type: 'item', url: '/materialmaster' },
             { id: 'user-master', title: 'User Master', type: 'item', url: '/usermaster' },
-            { id: 'customer-group', title: 'Supplier Group', type: 'item', url: '/customergroup' }
+            { id: 'customer-group', title: 'Customer Group', type: 'item', url: '/customergroup' }
           ]
         },
         // {

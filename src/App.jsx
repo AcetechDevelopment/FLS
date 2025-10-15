@@ -121,7 +121,18 @@ export default function App() {
         </Routes>
       </Suspense>
 
-      <ToastContainer position="top-right" autoClose={3000} theme="colored" />
+      <ToastContainer 
+        position="top-right" 
+        autoClose={3000} 
+        theme="colored"
+        hideProgressBar={false}
+        newestOnTop
+        closeOnClick
+        rtl={false}
+        pauseOnFocusLoss
+        draggable
+        pauseOnHover
+      />
     </BrowserRouter>
   );
 }

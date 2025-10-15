@@ -586,7 +586,7 @@ const deleteRow = async (id) => {
   <table
     id="supplier-table"
     className="table table-bordered table-striped align-middle"
-    style={{ fontSize: "12px", marginBottom: "0" }} // smaller font
+    style={{ fontSize: "12px", marginBottom: "0" }}
   >
     <thead className="table-primary">
       <tr className="text-center" style={{ fontSize: "12px" }}>
@@ -600,7 +600,7 @@ const deleteRow = async (id) => {
       </tr>
     </thead>
     <tbody>
-      {filteredSuppliers && filteredSuppliers.length > 0 ? (
+      {Array.isArray(filteredSuppliers) && filteredSuppliers.length > 0 ? (
         filteredSuppliers.map((supplier) => (
           <tr key={supplier.id} className="text-center" style={{ fontSize: "12px", lineHeight: "1.2" }}>
             <td className="py-0 px-1">{supplier.customer_code}</td>
@@ -625,49 +625,40 @@ const deleteRow = async (id) => {
                 <span className="text-muted" style={{ fontSize: "9px" }}>No Image</span>
               )}
             </td>
-          <td className="py-0 px-1">
-  <button
-    className="btn btn-sm p-0 me-1"
-    style={{ background: "transparent", border: "none", cursor: "pointer" }}
-    onClick={() => handleEditSupplier(supplier)}
-    title="Edit"
-  >
-    <span
-      className="material-icons-two-tone text-warning"
-      style={{ fontSize: "12px", cursor: "pointer" }}
-    >
-      edit
-    </span>
-  </button>
+            <td className="py-0 px-1">
+              <button
+                className="btn btn-sm p-0 me-1"
+                style={{ background: "transparent", border: "none", cursor: "pointer" }}
+                onClick={() => handleEditSupplier(supplier)}
+                title="Edit"
+              >
+                <span className="material-icons-two-tone text-warning" style={{ fontSize: "12px" }}>
+                  edit
+                </span>
+              </button>
 
-  <button
-    className="btn btn-sm p-0 me-1"
-    style={{ background: "transparent", border: "none", cursor: "pointer" }}
-    onClick={() => alert("Open Price List for " + supplier.customer_name)}
-    title="Price List"
-  >
-    <span
-      className="material-icons-two-tone text-info"
-      style={{ fontSize: "12px", cursor: "pointer" }}
-    >
-      list_alt
-    </span>
-  </button>
+              <button
+                className="btn btn-sm p-0 me-1"
+                style={{ background: "transparent", border: "none", cursor: "pointer" }}
+                onClick={() => alert("Open Price List for " + supplier.customer_name)}
+                title="Price List"
+              >
+                <span className="material-icons-two-tone text-info" style={{ fontSize: "12px" }}>
+                  list_alt
+                </span>
+              </button>
 
-  <button
-    className="btn btn-sm p-0"
-    style={{ background: "transparent", border: "none", cursor: "pointer" }}
-    onClick={() => deleteRow(supplier.id)}
-    title="Delete"
-  >
-    <span
-      className="material-icons-two-tone text-danger"
-      style={{ fontSize: "12px", cursor: "pointer" }}
-    >
-      delete
-    </span>
-  </button>
-</td>
+              <button
+                className="btn btn-sm p-0"
+                style={{ background: "transparent", border: "none", cursor: "pointer" }}
+                onClick={() => deleteRow(supplier.id)}
+                title="Delete"
+              >
+                <span className="material-icons-two-tone text-danger" style={{ fontSize: "12px" }}>
+                  delete
+                </span>
+              </button>
+            </td>
           </tr>
         ))
       ) : (

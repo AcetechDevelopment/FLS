@@ -21,14 +21,27 @@ export default function NavContent({ navigation, activeNav, setIsLoggedIn }) {
   const navigate = useNavigate();
 
   // ----------------- LOGOUT ----------------- //
+  // const handleLogout = () => {
+  //   console.log("Logging out..."); // debug
+  //   sessionStorage.clear();
+  //   localStorage.clear(); // clear local storage too
+  //   if (setIsLoggedIn) setIsLoggedIn(false);
+  //   toast.success("Logged out successfully!");
+  //   navigate('/login', { replace: true });
+  // };
+
+
   const handleLogout = () => {
-    console.log("Logging out..."); // debug
-    sessionStorage.clear();
-    localStorage.clear(); // clear local storage too
-    if (setIsLoggedIn) setIsLoggedIn(false);
-    toast.success("Logged out successfully!");
-    navigate('/login', { replace: true });
-  };
+  console.log("Logging out..."); // debug
+  sessionStorage.clear();
+  localStorage.clear(); // clear local storage too
+  if (setIsLoggedIn) setIsLoggedIn(false);
+  toast.success("Logged out successfully!");
+
+  // ✅ Redirect and reload page
+  navigate('/login', { replace: true });
+  window.location.reload(); // forces a full reload
+};
 
   // ----------------- NAV ITEMS ----------------- //
   const navItems = navigation.map((item) => {

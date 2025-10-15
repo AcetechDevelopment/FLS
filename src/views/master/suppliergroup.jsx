@@ -140,7 +140,7 @@ const SupplierGroup = () => {
 
   const handleSaveGroup = async () => {
     if (!formData.supplier_name?.trim()) {
-      toast.error("Supplier name is required");
+      toast.error("Customer name is required");
       return;
     }
 
@@ -151,24 +151,14 @@ const SupplierGroup = () => {
     }
 
     try {
-      // Use the same endpoint for both create and update
-      const endpoint = "https://115.124.111.111/FLS/public/api/supplier-group/create";
+      // Use different endpoints for create and update
+      const endpoint = editingGroup 
+        ? `https://115.124.111.111/FLS/public/api/supplier-group/update/${editingGroup.id}`
+        : "https://115.124.111.111/FLS/public/api/supplier-group/create";
       
-      // Ensure supplier_items is properly formatted
-      let supplier_items = [];
-      try {
-        if (Array.isArray(formData.supplier_items)) {
-          supplier_items = formData.supplier_items;
-        } else if (typeof formData.supplier_items === 'string') {
-          supplier_items = JSON.parse(formData.supplier_items);
-        }
-      } catch (e) {
-        console.warn('Error parsing supplier_items:', e);
-      }
-
       const payload = {
         supplier_name: formData.supplier_name,
-        supplier_items: supplier_items, // Send as array, not string
+        supplier_items: tempMaterials, // Use tempMaterials directly
         description: formData.description || "",
         ...(editingGroup && { id: editingGroup.id })
       };
@@ -273,9 +263,8 @@ const SupplierGroup = () => {
       
       toast.success("All materials saved successfully!");
       fetchGroups();
-      setShowMaterialModal(false);
+      // Don't clear tempMaterials, just reset the form
       setMaterialForm({ material: "", weight: "", price: "" });
-      setTempMaterials([]); // Clear temp materials after saving
       
     } catch (error) {
       console.error("Error saving materials:", error);
@@ -299,14 +288,21 @@ const SupplierGroup = () => {
 
       // Get selected material details
       const selectedMaterial = materialsList.find(m => m.id.toString() === materialForm.material_id);
+      if (!selectedMaterial) {
+        toast.error("Selected material not found");
+        return;
+      }
       
-      // Add to temp materials first for immediate display
+      // Create the new material object
       const newMaterial = {
-        ...materialForm,
-        material_name: selectedMaterial?.name || '',
-        material: selectedMaterial?.name || '',
-        id: `temp_${Date.now()}` // temporary ID for UI purposes
+        material_id: materialForm.material_id,
+        material_name: selectedMaterial.name,
+        material: selectedMaterial.name,
+        weight: materialForm.weight,
+        price: materialForm.price
       };
+
+      // First add to tempMaterials for immediate display
       setTempMaterials(prev => [...prev, newMaterial]);
 
       const res = await axios.post(
@@ -314,6 +310,7 @@ const SupplierGroup = () => {
         {
           supplier_group_id: selectedGroupId,
           material_id: materialForm.material_id,
+          material_name: selectedMaterial.name,
           weight: materialForm.weight,
           price: materialForm.price,
         },
@@ -329,25 +326,19 @@ const SupplierGroup = () => {
       if (res.data && (res.data.success || res.status === 200)) {
         toast.success("Material added successfully!");
         
-        // Get the material details from the materials list
-        const materialDetails = materialsList.find(m => m.id === Number(materialForm.material_id));
-        
-        // Create the new material object with all necessary data
+        // Update the material with the returned ID
         const savedMaterial = {
-          id: res.data.data?.id || newMaterial.id,
-          material_id: materialForm.material_id,
-          material_name: materialDetails?.name || materialForm.material_name,
-          material: materialDetails?.name || materialForm.material_name, // For display compatibility
-          weight: materialForm.weight,
-          price: materialForm.price
+          ...newMaterial,
+          id: res.data.data?.id
         };
 
-        // Update tempMaterials, replacing the temporary entry with the saved one
-        setTempMaterials(prev => 
-          prev.map(m => m.id === newMaterial.id ? savedMaterial : m)
-        );
+        // Update tempMaterials
+        setTempMaterials(prev => {
+          const filtered = prev.filter(m => m.material_id !== savedMaterial.material_id);
+          return [...filtered, savedMaterial];
+        });
         
-        // Reset only the form fields, not the materials list
+        // Reset only the form fields
         setMaterialForm({ 
           material_id: "", 
           material_name: "", 
@@ -429,7 +420,24 @@ const SupplierGroup = () => {
 
   const handleEditGroup = (group) => {
     setEditingGroup(group);
-    setFormData(group);
+    
+    // Process supplier_items
+    let items = [];
+    try {
+      if (group.supplier_items) {
+        items = typeof group.supplier_items === 'string'
+          ? JSON.parse(group.supplier_items)
+          : group.supplier_items;
+      }
+    } catch (e) {
+      console.warn('Error parsing supplier_items:', e);
+    }
+    
+    setTempMaterials(items); // Set the materials in tempMaterials
+    setFormData({
+      ...group,
+      supplier_items: items
+    });
     setShowModal(true);
   };
 
@@ -477,9 +485,27 @@ const SupplierGroup = () => {
     setSelectedGroupId(groupId);
     setMaterialForm({ material_id: "", material_name: "", weight: "", price: "" });
     
-    const materials = await fetchMaterialsForGroup(groupId);
-    console.log('Fetched materials:', materials); // For debugging
-    setTempMaterials(materials);
+    try {
+      const materials = await fetchMaterialsForGroup(groupId);
+      console.log('Fetched materials:', materials); // For debugging
+      
+      // Ensure each material has the required properties
+      const normalizedMaterials = materials.map(material => ({
+        id: material.id,
+        material_id: material.material_id,
+        material_name: material.material_name || material.material,
+        material: material.material_name || material.material,
+        weight: material.weight,
+        price: material.price
+      }));
+      
+      setTempMaterials(normalizedMaterials);
+    } catch (error) {
+      console.error('Error loading materials:', error);
+      toast.error('Failed to load materials');
+      setTempMaterials([]);
+    }
+    
     setShowMaterialModal(true);
   };
 
@@ -582,7 +608,7 @@ const SupplierGroup = () => {
   <table className="table table-bordered table-sm align-middle">
     <thead className="table-light">
 <tr className="text-center" style={{ fontSize: "12px" }}>
-  <th>Supplier Name</th>
+  <th> Customer Name</th>
   {/* <th>Supplier</th> */}
   {/* <th>Material</th> */}
   <th>Materials</th>
@@ -717,7 +743,7 @@ const SupplierGroup = () => {
               onChange={(e) =>
                 setFormData({ ...formData, supplier_name: e.target.value })
               }
-              placeholder="Enter Supplier Name"
+              placeholder="Enter Customer Name"
               ref={(el) => (inputRefs.current[0] = el)}
               onKeyDown={(e) => handleKeyDown(e, 0)}
             />
@@ -732,7 +758,7 @@ const SupplierGroup = () => {
               className="border rounded p-2"
               style={{ maxHeight: "150px", overflowY: "auto" }}
             >
-              {["Supplier 1", "Supplier 2", "Supplier 3", "Supplier 4"].map(
+              {["Customer 1", "Customer 2", "Customer 3", "Customer 4"].map(
                 (supplier, index) => (
                   <div className="form-check" key={index}>
                     <input
@@ -804,27 +830,15 @@ const SupplierGroup = () => {
       <div className="modal-content">
         <div className="modal-header py-2 px-3">
           <h5 className="modal-title" style={{ fontSize: "14px" }}>Add Material</h5>
-          <div>
-            <button
-              type="button"
-              className="btn btn-sm btn-primary me-2"
-              onClick={() => {
-                fetchGroups(); // Refresh the main list
-                setShowMaterialModal(false);
-              }}
-            >
-              Done
-            </button>
-            <button
-              type="button"
-              className="btn-close"
-              aria-label="Close"
-              onClick={() => {
-                fetchGroups(); // Refresh the main list
-                setShowMaterialModal(false);
-              }}
-            ></button>
-          </div>
+          <button
+            type="button"
+            className="btn-close"
+            aria-label="Close"
+            onClick={() => {
+              fetchGroups(); // ✅ refresh the main list after modal close
+              setShowMaterialModal(false);
+            }}
+          ></button>
         </div>
 
         <div
@@ -838,53 +852,45 @@ const SupplierGroup = () => {
         >
           <div className="row">
             {/* Left Side - Materials List */}
-<div className="col-6 border-end d-flex flex-column">
-  <h6 style={{ fontSize: "13px" }}>Added Materials</h6>
+            <div className="col-6 border-end d-flex flex-column">
+              <h6 style={{ fontSize: "13px" }}>Added Materials</h6>
 
-  {/* Scrollable List */}
-  <div
-    style={{
-      maxHeight: "250px",   // adjust as needed
-      overflowY: "auto",
-      overflowX: "hidden",
-      flexGrow: 1,
-    }}
-    className="mb-2"
-  >
-    {tempMaterials.length > 0 ? (
-      <ul className="list-group list-group-sm">
-        {tempMaterials.map((m, index) => {
-          const materialName = m.material_name || m.material || 
-            materialsList.find(mat => mat.id === Number(m.material_id))?.name || 'Unknown';
-          return (
-            <li
-              key={m.id || index}
-              className="list-group-item d-flex justify-content-between align-items-center py-1 px-2"
-              style={{ fontSize: "12px" }}
-            >
-              <span className="me-2 flex-grow-1">
-                {materialName} | {m.weight} Kg | ₹{m.price}
-              </span>
-              <button
-                className="btn btn-sm btn-danger py-0 px-2"
-                onClick={() => deleteMaterial(m.id)}
+              <div
+                style={{
+                  maxHeight: "250px",
+                  overflowY: "auto",
+                  overflowX: "hidden",
+                  flexGrow: 1,
+                }}
+                className="mb-2"
               >
-                x
-              </button>
-            </li>
-          );
-        })}
-      </ul>
-    ) : (
-      <p className="text-muted" style={{ fontSize: "12px" }}>
-        No materials added yet
-      </p>
-    )}
-  </div>
-
-  {/* Footer stays fixed below list */}
-
-</div>
+                {tempMaterials.length > 0 ? (
+                  <ul className="list-group list-group-sm">
+                    {tempMaterials.map((m, index) => (
+                      <li
+                        key={m.id || index}
+                        className="list-group-item d-flex justify-content-between align-items-center py-1 px-2"
+                        style={{ fontSize: "12px" }}
+                      >
+                        <span className="me-2 flex-grow-1">
+                          {m.material_name} | {m.weight} Kg | ₹{m.price}
+                        </span>
+                        <button
+                          className="btn btn-sm btn-danger py-0 px-2"
+                          onClick={() => deleteMaterial(m.id)}
+                        >
+                          x
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p className="text-muted" style={{ fontSize: "12px" }}>
+                    No materials added yet
+                  </p>
+                )}
+              </div>
+            </div>
 
             {/* Right Side - Add New Material */}
             <div className="col-6">
@@ -892,38 +898,45 @@ const SupplierGroup = () => {
 
               {/* Material select */}
               <div className="mb-2">
-                <label className="form-label" style={{ fontSize: "13px" }}>Material</label>
+                <label className="form-label" style={{ fontSize: "13px" }}>
+                  Material
+                </label>
                 <select
                   className="form-select form-select-sm"
                   value={materialForm.material_id}
                   onChange={(e) => {
-                    const selectedMaterial = materialsList.find(m => m.id === Number(e.target.value));
+                    const selectedMaterial = materialsList.find(
+                      (m) => m.id === Number(e.target.value)
+                    );
                     setMaterialForm({
                       ...materialForm,
                       material_id: e.target.value,
-                      material_name: selectedMaterial ? selectedMaterial.name : ''
+                      material_name: selectedMaterial ? selectedMaterial.name : "",
                     });
-                    console.log('Selected material:', selectedMaterial); // For debugging
                   }}
                   ref={(el) => (inputRefs.current[2] = el)}
                   onKeyDown={(e) => handleKeyDown(e, 2)}
                 >
                   <option value="">Select Material</option>
                   {materialsList && materialsList.length > 0 ? (
-                    materialsList.map(material => (
+                    materialsList.map((material) => (
                       <option key={material.id} value={material.id}>
-                        {material.name || 'Unnamed Material'}
+                        {material.name || "Unnamed Material"}
                       </option>
                     ))
                   ) : (
-                    <option value="" disabled>Loading materials...</option>
+                    <option value="" disabled>
+                      Loading materials...
+                    </option>
                   )}
                 </select>
               </div>
 
               {/* Weight input */}
               <div className="mb-2">
-                <label className="form-label" style={{ fontSize: "13px" }}>Weight (Kg)</label>
+                <label className="form-label" style={{ fontSize: "13px" }}>
+                  Weight (Kg)
+                </label>
                 <input
                   type="text"
                   className="form-control form-control-sm"
@@ -941,7 +954,9 @@ const SupplierGroup = () => {
 
               {/* Price input */}
               <div className="mb-2">
-                <label className="form-label" style={{ fontSize: "13px" }}>Price (₹)</label>
+                <label className="form-label" style={{ fontSize: "13px" }}>
+                  Price (₹)
+                </label>
                 <input
                   type="text"
                   className="form-control form-control-sm"
@@ -957,29 +972,24 @@ const SupplierGroup = () => {
                 />
               </div>
 
-              {/* Add button */}
-       <button
-  className="btn btn-sm btn-success"
-  ref={(el) => (inputRefs.current[5] = el)}
-  onKeyDown={(e) => {
-    if (e.key === "Enter") {
-      e.preventDefault();
-      addTempMaterial();   // ✅ Add material on Enter
-    }
-  }}
-  onClick={addTempMaterial}
->
-  Add
-</button>
-
+              {/* ✅ Single Add Button Logic */}
+              <button
+                type="button"
+                className="btn btn-sm btn-success"
+                ref={(el) => (inputRefs.current[5] = el)}
+                onClick={handleAddMaterial}
+              >
+                Add
+              </button>
             </div>
-            
           </div>
         </div>
       </div>
     </div>
   </div>
 )}
+
+
     </div>
   );
 };
