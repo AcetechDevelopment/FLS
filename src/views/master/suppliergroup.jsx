@@ -973,14 +973,24 @@ const SupplierGroup = () => {
               </div>
 
               {/* ✅ Single Add Button Logic */}
-              <button
+              {/* <button
                 type="button"
                 className="btn btn-sm btn-success"
                 ref={(el) => (inputRefs.current[5] = el)}
                 onClick={handleAddMaterial}
               >
                 Add
-              </button>
+              </button> */}
+
+
+              <button
+  type="button"
+  className="btn btn-sm btn-success"
+  ref={(el) => (inputRefs.current[5] = el)}
+  onClick={addTempMaterial}     // ✅ Correct
+>
+  Add
+</button>
             </div>
           </div>
         </div>

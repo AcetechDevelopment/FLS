@@ -1,9 +1,12 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import "bootstrap/dist/css/bootstrap.min.css";
 import jsPDF from "jspdf";
-import autoTable from "jspdf-autotable";   // ✅ Correct way
+import autoTable from "jspdf-autotable";
 import * as XLSX from "xlsx";
-import React, { useRef } from "react";
+import axios from "axios";
+import { toast } from "react-toastify";
+
+const API_BASE = "https://115.124.111.111/FLS/public/api/auth";
 
 const UserMaster = () => {
   const [users, setUsers] = useState([]);
@@ -18,155 +21,156 @@ const UserMaster = () => {
     role: "User",
   });
 
-// Enter Key navigation  
-  
-const inputRefs = useRef([]);
+  const inputRefs = useRef([]);
 
-const handleKeyDown = (e, index) => {
-  if (e.key === "Enter") {
-    e.preventDefault();
-    const next = inputRefs.current[index + 1];
-    if (next) {
-      next.focus();
+  // Fetch users from API
+  const fetchUsers = async () => {
+    try {
+      const token = sessionStorage.getItem("authToken");
+      const { data } = await axios.get(`${API_BASE}/userlist`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setUsers(data);
+    } catch (error) {
+      console.error(error);
+      toast.error("Failed to fetch users");
     }
-  }
-};
+  };
 
+  useEffect(() => {
+    fetchUsers();
+  }, []);
 
-  // Open modal for new user
+  const handleKeyDown = (e, index) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      const next = inputRefs.current[index + 1];
+      if (next) next.focus();
+    }
+  };
+
   const handleNewUser = () => {
     setEditingUser(null);
     setFormData({ name: "", phone: "", password: "", role: "User" });
     setShowModal(true);
   };
 
-  // Open modal for editing user
   const handleEditUser = (user) => {
     setEditingUser(user);
-    setFormData(user);
+    setFormData({ ...user, password: "" }); // don't auto-fill password
     setShowModal(true);
   };
 
-  // Save user (add or update)
-  const handleSaveUser = () => {
-    if (editingUser) {
-      setUsers(
-        users.map((u) =>
-          u.id === editingUser.id ? { ...formData, id: editingUser.id } : u
-        )
-      );
-    } else {
-      setUsers([...users, { ...formData, id: Date.now() }]);
+  const handleSaveUser = async () => {
+    const token = sessionStorage.getItem("authToken");
+    try {
+      if (editingUser) {
+        // Update user
+        const { data } = await axios.post(
+          `${API_BASE}/update_user/${editingUser.id}`,
+          formData,
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+        toast.success("User updated successfully");
+      } else {
+        // Add new user
+        const { data } = await axios.post(`${API_BASE}/register`, formData, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        toast.success("User added successfully");
+      }
+      setShowModal(false);
+      fetchUsers();
+    } catch (error) {
+      console.error(error);
+      toast.error("Failed to save user");
     }
-    setShowModal(false);
   };
 
-  // Delete user
-  const deleteRow = (id) => {
-    setUsers(users.filter((user) => user.id !== id));
+  const deleteRow = async (id) => {
+    if (!window.confirm("Are you sure you want to delete this user?")) return;
+    const token = sessionStorage.getItem("authToken");
+    try {
+      await axios.delete(`${API_BASE}/delete_user/${id}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      toast.success("User deleted successfully");
+      fetchUsers();
+    } catch (error) {
+      console.error(error);
+      toast.error("Failed to delete user");
+    }
   };
-// ✅ Export PDF
-const exportPDF = () => {
-  if (users.length === 0) {
-    alert("No users available to export.");
-    return;
-  }
 
-  const doc = new jsPDF();
+  // Export PDF
+  const exportPDF = () => {
+    if (users.length === 0) return toast.warning("No users available to export");
 
-  // Title
-  doc.setFontSize(16);
-  doc.text("User Master", 14, 15);
+    const doc = new jsPDF();
+    doc.setFontSize(16);
+    doc.text("User Master", 14, 15);
 
-  // ✅ Removed Password column
-  autoTable(doc, {
-    startY: 25,
-    head: [["Name", "Phone", "Role"]], 
-    body: users.map((u) => [u.name, u.phone, u.role]), 
-    theme: "grid",
-    styles: { fontSize: 10 },
-    headStyles: { fillColor: [0, 123, 255] }, // Bootstrap blue header
-  });
+    autoTable(doc, {
+      startY: 25,
+      head: [["Name", "Phone", "Role"]],
+      body: users.map((u) => [u.name, u.phone, u.role]),
+      theme: "grid",
+      styles: { fontSize: 10 },
+      headStyles: { fillColor: [0, 123, 255] },
+    });
 
-  doc.save("UserMaster.pdf");
-};
+    doc.save("UserMaster.pdf");
+  };
 
-// ✅ Export Excel
-const exportExcel = () => {
-  if (users.length === 0) {
-    alert("No users available to export.");
-    return;
-  }
+  // Export Excel
+  const exportExcel = () => {
+    if (users.length === 0) return toast.warning("No users available to export");
 
-  // ✅ Removed Password column
-  const data = users.map((u) => ({
-    Name: u.name,
-    Phone: u.phone,
-    Role: u.role,
-  }));
+    const data = users.map((u) => ({ Name: u.name, Phone: u.phone, Role: u.role }));
+    const worksheet = XLSX.utils.json_to_sheet(data);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Users");
+    XLSX.writeFile(workbook, "UserMaster.xlsx");
+  };
 
-  const worksheet = XLSX.utils.json_to_sheet(data);
-  const workbook = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(workbook, worksheet, "Users");
-  XLSX.writeFile(workbook, "UserMaster.xlsx");
-};
+  // Print table
+  const handlePrint = () => {
+    if (users.length === 0) return toast.warning("No users available to print");
 
-// ✅ Print Table
-const handlePrint = () => {
-  if (users.length === 0) {
-    alert("No users available to print.");
-    return;
-  }
+    const tableHTML = `
+      <table>
+        <thead>
+          <tr><th>Name</th><th>Phone</th><th>Role</th></tr>
+        </thead>
+        <tbody>
+          ${users
+            .map((u) => `<tr><td>${u.name}</td><td>${u.phone}</td><td>${u.role}</td></tr>`)
+            .join("")}
+        </tbody>
+      </table>
+    `;
 
-  // ✅ Build table without Password column
-  const tableHTML = `
-    <table>
-      <thead>
-        <tr>
-          <th>Name</th>
-          <th>Phone</th>
-          <th>Role</th>
-        </tr>
-      </thead>
-      <tbody>
-        ${users
-          .map(
-            (u) => `
-          <tr>
-            <td>${u.name}</td>
-            <td>${u.phone}</td>
-            <td>${u.role}</td>
-          </tr>
-        `
-          )
-          .join("")}
-      </tbody>
-    </table>
-  `;
+    const printWindow = window.open("", "", "width=900,height=600");
+    printWindow.document.write(`
+      <html>
+        <head>
+          <title>User Master</title>
+          <style>
+            table { width: 100%; border-collapse: collapse; }
+            th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+            th { background-color: #0d6efd; color: white; }
+          </style>
+        </head>
+        <body>
+          <h2>User Master</h2>
+          ${tableHTML}
+        </body>
+      </html>
+    `);
+    printWindow.document.close();
+    printWindow.print();
+  };
 
-  const printWindow = window.open("", "", "width=900,height=600");
-  printWindow.document.write(`
-    <html>
-      <head>
-        <title>User Master</title>
-        <style>
-          table { width: 100%; border-collapse: collapse; }
-          th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
-          th { background-color: #0d6efd; color: white; }
-        </style>
-      </head>
-      <body>
-        <h2>User Master</h2>
-        ${tableHTML}
-      </body>
-    </html>
-  `);
-  printWindow.document.close();
-  printWindow.print();
-};
-
-
-  // ✅ Filtered users
   const filteredUsers = users.filter(
     (u) =>
       u.name.toLowerCase().includes(search.toLowerCase()) ||
@@ -534,6 +538,7 @@ const handlePrint = () => {
 )}
 
     </div>
+
   );
 };
 

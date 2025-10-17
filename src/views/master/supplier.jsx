@@ -39,6 +39,15 @@ const SupplierMaster = () => {
     }
   }, [showModal, showImageModal]);
 
+
+  // added additionally
+
+  useEffect(() => {
+  fetchSuppliers(); // ✅ initial load
+}, []);
+
+  // added additionally
+
   const [formData, setFormData] = useState({
     id: "",
     customer_name: "",
@@ -49,20 +58,21 @@ const SupplierMaster = () => {
     image: null,
   });
 
-  // ✅ Fetch suppliers
+// ✅ Fetch suppliers
 const fetchSuppliers = async () => {
   try {
     setLoading(true);
     const token = sessionStorage.getItem("authToken");
     console.log("Auth Token:", token);
 
-    if (!token || token === "undefined" || token === "null") {
-      console.error("Invalid or missing auth token");
-      toast.error("Session expired. Please login again.");
-      sessionStorage.removeItem("authToken");
-      window.location.href = "/login";
-      return;
-    }
+
+if (!token || token === "undefined" || token === "null") {
+  console.error("Invalid or missing auth token");
+  toast.error("Session expired. Please login again.");
+  sessionStorage.removeItem("authToken");
+  navigate("/login"); // ✅ SPA-friendly navigation
+  return;
+}
 
     const response = await axiosInstance.get(`${API_BASE_URL}/customer/list`, {
       headers: {
@@ -74,10 +84,7 @@ const fetchSuppliers = async () => {
 
     console.log("Raw API response:", response);
 
-    // ✅ Some APIs return data directly, not inside `data.data`
     const resData = response.data;
-
-    // ✅ Try to handle multiple formats gracefully
     const list =
       resData?.data ||
       resData?.customers ||
@@ -113,9 +120,11 @@ const fetchSuppliers = async () => {
   }
 };
 
+// ✅ Add this right below
 useEffect(() => {
-  fetchSuppliers();
+  fetchSuppliers(); // runs only once when component loads
 }, []);
+
 
   // ✅ Enter key navigation
   const handleKeyDown = (e, index) => {
@@ -140,10 +149,30 @@ useEffect(() => {
   };
 
   // ✅ Generate supplier code
+  // const generateSupplierCode = () => {
+  //   const nextNumber = suppliers.length + 1;
+  //   return `SUP${String(nextNumber).padStart(3, "0")}`;
+  // };
+
   const generateSupplierCode = () => {
-    const nextNumber = suppliers.length + 1;
-    return `SUP${String(nextNumber).padStart(3, "0")}`;
-  };
+  if (!Array.isArray(suppliers) || suppliers.length === 0) {
+    return "SUP001";
+  }
+
+  // Extract all numeric parts of existing customer codes (e.g., SUP001 -> 1)
+  const numbers = suppliers
+    .map((s) => {
+      const match = String(s.customer_code || "").match(/SUP(\d+)/);
+      return match ? parseInt(match[1], 10) : 0;
+    })
+    .filter((n) => !isNaN(n));
+
+  const maxNumber = numbers.length > 0 ? Math.max(...numbers) : 0;
+  const nextNumber = maxNumber + 1;
+
+  return `SUP${String(nextNumber).padStart(3, "0")}`;
+};
+
 
   // ✅ Handle image change
   const handleImageUpload = (e) => {
@@ -245,17 +274,14 @@ const handleEditSupplier = async (supplier) => {
 
   // ✅ Save supplier
 const handleSaveSupplier = async () => {
-  if (isSaving) return; // Prevent multiple clicks
+  if (isSaving) return; // prevent double click
+  setIsSaving(true);
 
   try {
     if (!formData.customer_name || !formData.customer_code || !formData.gst) {
       toast.error("Please fill all required fields");
       return;
     }
-
-    setIsSaving(true); // Start submission
-
-    console.log("Saving supplier data...");
 
     const formDataToSend = new FormData();
     formDataToSend.append("id", formData.id || "");
@@ -268,64 +294,51 @@ const handleSaveSupplier = async () => {
     if (formData.image) {
       if (formData.image instanceof File) {
         formDataToSend.append("image", formData.image);
-      } else if (typeof formData.image === 'string') {
-        if (!formData.image.startsWith('data:')) {
-          formDataToSend.append("image_url", formData.image);
-        }
+      } else if (typeof formData.image === "string" && !formData.image.startsWith("data:")) {
+        formDataToSend.append("image_url", formData.image);
       }
-    }
-
-    for (let pair of formDataToSend.entries()) {
-      console.log(pair[0] + ': ' + pair[1]);
     }
 
     const url = editingSupplier
       ? `${API_BASE_URL}/customer/update`
       : `${API_BASE_URL}/customer/create`;
 
-    console.log("Sending request to:", url);
-
     const response = await axios.post(url, formDataToSend, {
       headers: {
         Authorization: `Bearer ${sessionStorage.getItem("authToken")}`,
-      }
+      },
     });
 
     if (response.data.status === "success") {
       toast.success(`Customer ${editingSupplier ? "updated" : "created"} successfully!`);
+      // Refresh table
       fetchSuppliers();
-      setShowModal(false);
+
+      // Reset form
+      setEditingSupplier(null);
+      setFormData({
+        id: "",
+        customer_name: "",
+        customer_code: "",
+        customer_group: "",
+        gst: "",
+        address: "",
+        image: null,
+      });
+      setPreviewImage(null);
     } else {
       toast.error(response.data.message || "Failed to save customer");
     }
   } catch (error) {
     console.error("Error saving supplier:", error);
-
-    if (error.response?.status === 401) {
-      sessionStorage.removeItem("authToken");
-      toast.error("Session expired. Please login again");
-      window.location.href = "/login";
-      return;
-    }
-
-    console.log("Error details:", {
-      status: error.response?.status,
-      data: error.response?.data,
-      message: error.message
-    });
-
-    let errorMessage = "Failed to save customer. ";
-    if (error.response?.data?.message) {
-      errorMessage += error.response.data.message;
-    } else if (error.message) {
-      errorMessage += error.message;
-    }
-
-    toast.error(errorMessage);
+    toast.error("Failed to save supplier. Please try again.");
   } finally {
-    setIsSaving(false); // Reset submission state
+    // ✅ Always close modal after save attempt
+    setShowModal(false);
+    setIsSaving(false);
   }
 };
+
 
 
   // ✅ Delete supplier
@@ -608,6 +621,7 @@ const deleteRow = async (id) => {
             <td className="py-0 px-1">{supplier.customer_group}</td>
             <td className="py-0 px-1">{supplier.address}</td>
             <td className="py-0 px-1">{supplier.gst}</td>
+
             <td className="py-0 px-1">
               {supplier.image ? (
                 <img
@@ -625,6 +639,7 @@ const deleteRow = async (id) => {
                 <span className="text-muted" style={{ fontSize: "9px" }}>No Image</span>
               )}
             </td>
+
             <td className="py-0 px-1">
               <button
                 className="btn btn-sm p-0 me-1"
@@ -757,33 +772,47 @@ const deleteRow = async (id) => {
     ></textarea>
   </div>
 
-  <div className="mb-2">
-    <label className="form-label">Image</label>
-    <input
-      type="file"
-      className="form-control form-control-sm"
-      ref={fileInputRef}
-      onChange={handleImageUpload}
-    />
-    {previewImage && (
-      <div className="mt-1">
-        <img
-          src={previewImage}
-          alt="Preview"
-          width="50"
-          height="50"
-          style={{ objectFit: "cover" }}
-        />
-        <button
-          type="button"
-          className="btn btn-sm btn-outline-danger ms-1"
-          onClick={handleRemoveImage}
-        >
-          Remove
-        </button>
-      </div>
-    )}
-  </div>
+<div className="mb-2 position-relative">
+  <label className="form-label">Image</label>
+  <input
+    type="file"
+    className="form-control form-control-sm"
+    ref={fileInputRef}
+    onChange={handleImageUpload}
+  />
+  {previewImage && (
+    <div className="position-relative mt-1" style={{ width: "50px", height: "50px" }}>
+      <img
+        src={previewImage}
+        alt="Preview"
+        width="50"
+        height="50"
+        style={{ objectFit: "cover", borderRadius: "4px" }}
+      />
+      <span
+        onClick={handleRemoveImage}
+        style={{
+          position: "absolute",
+          top: "-5px",
+          right: "-5px",
+          background: "red",
+          color: "white",
+          borderRadius: "50%",
+          width: "16px",
+          height: "16px",
+          fontSize: "12px",
+          fontWeight: "bold",
+          textAlign: "center",
+          lineHeight: "16px",
+          cursor: "pointer",
+        }}
+      >
+        ×
+      </span>
+    </div>
+  )}
+</div>
+
 </div>
                       <div className="modal-footer py-2">
                           <button
