@@ -595,90 +595,193 @@ const deleteRow = async (id) => {
             </div>
 
             {/* Table */}
-<div className="table-responsive">
+
+<div
+  className="table-responsive"
+  style={{
+    borderRadius: "8px",
+    boxShadow: "0 1px 5px rgba(0,0,0,0.08)",
+    overflow: "hidden",
+    backgroundColor: "#fff",
+  }}
+>
   <table
     id="supplier-table"
-    className="table table-bordered table-striped align-middle"
-    style={{ fontSize: "12px", marginBottom: "0" }}
+    className="table align-middle mb-0 text-center"
+    style={{
+      fontSize: "11px",
+      width: "100%",
+      borderCollapse: "collapse",
+    }}
   >
-    <thead className="table-primary">
-      <tr className="text-center" style={{ fontSize: "12px" }}>
-        <th className="py-0 px-1">Code</th>
-        <th className="py-0 px-1">Name</th>
-        <th className="py-0 px-1">Group</th>
-        <th className="py-0 px-1">Address</th>
-        <th className="py-0 px-1">GST</th>
-        <th className="py-0 px-1">Image</th>
-        <th className="py-0 px-1" style={{ minWidth: "120px" }}>Action</th>
+    <thead
+      style={{
+        background: "linear-gradient(90deg, #007bff, #00b4d8)",
+        color: "#fff",
+        textTransform: "uppercase",
+        fontSize: "11px",
+      }}
+    >
+      <tr>
+        {["Code", "Name", "Group", "Address", "GST", "Image", "Action"].map(
+          (header, i) => (
+            <th
+              key={i}
+              style={{
+                padding: "4px 5px",
+                fontWeight: "600",
+                border: "1px solid #dee2e6",
+                whiteSpace: "nowrap",
+                ...(header === "Action" && { minWidth: "90px" }),
+              }}
+            >
+              {header}
+            </th>
+          )
+        )}
       </tr>
     </thead>
+
     <tbody>
       {Array.isArray(filteredSuppliers) && filteredSuppliers.length > 0 ? (
-        filteredSuppliers.map((supplier) => (
-          <tr key={supplier.id} className="text-center" style={{ fontSize: "12px", lineHeight: "1.2" }}>
-            <td className="py-0 px-1">{supplier.customer_code}</td>
-            <td className="py-0 px-1">{supplier.customer_name}</td>
-            <td className="py-0 px-1">{supplier.customer_group}</td>
-            <td className="py-0 px-1">{supplier.address}</td>
-            <td className="py-0 px-1">{supplier.gst}</td>
+        filteredSuppliers.map((supplier, index) => (
+          <tr
+            key={supplier.id}
+            style={{
+              backgroundColor: index % 2 === 0 ? "#f9fafb" : "#ffffff",
+              transition: "background-color 0.15s ease-in-out",
+              lineHeight: "1.1",
+            }}
+            onMouseEnter={(e) =>
+              (e.currentTarget.style.backgroundColor = "#e8f2ff")
+            }
+            onMouseLeave={(e) =>
+              (e.currentTarget.style.backgroundColor =
+                index % 2 === 0 ? "#f9fafb" : "#ffffff")
+            }
+          >
+            <td style={{ padding: "3px 5px", border: "1px solid #dee2e6" }}>
+              {supplier.customer_code}
+            </td>
+            <td style={{ padding: "3px 5px", border: "1px solid #dee2e6" }}>
+              {supplier.customer_name}
+            </td>
+            <td style={{ padding: "3px 5px", border: "1px solid #dee2e6" }}>
+              {supplier.customer_group}
+            </td>
+            <td style={{ padding: "3px 5px", border: "1px solid #dee2e6" }}>
+              {supplier.address}
+            </td>
+            <td style={{ padding: "3px 5px", border: "1px solid #dee2e6" }}>
+              {supplier.gst}
+            </td>
 
-            <td className="py-0 px-1">
+            <td style={{ padding: "3px 5px", border: "1px solid #dee2e6" }}>
               {supplier.image ? (
                 <img
                   src={supplier.image}
                   alt="Supplier"
                   width="18"
                   height="18"
-                  style={{ cursor: "pointer", borderRadius: "3px", objectFit: "cover" }}
+                  style={{
+                    borderRadius: "3px",
+                    cursor: "pointer",
+                    objectFit: "cover",
+                    transition: "transform 0.2s ease-in-out",
+                  }}
+                  onMouseEnter={(e) => (e.currentTarget.style.transform = "scale(1.1)")}
+                  onMouseLeave={(e) => (e.currentTarget.style.transform = "scale(1)")}
                   onClick={() => {
                     setPreviewImage(supplier.image);
                     setShowImageModal(true);
                   }}
                 />
               ) : (
-                <span className="text-muted" style={{ fontSize: "9px" }}>No Image</span>
+                <span style={{ color: "#6c757d", fontSize: "9px" }}>No Image</span>
               )}
             </td>
 
-            <td className="py-0 px-1">
-              <button
-                className="btn btn-sm p-0 me-1"
-                style={{ background: "transparent", border: "none", cursor: "pointer" }}
-                onClick={() => handleEditSupplier(supplier)}
-                title="Edit"
-              >
-                <span className="material-icons-two-tone text-warning" style={{ fontSize: "12px" }}>
-                  edit
-                </span>
-              </button>
+           <td style={{ padding: "3px 5px", border: "1px solid #dee2e6" }}>
+  {/* Edit */}
+  <button
+    className="btn btn-sm p-0 me-1"
+    style={{
+      background: "transparent",
+      border: "none",
+      padding: 0,
+      transition: "transform 0.1s ease-in-out",
+    }}
+    onMouseEnter={(e) => (e.currentTarget.style.transform = "scale(1.2)")}
+    onMouseLeave={(e) => (e.currentTarget.style.transform = "scale(1)")}
+    onClick={() => handleEditSupplier(supplier)}
+    title="Edit"
+  >
+    <span
+      className="material-icons-two-tone"
+      style={{ fontSize: "12px", color: "#ffc107", cursor: "pointer" }}
+    >
+      edit
+    </span>
+  </button>
 
-              <button
-                className="btn btn-sm p-0 me-1"
-                style={{ background: "transparent", border: "none", cursor: "pointer" }}
-                onClick={() => alert("Open Price List for " + supplier.customer_name)}
-                title="Price List"
-              >
-                <span className="material-icons-two-tone text-info" style={{ fontSize: "12px" }}>
-                  list_alt
-                </span>
-              </button>
+  {/* Price List */}
+  <button
+    className="btn btn-sm p-0 me-1"
+    style={{
+      background: "transparent",
+      border: "none",
+      padding: 0,
+      transition: "transform 0.1s ease-in-out",
+    }}
+    onMouseEnter={(e) => (e.currentTarget.style.transform = "scale(1.2)")}
+    onMouseLeave={(e) => (e.currentTarget.style.transform = "scale(1)")}
+    onClick={() => alert("Open Price List for " + supplier.customer_name)}
+    title="Price List"
+  >
+    <span
+      className="material-icons-two-tone"
+      style={{ fontSize: "12px", color: "#0dcaf0", cursor: "pointer" }}
+    >
+      list_alt
+    </span>
+  </button>
 
-              <button
-                className="btn btn-sm p-0"
-                style={{ background: "transparent", border: "none", cursor: "pointer" }}
-                onClick={() => deleteRow(supplier.id)}
-                title="Delete"
-              >
-                <span className="material-icons-two-tone text-danger" style={{ fontSize: "12px" }}>
-                  delete
-                </span>
-              </button>
-            </td>
+  {/* Delete */}
+  <button
+    className="btn btn-sm p-0"
+    style={{
+      background: "transparent",
+      border: "none",
+      padding: 0,
+      transition: "transform 0.1s ease-in-out",
+    }}
+    onMouseEnter={(e) => (e.currentTarget.style.transform = "scale(1.2)")}
+    onMouseLeave={(e) => (e.currentTarget.style.transform = "scale(1)")}
+    onClick={() => deleteRow(supplier.id)}
+    title="Delete"
+  >
+    <span
+      className="material-icons-two-tone"
+      style={{ fontSize: "12px", color: "#dc3545", cursor: "pointer" }}
+    >
+      delete
+    </span>
+  </button>
+</td>
           </tr>
         ))
       ) : (
         <tr>
-          <td colSpan="7" className="text-center text-muted" style={{ fontSize: "10px" }}>
+          <td
+            colSpan="7"
+            style={{
+              textAlign: "center",
+              color: "#6c757d",
+              fontSize: "10px",
+              padding: "6px",
+              border: "1px solid #dee2e6",
+            }}
+          >
             No suppliers found
           </td>
         </tr>
@@ -686,6 +789,9 @@ const deleteRow = async (id) => {
     </tbody>
   </table>
 </div>
+
+
+
             {/* Form Modal */}
             {showModal && (
               <Fragment>

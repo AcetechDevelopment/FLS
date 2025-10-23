@@ -16,26 +16,39 @@ const UserMaster = () => {
   const [visiblePasswords, setVisiblePasswords] = useState({});
   const [formData, setFormData] = useState({
     name: "",
-    phone: "",
+    mobile: "",
     password: "",
     role: "User",
   });
 
   const inputRefs = useRef([]);
 
+  const roleMap = { Admin: 1, Manager: 2, User: 3 };
+
+// inside handleSaveUser
+const payload = {
+  name: formData.name,
+  mobile: formData.mobile,
+  password: formData.password,
+  role_id: roleMap[formData.role] || null,
+};
+
   // Fetch users from API
-  const fetchUsers = async () => {
-    try {
-      const token = sessionStorage.getItem("authToken");
-      const { data } = await axios.get(`${API_BASE}/userlist`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      setUsers(data);
-    } catch (error) {
-      console.error(error);
-      toast.error("Failed to fetch users");
-    }
-  };
+const fetchUsers = async () => {
+  try {
+    const token = sessionStorage.getItem("authToken");
+    const { data } = await axios.get(`${API_BASE}/userlist`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+
+    console.log("API userlist data:", data);
+
+    setUsers(data.data || data.users || []);
+  } catch (error) {
+    console.error(error);
+    toast.error("Failed to fetch users");
+  }
+};
 
   useEffect(() => {
     fetchUsers();
@@ -51,41 +64,114 @@ const UserMaster = () => {
 
   const handleNewUser = () => {
     setEditingUser(null);
-    setFormData({ name: "", phone: "", password: "", role: "User" });
+    setFormData({ name: "", mobile: "", password: "", role: "User" });
     setShowModal(true);
   };
 
-  const handleEditUser = (user) => {
-    setEditingUser(user);
-    setFormData({ ...user, password: "" }); // don't auto-fill password
-    setShowModal(true);
+// When editing a user, make sure all fields are populated correctly
+const handleEditUser = (user) => {
+  setEditingUser(user);
+  setFormData({
+    name: user.name || "",
+    email: user.email || "", // ✅ ensure email field is set
+    mobile: user.mobile || "",
+    password: "", // blank by default for security
+    role_id: user.role_id || roleMap[user.role] || 0, // ✅ handle role_id properly
+  });
+  setShowModal(true);
+};
+
+// const handleSaveUser = async () => {
+//   const token = sessionStorage.getItem("authToken");
+
+//   const payload = {
+//     email: formData.name, // change to your email field if you have one
+//     password: formData.password,
+//     role_id: getRoleId(formData.role),
+//     mobile: formData.mobile
+//   };
+
+//   try {
+//     if (editingUser) {
+//       // Update user
+//       await axios.post(`${API_BASE}/update_user/${editingUser.id}`, payload, {
+//         headers: { Authorization: `Bearer ${token}` },
+//       });
+//       toast.success("User updated successfully");
+//     } else {
+//       // Add new user
+//       await axios.post(`${API_BASE}/register`, payload, {
+//         headers: { Authorization: `Bearer ${token}` },
+//       });
+//       toast.success("User added successfully");
+//     }
+
+//     setShowModal(false);
+//     fetchUsers();
+//   } catch (error) {
+//     console.error(error.response?.data || error);
+//     toast.error(error.response?.data?.message || "Failed to save user");
+//   }
+// };
+
+const handleSaveUser = async () => {
+  const token = sessionStorage.getItem("authToken");
+  if (!token) return toast.error("Unauthorized. Please login again.");
+
+  // ✅ Basic validation
+  if (!formData.name || !formData.email || !formData.mobile || !formData.role_id) {
+    return toast.warning("Please fill all required fields");
+  }
+
+  const payload = {
+    name: formData.name.trim(),
+    email: formData.email.trim(),
+    mobile: formData.mobile.trim(),
+    password: formData.password || undefined, // optional during edit
+    role_id: formData.role_id,
   };
 
-  const handleSaveUser = async () => {
-    const token = sessionStorage.getItem("authToken");
-    try {
-      if (editingUser) {
-        // Update user
-        const { data } = await axios.post(
-          `${API_BASE}/update_user/${editingUser.id}`,
-          formData,
-          { headers: { Authorization: `Bearer ${token}` } }
-        );
-        toast.success("User updated successfully");
-      } else {
-        // Add new user
-        const { data } = await axios.post(`${API_BASE}/register`, formData, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        toast.success("User added successfully");
-      }
-      setShowModal(false);
-      fetchUsers();
-    } catch (error) {
-      console.error(error);
-      toast.error("Failed to save user");
+  try {
+    if (editingUser) {
+      // 🔹 Update existing user
+      const response = await axios.put(
+        `${API_BASE}/update_user/${editingUser.id}`,
+        payload,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+
+      toast.success("User updated successfully");
+
+      // ✅ Update user in local state instantly
+      setUsers((prev) =>
+        prev.map((u) =>
+          u.id === editingUser.id ? { ...u, ...payload } : u
+        )
+      );
+
+    } else {
+      // 🔹 Create new user
+      const response = await axios.post(`${API_BASE}/register`, payload, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      toast.success("User added successfully");
+
+      // ✅ Add new user to state instantly
+      const newUser = response.data?.data || payload;
+      setUsers((prev) => [...prev, newUser]);
     }
-  };
+
+    setShowModal(false);
+    setEditingUser(null);
+    setFormData({ name: "", email: "", mobile: "", password: "", role_id: "" });
+
+  } catch (error) {
+    console.error("Error saving user:", error);
+    toast.error(error.response?.data?.message || "Failed to save user");
+  }
+};
+
 
   const deleteRow = async (id) => {
     if (!window.confirm("Are you sure you want to delete this user?")) return;
@@ -113,7 +199,7 @@ const UserMaster = () => {
     autoTable(doc, {
       startY: 25,
       head: [["Name", "Phone", "Role"]],
-      body: users.map((u) => [u.name, u.phone, u.role]),
+      body: users.map((u) => [u.name, u.mobile, u.role]),
       theme: "grid",
       styles: { fontSize: 10 },
       headStyles: { fillColor: [0, 123, 255] },
@@ -126,7 +212,7 @@ const UserMaster = () => {
   const exportExcel = () => {
     if (users.length === 0) return toast.warning("No users available to export");
 
-    const data = users.map((u) => ({ Name: u.name, Phone: u.phone, Role: u.role }));
+    const data = users.map((u) => ({ Name: u.name, Phone: u.mobile, Role: u.role }));
     const worksheet = XLSX.utils.json_to_sheet(data);
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, "Users");
@@ -144,7 +230,7 @@ const UserMaster = () => {
         </thead>
         <tbody>
           ${users
-            .map((u) => `<tr><td>${u.name}</td><td>${u.phone}</td><td>${u.role}</td></tr>`)
+            .map((u) => `<tr><td>${u.name}</td><td>${u.mobile}</td><td>${u.role}</td></tr>`)
             .join("")}
         </tbody>
       </table>
@@ -174,7 +260,7 @@ const UserMaster = () => {
   const filteredUsers = users.filter(
     (u) =>
       u.name.toLowerCase().includes(search.toLowerCase()) ||
-      u.phone.includes(search) ||
+      u.mobile.includes(search) ||
       u.role.toLowerCase().includes(search.toLowerCase())
   );
 
@@ -291,121 +377,100 @@ const UserMaster = () => {
   </div>
 </div>
 
-
-
       {/* ✅ Responsive Table */}
   
 
-      <div className="table-responsive">
+<div className="table-responsive">
   <table
     id="user-table"
-    className="table table-bordered table-striped align-middle"
-    style={{ fontSize: "12px" }} // ✅ smaller font
+    className="table table-bordered align-middle"
+    style={{
+      fontSize: "10px",       // reduced font size
+      borderColor: "#dee2e6",
+      marginBottom: "0",
+    }}
   >
-    <thead className="table-primary" style={{ fontSize: "12px" }}>
+    <thead
+      style={{
+        backgroundColor: "#009efb",
+        color: "#fff",
+        fontSize: "10px",    // reduced font size
+      }}
+    >
       <tr className="text-center">
-        <th className="py-1 px-1">Name</th>
-        <th className="py-1 px-1">Phone No</th>
-        <th className="py-1 px-1">Password</th>
-        <th className="py-1 px-1">Role</th>
-        <th className="py-1 px-1" style={{ minWidth: "100px" }}>Action</th>
+        <th className="py-0 px-1">Name</th>
+        <th className="py-0 px-1">Phone No</th>
+        <th className="py-0 px-1">Password</th>
+        <th className="py-0 px-1">Role</th>
+        <th className="py-0 px-1" style={{ minWidth: "100px" }}>Action</th>
       </tr>
     </thead>
 
-    <tbody>
+    <tbody style={{ lineHeight: "1" }}>
       {filteredUsers.map((user) => (
-     <tr
-  className="text-center"
-  key={user.id}
-  style={{ fontSize: "13px", lineHeight: "1.2" }}
->
-          <td className="py-1 px-1">{user.name}</td>
-          <td className="py-1 px-1">{user.phone}</td>
+        <tr
+          key={user.id}
+          className="text-center"
+          style={{ fontSize: "10px", lineHeight: "1" }}
+        >
+          <td className="py-0 px-1 align-middle">{user.name}</td>
+          <td className="py-0 px-1 align-middle">{user.mobile}</td>
 
-          {/* Password with show on focus/blur */}
-          {/* <td className="py-1 px-1 text-center">
+          {/* Password placeholder */}
+          <td className="py-0 px-1 text-center align-middle" style={{ width: "120px" }}>
             <input
-              type={visiblePasswords[user.id] ? "text" : "password"}
-              className="form-control form-control-sm border-0 bg-transparent p-0"
-              value={user.password}
+              type="password"
+              className="form-control form-control-sm border-0 bg-transparent text-center p-0 m-0"
+              value={user.password ? user.password : "••••••"}
               readOnly
-              onFocus={() =>
-                setVisiblePasswords((prev) => ({ ...prev, [user.id]: true }))
-              }
-              onBlur={() =>
-                setVisiblePasswords((prev) => ({ ...prev, [user.id]: false }))
-              }
-              style={{ width: "90px", fontSize: "12px" }}
+              tabIndex={-1}
+              onMouseDown={(e) => e.preventDefault()}
+              style={{
+                fontSize: "10px",
+                height: "16px",
+                lineHeight: "1",
+              }}
             />
-          </td> */}
+          </td>
 
-{/* <td className="py-1 px-1 text-center" style={wi%dth}>
-  <input
-    type="password"
-    className="form-control form-control-sm border-0 bg-transparent p-0"
-    value={user.password}
-    readOnly
-    tabIndex={-1}
-    onMouseDown={(e) => e.preventDefault()}
-    style={{
-      fontSize: "12px",
-      textAlign: "center",   // ✅ force center
-    }}
-  />
-</td> */}
+          <td className="py-0 px-1 align-middle">
+            {user.role_id ? { 1: "Admin", 2: "Manager", 3: "User" }[user.role_id] : user.role || "-"}
+          </td>
 
-
-<td
-  className="py-1 px-1 text-center"
-  style={{ width: "180px" }}   // ✅ fixed width
->
-  <input
-    type="password"
-    className="form-control form-control-sm border-0 bg-transparent p-0"
-    value={user.password}
-    readOnly
-    tabIndex={-1}
-    onMouseDown={(e) => e.preventDefault()}
-    style={{
-      fontSize: "12px",
-      textAlign: "center", // ✅ force center inside input
-      width: "100%",       // ✅ make input fill the 180px cell
-    }}
-  />
-</td>
-
-          <td className="py-1 px-1">{user.role}</td>
-        <td className="py-1 px-1">
+          {/* Action buttons */}
+        	<td className="py-0 px-1 align-middle">
   <button
     className="btn btn-sm p-0 me-1"
-    style={{ background: "transparent", border: "none", cursor: "pointer" }}
+    style={{ background: "transparent", border: "none", padding: 0 }}
     onClick={() => handleEditUser(user)}
   >
     <span
       className="material-icons-two-tone text-warning"
-      style={{ fontSize: "16px", cursor: "pointer" }}
+      style={{ fontSize: "15px", verticalAlign: "middle", cursor: "pointer" }}
     >
       edit
     </span>
   </button>
   <button
     className="btn btn-sm p-0"
-    style={{ background: "transparent", border: "none", cursor: "pointer" }}
+    style={{ background: "transparent", border: "none", padding: 0 }}
     onClick={() => deleteRow(user.id)}
   >
     <span
       className="material-icons-two-tone text-danger"
-      style={{ fontSize: "16px", cursor: "pointer" }}
+      style={{ fontSize: "15px", verticalAlign: "middle", cursor: "pointer" }}
     >
       delete
     </span>
   </button>
 </td>
+
         </tr>
       ))}
+
       {filteredUsers.length === 0 && (
         <tr>
-          <td colSpan="5" className="text-center text-muted py-1" style={{ fontSize: "12px" }}>
+          <td colSpan="5" className="text-center text-muted" style={{ fontSize: "10px", padding: "2px 0" }}>
             No users found
           </td>
         </tr>
@@ -414,12 +479,19 @@ const UserMaster = () => {
   </table>
 </div>
 
+
       {/* Modal */}
 {showModal && (
-  <div className="modal fade show d-block" tabIndex="-1">
-    <div className="modal-dialog modal-sm"> {/* ✅ smaller modal */}
-      <div className="modal-content">
-        <div className="modal-header py-2 px-3"> {/* ✅ reduced padding */}
+  <div
+    className="modal fade show d-block"
+    tabIndex="-1"
+    style={{ backgroundColor: "rgba(0,0,0,0.3)" }}
+  >
+    <div className="modal-dialog modal-sm modal-dialog-centered">
+      <div className="modal-content" style={{ fontSize: "13px" }}>
+        
+        {/* Header */}
+        <div className="modal-header py-1 px-2">
           <h5 className="modal-title" style={{ fontSize: "14px" }}>
             {editingUser ? "Edit User" : "Add User"}
           </h5>
@@ -430,93 +502,117 @@ const UserMaster = () => {
           ></button>
         </div>
 
-        <div className="modal-body p-2" style={{ fontSize: "13px" }}>
-          {/* Name */}
-          <div className="mb-2">
-            <label className="form-label" style={{ fontSize: "13px" }}>
-              Name
-            </label>
-            <input
-              type="text"
-              className="form-control form-control-sm"
-              value={formData.name}
-              onChange={(e) =>
-                setFormData({ ...formData, name: e.target.value })
-              }
-              ref={(el) => (inputRefs.current[0] = el)}
-              onKeyDown={(e) => handleKeyDown(e, 0)}
-            />
-          </div>
+        {/* Body */}
+      <div className="modal-body p-2">
 
-          {/* Phone */}
-          <div className="mb-2">
-            <label className="form-label" style={{ fontSize: "13px" }}>
-              Phone No
-            </label>
-            <input
-              type="text"
-              className="form-control form-control-sm"
-              value={formData.phone}
-              onChange={(e) => {
-                const value = e.target.value;
-                if (/^\d*$/.test(value)) {
-                  setFormData({ ...formData, phone: value });
-                }
-              }}
-              inputMode="numeric"
-              maxLength="10"
-              ref={(el) => (inputRefs.current[1] = el)}
-              onKeyDown={(e) => handleKeyDown(e, 1)}
-            />
-          </div>
+  {/* Name */}
+  <div className="mb-1">
+    <label className="form-label mb-0" style={{ fontSize: "12px" }}>
+      Name
+    </label>
+    <input
+      type="text"
+      className="form-control form-control-sm"
+      style={{ height: "26px" }}
+      value={formData.name || ""}
+      onChange={(e) =>
+        setFormData({ ...formData, name: e.target.value })
+      }
+      ref={(el) => (inputRefs.current[0] = el)}
+      onKeyDown={(e) => handleKeyDown(e, 0)}
+    />
+  </div>
 
-          {/* Password */}
-          <div className="mb-2">
-            <label className="form-label" style={{ fontSize: "13px" }}>
-              Password
-            </label>
-            <input
-              type={formData.showPassword ? "text" : "password"}
-              className="form-control form-control-sm"
-              value={formData.password}
-              onChange={(e) =>
-                setFormData({ ...formData, password: e.target.value })
-              }
-              onFocus={() =>
-                setFormData({ ...formData, showPassword: true })
-              }
-              onBlur={() =>
-                setFormData({ ...formData, showPassword: false })
-              }
-              ref={(el) => (inputRefs.current[2] = el)}
-              onKeyDown={(e) => handleKeyDown(e, 2)}
-            />
-          </div>
+  {/* Email */}
+  <div className="mb-1">
+    <label className="form-label mb-0" style={{ fontSize: "12px" }}>
+      Email
+    </label>
+    <input
+      type="email"
+      className="form-control form-control-sm"
+      style={{ height: "26px" }}
+      value={formData.email || ""}
+      onChange={(e) =>
+        setFormData({ ...formData, email: e.target.value })
+      }
+      ref={(el) => (inputRefs.current[1] = el)}
+      onKeyDown={(e) => handleKeyDown(e, 1)}
+    />
+  </div>
 
-          {/* Role */}
-   <div className="mb-2">
-  <label className="form-label" style={{ fontSize: "13px" }}>
-    Role
-  </label>
-  <select
-    className="form-select form-select-sm"
-    value={formData.role || ""} // ensure no uncontrolled warning
-    onChange={(e) =>
-      setFormData({ ...formData, role: e.target.value })
-    }
-    ref={(el) => (inputRefs.current[3] = el)}
-    onKeyDown={(e) => handleKeyDown(e, 3)}
-  >
-        <option value="">  Select Role </option>   {/* ✅ placeholder */}
-    <option value="Admin">Admin</option>
-    <option value="Manager">Manager</option>
-    <option value="User">User</option>
-  </select>
+  {/* Mobile */}
+  <div className="mb-1">
+    <label className="form-label mb-0" style={{ fontSize: "12px" }}>
+      Mobile
+    </label>
+    <input
+      type="text"
+      className="form-control form-control-sm"
+      style={{ height: "26px" }}
+      value={formData.mobile || ""}
+      onChange={(e) => {
+        const value = e.target.value;
+        if (/^\d*$/.test(value))
+          setFormData({ ...formData, mobile: value });
+      }}
+      maxLength={10}
+      ref={(el) => (inputRefs.current[2] = el)}
+      onKeyDown={(e) => handleKeyDown(e, 2)}
+    />
+  </div>
+
+  {/* Password */}
+{/* Password - show only for new user */}
+{!editingUser && (
+  <div className="mb-1">
+    <label className="form-label mb-0" style={{ fontSize: "12px" }}>
+      Password
+    </label>
+    <input
+      type={formData.showPassword ? "text" : "password"}
+      className="form-control form-control-sm"
+      style={{ height: "26px" }}
+      value={formData.password || ""}
+      onChange={(e) =>
+        setFormData({ ...formData, password: e.target.value })
+      }
+      onFocus={() =>
+        setFormData({ ...formData, showPassword: true })
+      }
+      onBlur={() =>
+        setFormData({ ...formData, showPassword: false })
+      }
+      ref={(el) => (inputRefs.current[3] = el)}
+      onKeyDown={(e) => handleKeyDown(e, 3)}
+    />
+  </div>
+)}
+
+  {/* Role */}
+  <div className="mb-1">
+    <label className="form-label mb-0" style={{ fontSize: "12px" }}>
+      Role
+    </label>
+    <select
+      className="form-select form-select-sm"
+      value={formData.role_id || 0}
+      onChange={(e) =>
+        setFormData({ ...formData, role_id: Number(e.target.value) })
+      }
+      ref={(el) => (inputRefs.current[4] = el)}
+      onKeyDown={(e) => handleKeyDown(e, 4)}
+    >
+      <option value={0}>Select Role</option>
+      <option value={1}>Admin</option>
+      <option value={2}>Manager</option>
+      <option value={3}>User</option>
+    </select>
+  </div>
+
 </div>
-
-        </div>
-
-        <div className="modal-footer py-2 px-3">
+        {/* Footer */}
+        <div className="modal-footer py-1 px-2">
           <button
             className="btn btn-sm btn-primary"
             onClick={handleSaveUser}
@@ -524,7 +620,6 @@ const UserMaster = () => {
           >
             {editingUser ? "Update" : "Add"}
           </button>
-
           <button
             className="btn btn-sm btn-secondary"
             onClick={() => setShowModal(false)}
@@ -532,6 +627,7 @@ const UserMaster = () => {
             Cancel
           </button>
         </div>
+
       </div>
     </div>
   </div>

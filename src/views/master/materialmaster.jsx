@@ -370,72 +370,83 @@ const handleSaveMaterial = async () => {
       </div>
 
       {/* Table */}
-      <div className="table-responsive">
-        <table id="material-table" className="table table-bordered table-striped align-middle" style={{ fontSize: "12px" }}>
-          <thead className="table-primary" style={{ fontSize: "12px" }}>
-            <tr className="text-center">
-              <th className="py-1 px-1">Material Code</th>
-              <th className="py-1 px-1">Material Name</th>
-              <th className="py-1 px-1">Default Price</th>
-              <th className="py-1 px-1">Material Type</th>
-              <th className="py-1 px-1" style={{ minWidth: "140px" }}>Action</th>
-            </tr>
-          </thead>
-          <tbody>
-            {loading ? (
-              <tr>
-                {/* <td colSpan="5" className="text-center py-3">
-                  <div className="spinner-border spinner-border-sm text-primary me-2" role="status">
-                    <span className="visually-hidden">Loading...</span>
-                  </div>
-                  Loading materials...
-                </td> */}
-              </tr>
-            ) : filteredMaterials.length > 0 ? (
-              filteredMaterials.map((material) => (
-                <tr key={material.id} className="text-center" style={{ fontSize: "12px" }}>
-                  <td className="py-0 px-1">{material.material_code}</td>
-                  <td className="py-0 px-1">{material.material_name}</td>
-                  <td className="py-0 px-1">{formatPrice(material.default_price)}</td>
-                  <td className="py-0 px-1">{material.material_type}</td>
-                 <td className="py-0 px-1 text-center">
-  <button
-    className="btn btn-sm p-0 me-1"
-    style={{ background: "transparent", border: "none" }}
-    title="Edit"
-    onClick={() => handleEditMaterial(material)}
+<div className="table-responsive">
+  <table
+    id="material-table"
+    className="table table-bordered table-striped align-middle"
+    style={{ fontSize: "12px" }}
   >
-    <span
-      className="material-icons-two-tone text-warning"
-      style={{ fontSize: "16px", cursor: "pointer" }}
-    >
-      edit
-    </span>
-  </button>
-  <button
-    className="btn btn-sm p-0"
-    style={{ background: "transparent", border: "none" }}
-    title="Delete"
-    onClick={() => deleteMaterial(material.id)}
-  >
-    <span
-      className="material-icons-two-tone text-danger"
-      style={{ fontSize: "16px", cursor: "pointer" }}
-    >
-      delete
-    </span>
-  </button>
-</td>
-                </tr>
-              ))
-            ) : (
-              <tr>
-                <td colSpan="5" className="text-center text-muted">No materials found</td>
-              </tr>
-            )}
-          </tbody>
-        </table>
-      </div>
+    <thead className="table-primary" style={{ fontSize: "12px" }}>
+      <tr className="text-center">
+        <th className="py-1 px-1">Material Code</th>
+        <th className="py-1 px-1">Material Name</th>
+        <th className="py-1 px-1">Default Price</th>
+        <th className="py-1 px-1">Material Type</th>
+        <th className="py-1 px-1" style={{ minWidth: "140px" }}>Action</th>
+      </tr>
+    </thead>
+
+    <tbody style={{ lineHeight: "1.1" }}>
+      {loading ? (
+        <tr>
+          <td colSpan="5" className="text-center py-2">
+            <div className="spinner-border spinner-border-sm text-primary me-2" role="status">
+              <span className="visually-hidden">Loading...</span>
+            </div>
+            Loading materials...
+          </td>
+        </tr>
+      ) : filteredMaterials.length > 0 ? (
+        filteredMaterials.map((material) => (
+          <tr key={material.id} className="text-center" style={{ fontSize: "12px", lineHeight: "1.1" }}>
+            <td className="py-0 px-1 align-middle">{material.material_code}</td>
+            <td className="py-0 px-1 align-middle">{material.material_name}</td>
+            <td className="py-0 px-1 align-middle">{formatPrice(material.default_price)}</td>
+            <td className="py-0 px-1 align-middle">{material.material_type}</td>
+
+            <td className="py-0 px-1 align-middle text-center">
+              {/* Edit button */}
+              <button
+                className="btn btn-sm p-0 me-1"
+                style={{ background: "transparent", border: "none", padding: 0 }}
+                title="Edit"
+                onClick={() => handleEditMaterial(material)}
+              >
+                <span
+                  className="material-icons-two-tone text-warning"
+                  style={{ fontSize: "15px", verticalAlign: "middle", cursor: "pointer" }}
+                >
+                  edit
+                </span>
+              </button>
+
+              {/* Delete button */}
+              <button
+                className="btn btn-sm p-0"
+                style={{ background: "transparent", border: "none", padding: 0 }}
+                title="Delete"
+                onClick={() => deleteMaterial(material.id)}
+              >
+                <span
+                  className="material-icons-two-tone text-danger"
+                  style={{ fontSize: "15px", verticalAlign: "middle", cursor: "pointer" }}
+                >
+                  delete
+                </span>
+              </button>
+            </td>
+          </tr>
+        ))
+      ) : (
+        <tr>
+          <td colSpan="5" className="text-center text-muted" style={{ fontSize: "11px", padding: "2px 0" }}>
+            No materials found
+          </td>
+        </tr>
+      )}
+    </tbody>
+  </table>
+</div>
 
       {/* Modal */}
      {showModal && (
