@@ -17,7 +17,7 @@ const UserMaster = () => {
   const [formData, setFormData] = useState({
     name: "",
     mobile: "",
-    password: "",
+    email: "",
     role: "User",
   });
 
@@ -29,7 +29,7 @@ const UserMaster = () => {
 const payload = {
   name: formData.name,
   mobile: formData.mobile,
-  password: formData.password,
+  email: formData.email,
   role_id: roleMap[formData.role] || null,
 };
 
@@ -64,7 +64,7 @@ const fetchUsers = async () => {
 
   const handleNewUser = () => {
     setEditingUser(null);
-    setFormData({ name: "", mobile: "", password: "", role: "User" });
+    setFormData({ name: "", mobile: "", email: "", role: "User" });
     setShowModal(true);
   };
 
@@ -75,7 +75,6 @@ const handleEditUser = (user) => {
     name: user.name || "",
     email: user.email || "", // ✅ ensure email field is set
     mobile: user.mobile || "",
-    password: "", // blank by default for security
     role_id: user.role_id || roleMap[user.role] || 0, // ✅ handle role_id properly
   });
   setShowModal(true);
@@ -86,7 +85,6 @@ const handleEditUser = (user) => {
 
 //   const payload = {
 //     email: formData.name, // change to your email field if you have one
-//     password: formData.password,
 //     role_id: getRoleId(formData.role),
 //     mobile: formData.mobile
 //   };
@@ -124,51 +122,64 @@ const handleSaveUser = async () => {
   }
 
   const payload = {
+    id: editingUser?.id, // 🔹 Backend needs this for update
     name: formData.name.trim(),
     email: formData.email.trim(),
     mobile: formData.mobile.trim(),
-    password: formData.password || undefined, // optional during edit
+    password: formData.password?.trim() || undefined, // optional if not changing
     role_id: formData.role_id,
   };
 
   try {
+    let response;
+
     if (editingUser) {
-      // 🔹 Update existing user
-      const response = await axios.put(
-        `${API_BASE}/update_user/${editingUser.id}`,
+      // 🔹 Update existing user using PUT
+      response = await axios.put(
+        "https://115.124.111.111/FLS/public/api/auth/update_user",
         payload,
-        { headers: { Authorization: `Bearer ${token}` } }
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
       );
 
-      toast.success("User updated successfully");
+      toast.success("✅ User updated successfully");
 
-      // ✅ Update user in local state instantly
+      const updatedUser = response.data?.data || { ...editingUser, ...payload };
+
+      // ✅ Update the user in local state instantly
       setUsers((prev) =>
-        prev.map((u) =>
-          u.id === editingUser.id ? { ...u, ...payload } : u
-        )
+        prev.map((u) => (u.id === editingUser.id ? updatedUser : u))
       );
 
     } else {
       // 🔹 Create new user
-      const response = await axios.post(`${API_BASE}/register`, payload, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      response = await axios.post(
+        "https://115.124.111.111/FLS/public/api/auth/register",
+        payload,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
 
-      toast.success("User added successfully");
+      toast.success("✅ User added successfully");
 
-      // ✅ Add new user to state instantly
       const newUser = response.data?.data || payload;
       setUsers((prev) => [...prev, newUser]);
     }
 
+    // ✅ Reset form and close modal
     setShowModal(false);
     setEditingUser(null);
-    setFormData({ name: "", email: "", mobile: "", password: "", role_id: "" });
+    setFormData({ name: "", email: "", password: "", mobile: "", role_id: "" });
 
   } catch (error) {
     console.error("Error saving user:", error);
-    toast.error(error.response?.data?.message || "Failed to save user");
+    const errMsg =
+      error.response?.data?.message ||
+      error.response?.data?.error ||
+      "Failed to save user";
+    toast.error(`❌ ${errMsg}`);
   }
 };
 
@@ -400,7 +411,7 @@ const handleSaveUser = async () => {
       <tr className="text-center">
         <th className="py-0 px-1">Name</th>
         <th className="py-0 px-1">Phone No</th>
-        <th className="py-0 px-1">Password</th>
+        <th className="py-0 px-1">Email</th>
         <th className="py-0 px-1">Role</th>
         <th className="py-0 px-1" style={{ minWidth: "100px" }}>Action</th>
       </tr>
@@ -415,8 +426,9 @@ const handleSaveUser = async () => {
         >
           <td className="py-0 px-1 align-middle">{user.name}</td>
           <td className="py-0 px-1 align-middle">{user.mobile}</td>
+          <td className="py-0 px-1 align-middle">{user.email}</td>
 
-          {/* Password placeholder */}
+          {/* Password placeholder
           <td className="py-0 px-1 text-center align-middle" style={{ width: "120px" }}>
             <input
               type="password"
@@ -431,7 +443,7 @@ const handleSaveUser = async () => {
                 lineHeight: "1",
               }}
             />
-          </td>
+          </td> */}
 
           <td className="py-0 px-1 align-middle">
             {user.role_id ? { 1: "Admin", 2: "Manager", 3: "User" }[user.role_id] : user.role || "-"}

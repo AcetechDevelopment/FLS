@@ -86,7 +86,7 @@ const MaterialMaster = () => {
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
     material_name: "",
-    material_code: "",
+    material_id: "",
     default_price: "",
     material_type: "",
     weight: ""
@@ -157,7 +157,7 @@ const fetchMaterials = async () => {
 
   const generateMaterialCode = () => {
     const maxCode = materials.reduce((max, material) => {
-      const codeNum = parseInt(material.material_code?.replace('MAT', '') || '0');
+      const codeNum = parseInt(material.material_id?.replace('MAT', '') || '0');
       return Math.max(max, codeNum);
     }, 0);
     return `MAT${String(maxCode + 1).padStart(3, "0")}`;
@@ -167,7 +167,7 @@ const fetchMaterials = async () => {
     setEditingMaterial(null);
     setFormData({
       material_name: "",
-      material_code: generateMaterialCode(),
+      material_id: generateMaterialCode(),
       default_price: "",
       material_type: "",
       weight: "",
@@ -202,7 +202,7 @@ const handleEditMaterial = async (material) => {
 
     setFormData({
       material_name: apiData.material_name || "",
-      material_code: apiData.material_code || "",
+      material_id: apiData.material_id || "",
       default_price: apiData.default_price || "",
       material_type: apiData.material_type || "",
       weight: apiData.weight || "",
@@ -230,7 +230,7 @@ const handleSaveMaterial = async () => {
 
     const materialData = {
       material_name: formData.material_name.trim(),
-      material_code: formData.material_code.trim(),
+      material_id: formData.material_id.trim(),
       material_type: formData.material_type,
       default_price: parseFloat(formData.default_price),
       weight: formData.weight ? parseFloat(formData.weight) : null
@@ -296,7 +296,7 @@ const handleSaveMaterial = async () => {
     autoTable(doc, {
       startY: 25,
       head: [["Code", "Name", "Price", "Type"]],
-      body: materials.map((m) => [m.material_code, m.material_name, m.default_price, m.material_type]),
+      body: materials.map((m) => [m.material_id, m.material_name, m.default_price, m.material_type]),
       theme: "grid",
       styles: { halign: "center", fontSize: 10 },
       headStyles: { fillColor: [22, 160, 133] },
@@ -309,7 +309,7 @@ const handleSaveMaterial = async () => {
   const exportExcel = () => {
     if (!materials.length) return alert("No materials to export.");
     const data = materials.map((m) => ({
-      "Material Code": m.material_code,
+      "Material Code": m.material_id,
       "Material Name": m.material_name,
       "Default Price": m.default_price,
       "Material Type": m.material_type,
@@ -341,7 +341,7 @@ const handleSaveMaterial = async () => {
 
   const filteredMaterials = materials.filter((m) =>
     String(m.material_name || '').toLowerCase().includes(search.toLowerCase()) ||
-    String(m.material_code || '').toLowerCase().includes(search.toLowerCase()) ||
+    String(m.material_id || '').toLowerCase().includes(search.toLowerCase()) ||
     String(m.default_price || '').toLowerCase().includes(search.toLowerCase()) ||
     String(m.material_type || '').toLowerCase().includes(search.toLowerCase())
   );
@@ -399,7 +399,7 @@ const handleSaveMaterial = async () => {
       ) : filteredMaterials.length > 0 ? (
         filteredMaterials.map((material) => (
           <tr key={material.id} className="text-center" style={{ fontSize: "12px", lineHeight: "1.1" }}>
-            <td className="py-0 px-1 align-middle">{material.material_code}</td>
+            <td className="py-0 px-1 align-middle">{material.material_id}</td>
             <td className="py-0 px-1 align-middle">{material.material_name}</td>
             <td className="py-0 px-1 align-middle">{formatPrice(material.default_price)}</td>
             <td className="py-0 px-1 align-middle">{material.material_type}</td>
@@ -582,6 +582,11 @@ const handleSaveMaterial = async () => {
   <option value="Towel">Towel</option>
 </select>
           </div>
+
+          
+
+
+
         </div>
 
         {/* Footer */}

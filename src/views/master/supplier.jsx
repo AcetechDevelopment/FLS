@@ -51,7 +51,7 @@ const SupplierMaster = () => {
   const [formData, setFormData] = useState({
     id: "",
     customer_name: "",
-    customer_code: "",
+    customer_id: "",
     customer_group: "",
     gst: "",
     address: "",
@@ -162,7 +162,7 @@ useEffect(() => {
   // Extract all numeric parts of existing customer codes (e.g., SUP001 -> 1)
   const numbers = suppliers
     .map((s) => {
-      const match = String(s.customer_code || "").match(/SUP(\d+)/);
+      const match = String(s.customer_id || "").match(/SUP(\d+)/);
       return match ? parseInt(match[1], 10) : 0;
     })
     .filter((n) => !isNaN(n));
@@ -196,7 +196,7 @@ useEffect(() => {
     setFormData({
       id: "",
       customer_name: "",
-      customer_code: generateSupplierCode(),
+      customer_id: generateSupplierCode(),
       customer_group: "",
       gst: "",
       address: "",
@@ -249,7 +249,7 @@ const handleEditSupplier = async (supplier) => {
       setFormData({
         id: data.id || "",
         customer_name: data.customer_name || "",
-        customer_code: data.customer_code || "",
+        customer_id: data.customer_id || "",
         customer_group: data.customer_group || "",
         gst: data.gst || "",
         address: data.address || "",
@@ -278,7 +278,7 @@ const handleSaveSupplier = async () => {
   setIsSaving(true);
 
   try {
-    if (!formData.customer_name || !formData.customer_code || !formData.gst) {
+    if (!formData.customer_name || !formData.customer_id || !formData.gst) {
       toast.error("Please fill all required fields");
       return;
     }
@@ -286,11 +286,10 @@ const handleSaveSupplier = async () => {
     const formDataToSend = new FormData();
     formDataToSend.append("id", formData.id || "");
     formDataToSend.append("customer_name", formData.customer_name);
-    formDataToSend.append("customer_code", formData.customer_code);
+    formDataToSend.append("customer_id", formData.customer_id);
     formDataToSend.append("customer_group", formData.customer_group);
     formDataToSend.append("gst", formData.gst);
     formDataToSend.append("address", formData.address || "");
-
     if (formData.image) {
       if (formData.image instanceof File) {
         formDataToSend.append("image", formData.image);
@@ -311,21 +310,35 @@ const handleSaveSupplier = async () => {
 
     if (response.data.status === "success") {
       toast.success(`Customer ${editingSupplier ? "updated" : "created"} successfully!`);
-      // Refresh table
-      fetchSuppliers();
+
+      const updatedSupplier = response.data.data || {
+        ...formData,
+        id: editingSupplier ? formData.id : response.data.id,
+      };
+
+      setSuppliers(prev => {
+        if (editingSupplier) {
+          // Update existing supplier in the list
+          return prev.map(s => (s.id === updatedSupplier.id ? updatedSupplier : s));
+        } else {
+          // Add new supplier at the top
+          return [updatedSupplier, ...prev];
+        }
+      });
 
       // Reset form
       setEditingSupplier(null);
       setFormData({
         id: "",
         customer_name: "",
-        customer_code: "",
+        customer_id: generateSupplierCode(),
         customer_group: "",
         gst: "",
         address: "",
         image: null,
       });
       setPreviewImage(null);
+      setShowModal(false);
     } else {
       toast.error(response.data.message || "Failed to save customer");
     }
@@ -333,8 +346,6 @@ const handleSaveSupplier = async () => {
     console.error("Error saving supplier:", error);
     toast.error("Failed to save supplier. Please try again.");
   } finally {
-    // ✅ Always close modal after save attempt
-    setShowModal(false);
     setIsSaving(false);
   }
 };
@@ -406,7 +417,7 @@ const deleteRow = async (id) => {
       startY: 25,
       head: [["Code", "Name", "Group", "Address", "GST"]],
       body: suppliers.map((s) => [
-        s.customer_code,
+        s.customer_id,
         s.customer_name,
         s.customer_group || "",
         s.address || "",
@@ -428,7 +439,7 @@ const deleteRow = async (id) => {
     }
 
     const data = suppliers.map((s) => ({
-      Code: s.customer_code,
+      Code: s.customer_id,
       Name: s.customer_name,
       Group: s.customer_group || "",
       Address: s.address || "",
@@ -491,7 +502,7 @@ const deleteRow = async (id) => {
   const filteredSuppliers = suppliers.filter(
     (s) =>
       s.customer_name?.toLowerCase().includes(search.toLowerCase()) ||
-      s.customer_code?.toLowerCase().includes(search.toLowerCase()) ||
+      s.customer_id?.toLowerCase().includes(search.toLowerCase()) ||
       s.customer_group?.toLowerCase().includes(search.toLowerCase()) ||
       s.gst?.toLowerCase().includes(search.toLowerCase()) ||
       s.address?.toLowerCase().includes(search.toLowerCase())
@@ -661,7 +672,7 @@ const deleteRow = async (id) => {
             }
           >
             <td style={{ padding: "3px 5px", border: "1px solid #dee2e6" }}>
-              {supplier.customer_code}
+              {supplier.customer_id}
             </td>
             <td style={{ padding: "3px 5px", border: "1px solid #dee2e6" }}>
               {supplier.customer_name}
@@ -821,7 +832,7 @@ const deleteRow = async (id) => {
       <input
         type="text"
         className="form-control form-control-sm"
-        value={formData.customer_code}
+        value={formData.customer_id}
         readOnly
       />
     </div>
