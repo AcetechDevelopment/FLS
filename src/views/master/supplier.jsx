@@ -42,9 +42,9 @@ const SupplierMaster = () => {
 
   // added additionally
 
-  useEffect(() => {
-  fetchSuppliers(); // ✅ initial load
-}, []);
+//   useEffect(() => {
+//   fetchSuppliers(); // ✅ initial load
+// }, []);
 
   // added additionally
 
@@ -272,7 +272,6 @@ const handleEditSupplier = async (supplier) => {
   }
 };
 
-  // ✅ Save supplier
 const handleSaveSupplier = async () => {
   if (isSaving) return; // prevent double click
   setIsSaving(true);
@@ -310,6 +309,9 @@ const handleSaveSupplier = async () => {
 
     if (response.data.status === "success") {
       toast.success(`Customer ${editingSupplier ? "updated" : "created"} successfully!`);
+
+      // ✅ Added this line only
+      await fetchSuppliers();
 
       const updatedSupplier = response.data.data || {
         ...formData,
@@ -349,7 +351,6 @@ const handleSaveSupplier = async () => {
     setIsSaving(false);
   }
 };
-
 
 
   // ✅ Delete supplier
@@ -931,6 +932,7 @@ const deleteRow = async (id) => {
 </div>
 
 </div>
+
                       <div className="modal-footer py-2">
                           <button
                             className="btn btn-sm btn-secondary"
@@ -946,6 +948,7 @@ const deleteRow = async (id) => {
                             Save
                           </button>
                         </div>
+                        
                       </div>
                     </div>
                   </div>

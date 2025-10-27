@@ -1,11 +1,16 @@
 import { useContext, useState } from "react";
+import axios from "axios";
 import { MaterialContext } from "../../contexts/MaterialContext";
+import { toast } from "react-toastify";
 
 const StockAdjustment = () => {
   const { materials, setMaterials } = useContext(MaterialContext);
   const [editingCell, setEditingCell] = useState({ id: null, field: null });
+  const [savingId, setSavingId] = useState(null);
 
-  // ✅ Update material values
+  const authToken = sessionStorage.getItem("authToken"); // get token
+
+  // ✅ Update material values locally
   const handleChange = (id, field, value) => {
     setMaterials((prev) =>
       prev.map((m) =>
@@ -14,7 +19,7 @@ const StockAdjustment = () => {
     );
   };
 
-  // ✅ Reusable number validation
+  // ✅ Number validation
   const isNumberKey = (e, allowDecimal = false) => {
     const char = e.key;
     const allowedChars = "0123456789";
@@ -25,6 +30,51 @@ const StockAdjustment = () => {
     if (allowDecimal && char === "." && !e.target.value.includes(".")) return;
 
     e.preventDefault();
+  };
+
+  // ✅ Save changes for a single row
+  const saveMaterial = async (material) => {
+    if (!authToken) {
+      toast.error("Session expired. Please login again.");
+      return;
+    }
+
+    setSavingId(material.id);
+    try {
+      const response = await axios.post(
+        "https://115.124.111.111/FLS/public/api/material/stock-management",
+        {
+          id: material.id,
+          stock: material.stock,
+          defaultPrice: material.defaultPrice,
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${authToken}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      if (response.data.status === "success") {
+        toast.success("Stock updated successfully!");
+        setEditingCell({ id: null, field: null });
+        // Optionally update local materials with response data
+        const updated = response.data.data;
+        if (updated) {
+          setMaterials((prev) =>
+            prev.map((m) => (m.id === updated.id ? updated : m))
+          );
+        }
+      } else {
+        toast.error(response.data.message || "Failed to update stock");
+      }
+    } catch (error) {
+      console.error("Error updating stock:", error);
+      toast.error("Error updating stock. Please try again.");
+    } finally {
+      setSavingId(null);
+    }
   };
 
   return (
@@ -40,24 +90,22 @@ const StockAdjustment = () => {
               style={{ fontSize: "12px" }}
             >
               <thead className="table-primary text-center">
-             <tr>
-          <th className="py-2 px-2 text-center">Material Code</th>
-          <th className="py-2 px-2 text-center">Material Name</th>
-          <th className="py-2 px-2 text-center">Default Price</th>
-          <th className="py-2 px-2 text-center">Current Stock</th>
-         </tr>
+                <tr>
+                  <th className="py-2 px-2 text-center">Material Code</th>
+                  <th className="py-2 px-2 text-center">Material Name</th>
+                  <th className="py-2 px-2 text-center">Default Price</th>
+                  <th className="py-2 px-2 text-center">Current Stock</th>
+                  <th className="py-2 px-2 text-center">Action</th>
+                </tr>
               </thead>
               <tbody>
                 {materials.length > 0 ? (
                   materials.map((m) => (
                     <tr key={m.id}>
-                      {/* Material Code */}
                       <td className="py-1 px-2 text-center">{m.materialCode}</td>
-
-                      {/* Material Name */}
                       <td className="py-1 px-2 text-center">{m.materialName}</td>
 
-                      {/* ✅ Default Price (editable, allow decimals) */}
+                      {/* Default Price */}
                       <td className="py-1 px-2 text-center">
                         {editingCell.id === m.id && editingCell.field === "defaultPrice" ? (
                           <input
@@ -65,26 +113,25 @@ const StockAdjustment = () => {
                             className="form-control form-control-sm"
                             value={m.defaultPrice}
                             autoFocus
-                            onKeyDown={(e) => isNumberKey(e, true)} // allow decimals
+                            onKeyDown={(e) => isNumberKey(e, true)}
                             onChange={(e) =>
                               handleChange(m.id, "defaultPrice", e.target.value)
                             }
                             onBlur={() => setEditingCell({ id: null, field: null })}
-                            placeholder="Enter price"
                           />
                         ) : (
                           <span
                             onClick={() =>
                               setEditingCell({ id: m.id, field: "defaultPrice" })
                             }
-                            style={{ display: "block", cursor: "text" }}
+                            style={{ cursor: "text", display: "block" }}
                           >
                             {m.defaultPrice || 0}
                           </span>
                         )}
                       </td>
 
-                      {/* ✅ Current Stock (editable, integers only) */}
+                      {/* Current Stock */}
                       <td className="py-1 px-2 text-center">
                         {editingCell.id === m.id && editingCell.field === "stock" ? (
                           <input
@@ -92,29 +139,37 @@ const StockAdjustment = () => {
                             className="form-control form-control-sm"
                             value={m.stock}
                             autoFocus
-                            onKeyDown={(e) => isNumberKey(e, false)} // integers only
+                            onKeyDown={(e) => isNumberKey(e, false)}
                             onChange={(e) =>
                               handleChange(m.id, "stock", e.target.value)
                             }
                             onBlur={() => setEditingCell({ id: null, field: null })}
-                            placeholder="Enter stock"
                           />
                         ) : (
                           <span
-                            onClick={() =>
-                              setEditingCell({ id: m.id, field: "stock" })
-                            }
-                            style={{ display: "block", cursor: "text" }}
+                            onClick={() => setEditingCell({ id: m.id, field: "stock" })}
+                            style={{ cursor: "text", display: "block" }}
                           >
                             {m.stock || 0}
                           </span>
                         )}
                       </td>
+
+                      {/* Action */}
+                      <td className="py-1 px-2 text-center">
+                        <button
+                          className="btn btn-sm btn-success"
+                          disabled={savingId === m.id}
+                          onClick={() => saveMaterial(m)}
+                        >
+                          {savingId === m.id ? "Saving..." : "Save"}
+                        </button>
+                      </td>
                     </tr>
                   ))
                 ) : (
                   <tr>
-                    <td colSpan="4" className="text-center text-muted py-2">
+                    <td colSpan="5" className="text-center text-muted py-2">
                       No materials found
                     </td>
                   </tr>

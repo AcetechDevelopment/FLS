@@ -9,15 +9,20 @@ import GuestLayout from "layouts/GuestLayout";
 // Toast
 import { ToastContainer } from "react-toastify";
 
+// 🔹 Remove the direct import of VehicleInventory
+// import VehicleInventory from "./views/master/vehicleinventory";
+
 // Loading component
 const LoadingSpinner = () => (
-  <div style={{
-    display: 'flex',
-    justifyContent: 'center',
-    alignItems: 'center',
-    height: '100vh',
-    fontSize: '1.5rem'
-  }}>
+  <div
+    style={{
+      display: "flex",
+      justifyContent: "center",
+      alignItems: "center",
+      height: "100vh",
+      fontSize: "1.5rem",
+    }}
+  >
     <div>Loading...</div>
   </div>
 );
@@ -52,6 +57,7 @@ const PriceMaster = lazy(() => import("./views/master/pricemaster"));
 const CategoryWise = lazy(() => import("./views/reports/categorywise"));
 const InwardReport = lazy(() => import("./views/reports/inwardreport"));
 const DispatchReport = lazy(() => import("./views/reports/dispatchreport"));
+const VehicleInventory = lazy(() => import("./views/master/vehicleinventory")); // ✅ keep this one only
 
 export default function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(!!sessionStorage.getItem("authToken"));
@@ -80,7 +86,12 @@ export default function App() {
 
           {/* Public routes */}
           <Route element={<GuestLayout />}>
-            <Route path="/login" element={isLoggedIn ? <Navigate to="/dashboard" replace /> : <Login setIsLoggedIn={setIsLoggedIn} />} />
+            <Route
+              path="/login"
+              element={
+                isLoggedIn ? <Navigate to="/dashboard" replace /> : <Login setIsLoggedIn={setIsLoggedIn} />
+              }
+            />
             <Route path="/register" element={<Register />} />
           </Route>
 
@@ -105,6 +116,7 @@ export default function App() {
             <Route path="/materialmaster" element={<MaterialMaster />} />
             <Route path="/pricemaster" element={<PriceMaster />} />
             <Route path="/customergroup" element={<SupplierGroup />} />
+            <Route path="/vehicleinventory" element={<VehicleInventory />} />
 
             {/* Stock routes */}
             <Route path="/materialstock" element={<MaterialStockMaster />} />
@@ -121,9 +133,9 @@ export default function App() {
         </Routes>
       </Suspense>
 
-      <ToastContainer 
-        position="top-right" 
-        autoClose={3000} 
+      <ToastContainer
+        position="top-right"
+        autoClose={3000}
         theme="colored"
         hideProgressBar={false}
         newestOnTop
@@ -136,5 +148,3 @@ export default function App() {
     </BrowserRouter>
   );
 }
-
-
