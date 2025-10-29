@@ -273,28 +273,37 @@ const handleEditSupplier = async (supplier) => {
 };
 
 const handleSaveSupplier = async () => {
-  if (isSaving) return; // prevent double click
+  if (isSaving) return;
   setIsSaving(true);
 
   try {
+    const token = sessionStorage.getItem("authToken");
+    if (!token) {
+      toast.error("Unauthorized! Please login again.");
+      setIsSaving(false);
+      return;
+    }
+
     if (!formData.customer_name || !formData.customer_id || !formData.gst) {
       toast.error("Please fill all required fields");
+      setIsSaving(false);
       return;
     }
 
     const formDataToSend = new FormData();
-    formDataToSend.append("id", formData.id || "");
-    formDataToSend.append("customer_name", formData.customer_name);
-    formDataToSend.append("customer_id", formData.customer_id);
-    formDataToSend.append("customer_group", formData.customer_group);
-    formDataToSend.append("gst", formData.gst);
+    if (editingSupplier) {
+      formDataToSend.append("id", formData.id);
+    }
+    formDataToSend.append("customer_name", formData.customer_name.trim());
+    formDataToSend.append("customer_id", formData.customer_id.trim());
+    formDataToSend.append("customer_group", formData.customer_group || "");
+    formDataToSend.append("gst", formData.gst.trim());
     formDataToSend.append("address", formData.address || "");
-    if (formData.image) {
-      if (formData.image instanceof File) {
-        formDataToSend.append("image", formData.image);
-      } else if (typeof formData.image === "string" && !formData.image.startsWith("data:")) {
-        formDataToSend.append("image_url", formData.image);
-      }
+
+    if (formData.image instanceof File) {
+      formDataToSend.append("image", formData.image);
+    } else if (typeof formData.image === "string" && formData.image !== "") {
+      formDataToSend.append("image_url", formData.image);
     }
 
     const url = editingSupplier
@@ -302,34 +311,18 @@ const handleSaveSupplier = async () => {
       : `${API_BASE_URL}/customer/create`;
 
     const response = await axios.post(url, formDataToSend, {
-      headers: {
-        Authorization: `Bearer ${sessionStorage.getItem("authToken")}`,
-      },
+      headers: { Authorization: `Bearer ${token}` },
     });
 
     if (response.data.status === "success") {
-      toast.success(`Customer ${editingSupplier ? "updated" : "created"} successfully!`);
+      toast.success(
+        `Customer ${editingSupplier ? "updated" : "created"} successfully!`
+      );
 
-      // ✅ Added this line only
+      // ✅ Refresh table
       await fetchSuppliers();
 
-      const updatedSupplier = response.data.data || {
-        ...formData,
-        id: editingSupplier ? formData.id : response.data.id,
-      };
-
-      setSuppliers(prev => {
-        if (editingSupplier) {
-          // Update existing supplier in the list
-          return prev.map(s => (s.id === updatedSupplier.id ? updatedSupplier : s));
-        } else {
-          // Add new supplier at the top
-          return [updatedSupplier, ...prev];
-        }
-      });
-
-      // Reset form
-      setEditingSupplier(null);
+      // ✅ Reset form
       setFormData({
         id: "",
         customer_name: "",
@@ -340,13 +333,16 @@ const handleSaveSupplier = async () => {
         image: null,
       });
       setPreviewImage(null);
+      setEditingSupplier(null);
+
+      // ✅ CLOSE MODAL HERE
       setShowModal(false);
     } else {
       toast.error(response.data.message || "Failed to save customer");
     }
   } catch (error) {
     console.error("Error saving supplier:", error);
-    toast.error("Failed to save supplier. Please try again.");
+    toast.error("Something went wrong while saving supplier.");
   } finally {
     setIsSaving(false);
   }
@@ -805,156 +801,193 @@ const deleteRow = async (id) => {
 
 
             {/* Form Modal */}
-            {showModal && (
-              <Fragment>
-                <div className="modal-wrapper">
-                  <div className="modal-backdrop fade show"></div>
-                  <div className="modal fade show d-block" tabIndex="-1">
-                    <div className="modal-dialog modal-dialog-centered modal-dialog-scrollable">
-                      <div className="modal-content" style={{ fontSize: "13px" }}>
-                        <div className="modal-header py-2">
-                          <h6 className="modal-title">
-                            {editingSupplier ? "Edit Supplier" : "Add Supplier"}
-                          </h6>
-                          <button
-                            type="button"
-                            className="btn-close"
-                            onClick={() => setShowModal(false)}
-                          ></button>
-                        </div>
+{showModal && (
+  <Fragment>
+    <div className="modal-wrapper">
+      <div className="modal-backdrop fade show"></div>
+      <div className="modal fade show d-block" tabIndex="-1">
+        <div className="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+          <div className="modal-content" style={{ fontSize: "13px" }}>
+            
+            <div className="modal-header py-2">
+              <h6 className="modal-title">
+                {editingSupplier ? "Edit Supplier" : "Add Supplier"}
+              </h6>
+              <button
+                type="button"
+                className="btn-close"
+                onClick={() => {
+                  setShowModal(false);
+                  setFormData({
+                    id: "",
+                    customer_name: "",
+                    customer_id: generateSupplierCode(),
+                    customer_group: "",
+                    gst: "",
+                    address: "",
+                    image: null,
+                  });
+                  setPreviewImage(null);
+                  setEditingSupplier(null);
+                }}
+              ></button>
+            </div>
 
-                    <div
-  className="modal-body p-2"
-  style={{ maxHeight: "300px", overflowY: "auto" }}
->
-  {editingSupplier && (
-    <div className="mb-2">
-      <label className="form-label">Customer Code</label>
-      <input
-        type="text"
-        className="form-control form-control-sm"
-        value={formData.customer_id}
-        readOnly
-      />
-    </div>
-  )}
-
-  <div className="mb-2">
-    <label className="form-label">Customer Name</label>
-    <input
-      type="text"
-      className="form-control form-control-sm"
-      value={formData.customer_name}
-      onChange={(e) =>
-        setFormData({ ...formData, customer_name: e.target.value })
-      }
-    />
-  </div>
-
-  <div className="mb-2">
-    <label className="form-label">Customer Group</label>
-    <select
-      className="form-select form-select-sm"
-      value={formData.customer_group}
-      onChange={(e) =>
-        setFormData({ ...formData, customer_group: e.target.value })
-      }
-    >
-      <option value="">Select</option>
-      <option value="Hospital">Hospital</option>
-      <option value="Retail">Retail</option>
-      <option value="Distributor">Distributor</option>
-    </select>
-  </div>
-
-  <div className="mb-2">
-    <label className="form-label">GST</label>
-    <input
-      type="text"
-      className="form-control form-control-sm"
-      value={formData.gst}
-      onChange={(e) =>
-        setFormData({ ...formData, gst: e.target.value })
-      }
-    />
-  </div>
-
-  <div className="mb-2">
-    <label className="form-label">Address</label>
-    <textarea
-      className="form-control form-control-sm"
-      value={formData.address}
-      onChange={(e) =>
-        setFormData({ ...formData, address: e.target.value })
-      }
-    ></textarea>
-  </div>
-
-<div className="mb-2 position-relative">
-  <label className="form-label">Image</label>
-  <input
-    type="file"
-    className="form-control form-control-sm"
-    ref={fileInputRef}
-    onChange={handleImageUpload}
-  />
-  {previewImage && (
-    <div className="position-relative mt-1" style={{ width: "50px", height: "50px" }}>
-      <img
-        src={previewImage}
-        alt="Preview"
-        width="50"
-        height="50"
-        style={{ objectFit: "cover", borderRadius: "4px" }}
-      />
-      <span
-        onClick={handleRemoveImage}
-        style={{
-          position: "absolute",
-          top: "-5px",
-          right: "-5px",
-          background: "red",
-          color: "white",
-          borderRadius: "50%",
-          width: "16px",
-          height: "16px",
-          fontSize: "12px",
-          fontWeight: "bold",
-          textAlign: "center",
-          lineHeight: "16px",
-          cursor: "pointer",
-        }}
-      >
-        ×
-      </span>
-    </div>
-  )}
-</div>
-
-</div>
-
-                      <div className="modal-footer py-2">
-                          <button
-                            className="btn btn-sm btn-secondary"
-                            onClick={() => setShowModal(false)}
-                          >
-                            Close
-                          </button>
-                          <button
-                            id="saveSupplierBtn"
-                            className="btn btn-sm btn-primary"
-                            onClick={handleSaveSupplier}
-                          >
-                            Save
-                          </button>
-                        </div>
-                        
-                      </div>
-                    </div>
-                  </div>
+            <div
+              className="modal-body p-2"
+              style={{ maxHeight: "300px", overflowY: "auto" }}
+            >
+              {/* Customer Code (Read-only in Edit Mode) */}
+              {editingSupplier && (
+                <div className="mb-2">
+                  <label className="form-label">Customer Code</label>
+                  <input
+                    type="text"
+                    className="form-control form-control-sm"
+                    value={formData.customer_id}
+                    readOnly
+                  />
                 </div>
-              </Fragment>
-            )}
+              )}
+
+              {/* Customer Name */}
+              <div className="mb-2">
+                <label className="form-label">Customer Name</label>
+                <input
+                  type="text"
+                  className="form-control form-control-sm"
+                  value={formData.customer_name}
+                  onChange={(e) =>
+                    setFormData({ ...formData, customer_name: e.target.value })
+                  }
+                />
+              </div>
+
+              {/* Customer Group */}
+              <div className="mb-2">
+                <label className="form-label">Customer Group</label>
+                <select
+                  className="form-select form-select-sm"
+                  value={formData.customer_group}
+                  onChange={(e) =>
+                    setFormData({ ...formData, customer_group: e.target.value })
+                  }
+                >
+                  <option value="">Select</option>
+                  <option value="Hospital">Hospital</option>
+                  <option value="Retail">Retail</option>
+                  <option value="Distributor">Distributor</option>
+                </select>
+              </div>
+
+              {/* GST */}
+              <div className="mb-2">
+                <label className="form-label">GST</label>
+                <input
+                  type="text"
+                  className="form-control form-control-sm"
+                  value={formData.gst}
+                  onChange={(e) =>
+                    setFormData({ ...formData, gst: e.target.value })
+                  }
+                />
+              </div>
+
+              {/* Address */}
+              <div className="mb-2">
+                <label className="form-label">Address</label>
+                <textarea
+                  className="form-control form-control-sm"
+                  value={formData.address}
+                  onChange={(e) =>
+                    setFormData({ ...formData, address: e.target.value })
+                  }
+                ></textarea>
+              </div>
+
+              {/* Image Upload */}
+              <div className="mb-2 position-relative">
+                <label className="form-label">Image</label>
+                <input
+                  type="file"
+                  className="form-control form-control-sm"
+                  ref={fileInputRef}
+                  onChange={handleImageUpload}
+                />
+                {previewImage && (
+                  <div
+                    className="position-relative mt-1"
+                    style={{ width: "50px", height: "50px" }}
+                  >
+                    <img
+                      src={previewImage}
+                      alt="Preview"
+                      width="50"
+                      height="50"
+                      style={{ objectFit: "cover", borderRadius: "4px" }}
+                    />
+                    <span
+                      onClick={handleRemoveImage}
+                      style={{
+                        position: "absolute",
+                        top: "-5px",
+                        right: "-5px",
+                        background: "red",
+                        color: "white",
+                        borderRadius: "50%",
+                        width: "16px",
+                        height: "16px",
+                        fontSize: "12px",
+                        fontWeight: "bold",
+                        textAlign: "center",
+                        lineHeight: "16px",
+                        cursor: "pointer",
+                      }}
+                    >
+                      ×
+                    </span>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Footer */}
+            <div className="modal-footer py-2">
+              <button
+                className="btn btn-sm btn-secondary"
+                onClick={() => {
+                  setShowModal(false);
+                  setFormData({
+                    id: "",
+                    customer_name: "",
+                    customer_id: generateSupplierCode(),
+                    customer_group: "",
+                    gst: "",
+                    address: "",
+                    image: null,
+                  });
+                  setPreviewImage(null);
+                  setEditingSupplier(null);
+                }}
+              >
+                Close
+              </button>
+              <button
+                id="saveSupplierBtn"
+                className="btn btn-sm btn-primary"
+                onClick={handleSaveSupplier}
+                disabled={isSaving}
+              >
+                {isSaving ? "Saving..." : "Save"}
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </Fragment>
+)}
+
 
             {/* Image Modal */}
             {showImageModal && (

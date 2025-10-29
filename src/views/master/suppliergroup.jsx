@@ -34,7 +34,8 @@ const SupplierGroup = () => {
   const [editingGroup, setEditingGroup] = useState(null);
   const [selectedGroupId, setSelectedGroupId] = useState(null);
   const [tempMaterials, setTempMaterials] = useState([]);
-  const [materialsList, setMaterialsList] = useState([]); // List of all available materials
+  const [materialsList, setMaterialsList] = useState([]); 
+  // const [selectedSupplierId, setSelectedSupplierId] = useState(null); // ✅ add this// List of all available materials
   const [formData, setFormData] = useState({
     supplier_name: "",
     supplier_items:"",
@@ -46,6 +47,9 @@ const SupplierGroup = () => {
     weight: "",
     price: ""
   });
+
+
+
 
   // Refs
   const inputRefs = useRef([]);
@@ -362,54 +366,56 @@ const SupplierGroup = () => {
     setTempMaterials(tempMaterials.filter((_, i) => i !== index));
   };
 
-  const deleteMaterial = async (materialId) => {
-    if (!window.confirm("Are you sure you want to delete this material?")) return;
-    
-    try {
-      const token = sessionStorage.getItem("authToken");
-      if (!token) {
-        toast.error("Session expired. Please login again.");
-        window.location.href = "/login";
-        return;
-      }
+const deleteMaterial = async (materialId) => {
+  if (!window.confirm("Are you sure you want to delete this material?")) return;
 
-      // First remove from tempMaterials to update UI immediately
-      setTempMaterials(prev => prev.filter(m => m.id !== materialId));
+  const token = sessionStorage.getItem("authToken");
+  if (!token) {
+    toast.error("Session expired. Please login again.");
+    window.location.href = "/login";
+    return;
+  }
 
-      const res = await axios.delete(
-        `https://115.124.111.111/FLS/public/api/supplier-material/delete/${materialId}`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            'Accept': 'application/json',
-            'Content-Type': 'application/json'
-          },
-        }
-      );
+  // ✅ Backup current materials in case API fails
+  const previousMaterials = [...tempMaterials];
 
-      if (res.data && (res.data.success || res.status === 200)) {
-        toast.success("Material deleted successfully");
-        // No need to fetch groups here since we're in the modal
-      } else {
-        // If delete failed, add the material back to the list
-        const materialToRestore = tempMaterials.find(m => m.id === materialId);
-        if (materialToRestore) {
-          setTempMaterials(prev => [...prev, materialToRestore]);
-        }
-        console.error('Delete material response:', res.data);
-        toast.error(res.data?.message || "Failed to delete material");
+  try {
+    // ✅ Update UI immediately (optimistic delete)
+    setTempMaterials(prev => prev.filter(m => m.id !== materialId));
+
+    // ✅ API call
+    const res = await axios.delete(
+      `https://115.124.111.111/FLS/public/api/supplier-material/delete/${materialId}`,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          Accept: "application/json",
+          "Content-Type": "application/json",
+        },
       }
-    } catch (err) {
-      // If delete failed, add the material back to the list
-      const materialToRestore = tempMaterials.find(m => m.id === materialId);
-      if (materialToRestore) {
-        setTempMaterials(prev => [...prev, materialToRestore]);
-      }
-      console.error("Error deleting material:", err.response?.data || err);
-      const errorMessage = err.response?.data?.message || "Failed to delete material";
-      toast.error(errorMessage);
+    );
+
+    // ✅ Handle success
+    if (res.status === 200 || res.data?.success === true) {
+      toast.success("🗑️ Material deleted successfully");
+    } else {
+      // ✅ Restore list if backend failed
+      setTempMaterials(previousMaterials);
+      console.error("Delete material response:", res.data);
+      toast.error(res.data?.message || "Failed to delete material");
     }
-  };
+  } catch (err) {
+    // ✅ Restore materials on error
+    setTempMaterials(previousMaterials);
+
+    console.error("Error deleting material:", err.response?.data || err);
+    const message =
+      err.response?.data?.message ||
+      err.response?.data?.error ||
+      "Failed to delete material";
+    toast.error(`❌ ${message}`);
+  }
+};
 
   // Modal handlers
   const handleNewGroup = () => {
@@ -828,19 +834,23 @@ const SupplierGroup = () => {
   >
     <div className="modal-dialog modal-lg">
       <div className="modal-content">
+        {/* ---------- Modal Header ---------- */}
         <div className="modal-header py-2 px-3">
-          <h5 className="modal-title" style={{ fontSize: "14px" }}>Add Material</h5>
+          <h5 className="modal-title" style={{ fontSize: "14px" }}>
+            Add Material
+          </h5>
           <button
             type="button"
             className="btn-close"
             aria-label="Close"
             onClick={() => {
-              fetchGroups(); // ✅ refresh the main list after modal close
+              fetchGroups(); // refresh after closing modal
               setShowMaterialModal(false);
             }}
           ></button>
         </div>
 
+        {/* ---------- Modal Body ---------- */}
         <div
           className="modal-body p-2"
           style={{
@@ -851,7 +861,7 @@ const SupplierGroup = () => {
           }}
         >
           <div className="row">
-            {/* Left Side - Materials List */}
+            {/* ---------- LEFT SIDE (Added Materials) ---------- */}
             <div className="col-6 border-end d-flex flex-column">
               <h6 style={{ fontSize: "13px" }}>Added Materials</h6>
 
@@ -892,11 +902,11 @@ const SupplierGroup = () => {
               </div>
             </div>
 
-            {/* Right Side - Add New Material */}
+            {/* ---------- RIGHT SIDE (Add New Material) ---------- */}
             <div className="col-6">
               <h6 style={{ fontSize: "13px" }}>New Material</h6>
 
-              {/* Material select */}
+              {/* Material Dropdown */}
               <div className="mb-2">
                 <label className="form-label" style={{ fontSize: "13px" }}>
                   Material
@@ -914,8 +924,6 @@ const SupplierGroup = () => {
                       material_name: selectedMaterial ? selectedMaterial.name : "",
                     });
                   }}
-                  ref={(el) => (inputRefs.current[2] = el)}
-                  onKeyDown={(e) => handleKeyDown(e, 2)}
                 >
                   <option value="">Select Material</option>
                   {materialsList && materialsList.length > 0 ? (
@@ -933,61 +941,171 @@ const SupplierGroup = () => {
               </div>
 
               {/* Weight input */}
-              <div className="mb-2">
-                <label className="form-label" style={{ fontSize: "13px" }}>
-                  Weight (Kg)
-                </label>
-                <input
-                  type="text"
-                  className="form-control form-control-sm"
-                  value={materialForm.weight}
-                  onKeyDown={(e) => {
-                    isNumberKey(e);
-                    handleKeyDown(e, 3);
-                  }}
-                  onChange={(e) =>
-                    setMaterialForm({ ...materialForm, weight: e.target.value })
-                  }
-                  ref={(el) => (inputRefs.current[3] = el)}
-                />
-              </div>
+           <div className="mb-2">
+  <label className="form-label" style={{ fontSize: "13px" }}>
+    Weight (Kg)
+  </label>
+  <input
+    type="text"
+    className="form-control form-control-sm"
+    value={materialForm.weight}
+    onKeyDown={(e) => {
+      const allowedKeys = [
+        "Backspace",
+        "Delete",
+        "ArrowLeft",
+        "ArrowRight",
+        "Tab",
+      ];
+      if (!/[0-9]/.test(e.key) && !allowedKeys.includes(e.key)) {
+        e.preventDefault(); // ❌ block non-numeric input
+      }
+    }}
+    onChange={(e) => {
+      // ✅ clean any accidental non-numeric paste
+      const numericValue = e.target.value.replace(/[^0-9]/g, "");
+      setMaterialForm({ ...materialForm, weight: numericValue });
+    }}
+  />
+</div>
 
               {/* Price input */}
-              <div className="mb-2">
-                <label className="form-label" style={{ fontSize: "13px" }}>
-                  Price (₹)
-                </label>
-                <input
-                  type="text"
-                  className="form-control form-control-sm"
-                  value={materialForm.price}
-                  onKeyDown={(e) => {
-                    isNumberKey(e);
-                    handleKeyDown(e, 4);
-                  }}
-                  onChange={(e) =>
-                    setMaterialForm({ ...materialForm, price: e.target.value })
-                  }
-                  ref={(el) => (inputRefs.current[4] = el)}
-                />
-              </div>
+         <div className="mb-2">
+  <label className="form-label" style={{ fontSize: "13px" }}>
+    Price (₹)
+  </label>
+  <input
+    type="text"
+    className="form-control form-control-sm"
+    value={materialForm.price}
+    onKeyDown={(e) => {
+      const allowedKeys = [
+        "Backspace",
+        "Delete",
+        "ArrowLeft",
+        "ArrowRight",
+        "Tab",
+      ];
+      if (!/[0-9]/.test(e.key) && !allowedKeys.includes(e.key)) {
+        e.preventDefault(); // ❌ block non-numeric input
+      }
+    }}
+    onChange={(e) => {
+      const numericValue = e.target.value.replace(/[^0-9]/g, "");
+      setMaterialForm({ ...materialForm, price: numericValue });
+    }}
+  />
+</div>
 
-              {/* ✅ Single Add Button Logic */}
+              {/* ✅ ADD BUTTON */}
               {/* <button
                 type="button"
                 className="btn btn-sm btn-success"
-                ref={(el) => (inputRefs.current[5] = el)}
-                onClick={handleAddMaterial}
+                onClick={async () => {
+                  const token = sessionStorage.getItem("authToken");
+                  if (!token) return toast.error("Unauthorized");
+
+                  if (
+                    !materialForm.material_id ||
+                    !materialForm.weight ||
+                    !materialForm.price
+                  ) {
+                    return toast.warning("Please fill all fields");
+                  }
+
+                  try {
+                    const payload = {
+                      // supplier_id removed intentionally
+                      material_id: materialForm.material_id,
+                      weight: materialForm.weight,
+                      price: materialForm.price,
+                    };
+
+                    const response = await axios.post(
+                      "https://115.124.111.111/FLS/public/api/supplier-material/create",
+                      payload,
+                      {
+                        headers: {
+                          Authorization: `Bearer ${token}`,
+                          "Content-Type": "application/json",
+                        },
+                      }
+                    );
+
+                    if (response.status === 200) {
+                      toast.success("✅ Material added successfully");
+                      fetchMaterials(); // refresh list
+                      setMaterialForm({ material_id: "", weight: "", price: "" });
+                    } else {
+                      toast.error("❌ Failed to add material");
+                    }
+                  } catch (error) {
+                    console.error("Add material error:", error);
+                    toast.error("❌ Error adding material");
+                  }
+                }}
               >
                 Add
               </button> */}
 
-
-              <button
+              {/* ✅ ADD BUTTON */}
+<button
   type="button"
   className="btn btn-sm btn-success"
-  ref={(el) => (inputRefs.current[5] = el)}
-  onClick={addTempMaterial}     // ✅ Correct
+  onClick={async () => {
+    const token = sessionStorage.getItem("authToken");
+    if (!token) return toast.error("Unauthorized");
+
+    if (
+      !materialForm.material_id ||
+      !materialForm.weight ||
+      !materialForm.price
+    ) {
+      return toast.warning("Please fill all fields");
+    }
+
+    try {
+      // ✅ include supplier_id if required by backend
+      const payload = {
+        supplier_id: selectedSupplier?.id || materialForm.supplier_id || 1, // <-- use actual supplier_id here
+        material_id: materialForm.material_id,
+        weight: materialForm.weight,
+        price: materialForm.price,
+      };
+
+      console.log("Payload sent:", payload);
+
+      const response = await axios.post(
+        "https://115.124.111.111/FLS/public/api/supplier-material/create",
+        payload,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      console.log("Response:", response.data);
+
+      // ✅ handle success
+      if (response.status === 200 || response.data.status === "success") {
+        toast.success("✅ Material added successfully");
+        fetchMaterials(); // refresh list
+        setMaterialForm({ material_id: "", weight: "", price: "" });
+      } else {
+        toast.error("❌ Failed to add material");
+      }
+    } catch (error) {
+      console.error("Add material error:", error);
+      console.log("Error Response:", error.response?.data || error.message);
+      toast.error(
+        `❌ Error adding material: ${
+          error.response?.data?.message || "Unexpected error"
+        }`
+      );
+    }
+  }}
 >
   Add
 </button>

@@ -1,4 +1,5 @@
 import { useState, useContext, useEffect } from "react";
+// import { MaterialContext } from "../../contexts/MaterialContext";
 import { MaterialContext } from "../../contexts/MaterialContext";
 import "bootstrap/dist/css/bootstrap.min.css";
 import jsPDF from "jspdf";
@@ -79,7 +80,8 @@ axiosInstance.interceptors.response.use(
 
 const MaterialMaster = () => {
   const { isAuthenticated, handleAuthError } = useAuth();
-  const [materials, setMaterials] = useState([]);
+  // const [materials, setMaterials] = useState([]);
+  const { materials, setMaterials } = useContext(MaterialContext);
   const [search, setSearch] = useState("");
   const [showModal, setShowModal] = useState(false);
   const [editingMaterial, setEditingMaterial] = useState(null);
@@ -94,22 +96,45 @@ const MaterialMaster = () => {
 
   const inputRefs = useRef([]);
 
+  // useEffect(() => {
+  //   const checkAuthAndFetch = async () => {
+  //     const token = getAuthToken();
+  //     if (!isValidToken(token)) {
+  //       console.log('No valid token found on mount');
+  //       handleAuthError();
+  //       return;
+  //     }
+  //     try {
+  //       await fetchMaterials();
+  //     } catch (error) {
+  //       console.error('Initial fetch failed:', error);
+  //     }
+  //   };
+  //   checkAuthAndFetch();
+  // }, []);
+
+
   useEffect(() => {
-    const checkAuthAndFetch = async () => {
-      const token = getAuthToken();
-      if (!isValidToken(token)) {
-        console.log('No valid token found on mount');
-        handleAuthError();
-        return;
-      }
+  const checkAuthAndFetch = async () => {
+    const token = getAuthToken();
+    if (!isValidToken(token)) {
+      console.log("No valid token found on mount");
+      handleAuthError();
+      return;
+    }
+
+    // ✅ only fetch if materials not already in context
+    if (materials.length === 0) {
       try {
         await fetchMaterials();
       } catch (error) {
-        console.error('Initial fetch failed:', error);
+        console.error("Initial fetch failed:", error);
       }
-    };
-    checkAuthAndFetch();
-  }, []);
+    }
+  };
+  checkAuthAndFetch();
+}, [materials, handleAuthError]);
+
 
 const fetchMaterials = async () => {
   try {

@@ -1,4 +1,4 @@
-import { useContext, useState } from "react";
+import { useContext, useEffect, useState } from "react";
 import axios from "axios";
 import { MaterialContext } from "../../contexts/MaterialContext";
 import { toast } from "react-toastify";
@@ -6,47 +6,66 @@ import { toast } from "react-toastify";
 const StockAdjustment = () => {
   const { materials, setMaterials } = useContext(MaterialContext);
   const [editingCell, setEditingCell] = useState({ id: null, field: null });
-  const [savingId, setSavingId] = useState(null);
+  // const [savingId, setSavingId] = useState(null);
+  const authToken = sessionStorage.getItem("authToken");
 
-  const authToken = sessionStorage.getItem("authToken"); // get token
+  // ✅ Fetch materials from API
+  useEffect(() => {
+    const fetchMaterials = async () => {
+      if (!authToken) return toast.error("Unauthorized. Please login again.");
+      try {
+        const response = await axios.get(
+          "https://115.124.111.111/FLS/public/api/material/list",
+          {
+            headers: {
+              Authorization: `Bearer ${authToken}`,
+              "Content-Type": "application/json",
+            },
+          }
+        );
 
-  // ✅ Update material values locally
+        if (response.data?.data) {
+          setMaterials(response.data.data);
+        } else {
+          toast.warning("No materials found.");
+        }
+      } catch (error) {
+        console.error("Fetch materials error:", error);
+        toast.error("Failed to fetch materials.");
+      }
+    };
+
+    fetchMaterials();
+  }, [authToken, setMaterials]);
+
   const handleChange = (id, field, value) => {
     setMaterials((prev) =>
-      prev.map((m) =>
-        m.id === id ? { ...m, [field]: Number(value) } : m
-      )
+      prev.map((m) => (m.id === id ? { ...m, [field]: Number(value) } : m))
     );
   };
 
-  // ✅ Number validation
   const isNumberKey = (e, allowDecimal = false) => {
     const char = e.key;
     const allowedChars = "0123456789";
     const controlKeys = ["Backspace", "Delete", "ArrowLeft", "ArrowRight", "Tab"];
-
     if (controlKeys.includes(char)) return;
     if (allowedChars.includes(char)) return;
     if (allowDecimal && char === "." && !e.target.value.includes(".")) return;
-
     e.preventDefault();
   };
 
-  // ✅ Save changes for a single row
+  // ✅ Save API - updated endpoint
   const saveMaterial = async (material) => {
-    if (!authToken) {
-      toast.error("Session expired. Please login again.");
-      return;
-    }
+    if (!authToken) return toast.error("Session expired. Please login again.");
 
     setSavingId(material.id);
     try {
       const response = await axios.post(
-        "https://115.124.111.111/FLS/public/api/material/stock-management",
+        "https://115.124.111.111/FLS/public/api/material/stock-adjustment",
         {
-          id: material.id,
-          stock: material.stock,
-          defaultPrice: material.defaultPrice,
+          material_id: material.material_id,
+          stock: material.weight, // Using 'weight' as stock
+          default_price: material.default_price,
         },
         {
           headers: {
@@ -59,11 +78,15 @@ const StockAdjustment = () => {
       if (response.data.status === "success") {
         toast.success("Stock updated successfully!");
         setEditingCell({ id: null, field: null });
-        // Optionally update local materials with response data
-        const updated = response.data.data;
-        if (updated) {
+
+        // If API returns updated data, merge it
+        if (response.data.data) {
           setMaterials((prev) =>
-            prev.map((m) => (m.id === updated.id ? updated : m))
+            prev.map((m) =>
+              m.material_id === response.data.data.material_id
+                ? { ...m, ...response.data.data }
+                : m
+            )
           );
         }
       } else {
@@ -71,7 +94,7 @@ const StockAdjustment = () => {
       }
     } catch (error) {
       console.error("Error updating stock:", error);
-      toast.error("Error updating stock. Please try again.");
+      toast.error(error.response?.data?.message || "Error updating stock");
     } finally {
       setSavingId(null);
     }
@@ -91,72 +114,73 @@ const StockAdjustment = () => {
             >
               <thead className="table-primary text-center">
                 <tr>
-                  <th className="py-2 px-2 text-center">Material Code</th>
-                  <th className="py-2 px-2 text-center">Material Name</th>
-                  <th className="py-2 px-2 text-center">Default Price</th>
-                  <th className="py-2 px-2 text-center">Current Stock</th>
-                  <th className="py-2 px-2 text-center">Action</th>
+                  <th>Material ID</th>
+                  <th>Material Name</th>
+                  <th>Material Type</th>
+                  <th>Default Price</th>
+                  <th>Current Stock</th>
+                  {/* <th>Action</th> */}
                 </tr>
               </thead>
               <tbody>
                 {materials.length > 0 ? (
                   materials.map((m) => (
                     <tr key={m.id}>
-                      <td className="py-1 px-2 text-center">{m.materialCode}</td>
-                      <td className="py-1 px-2 text-center">{m.materialName}</td>
+                      <td className="text-center">{m.material_id}</td>
+                      <td className="text-center">{m.material_name}</td>
+                      <td className="text-center">{m.material_type}</td>
 
-                      {/* Default Price */}
-                      <td className="py-1 px-2 text-center">
-                        {editingCell.id === m.id && editingCell.field === "defaultPrice" ? (
+                      {/* Editable Default Price */}
+                      <td className="text-center">
+                        {editingCell.id === m.id && editingCell.field === "default_price" ? (
                           <input
-                            type="text"
+                            type="number"
                             className="form-control form-control-sm"
-                            value={m.defaultPrice}
+                            value={m.default_price || ""}
                             autoFocus
                             onKeyDown={(e) => isNumberKey(e, true)}
                             onChange={(e) =>
-                              handleChange(m.id, "defaultPrice", e.target.value)
+                              handleChange(m.id, "default_price", e.target.value)
                             }
                             onBlur={() => setEditingCell({ id: null, field: null })}
                           />
                         ) : (
                           <span
                             onClick={() =>
-                              setEditingCell({ id: m.id, field: "defaultPrice" })
+                              setEditingCell({ id: m.id, field: "default_price" })
                             }
                             style={{ cursor: "text", display: "block" }}
                           >
-                            {m.defaultPrice || 0}
+                            {m.default_price || 0}
                           </span>
                         )}
                       </td>
 
-                      {/* Current Stock */}
-                      <td className="py-1 px-2 text-center">
-                        {editingCell.id === m.id && editingCell.field === "stock" ? (
+                      {/* Editable Stock */}
+                      <td className="text-center">
+                        {editingCell.id === m.id && editingCell.field === "weight" ? (
                           <input
-                            type="text"
+                            type="number"
                             className="form-control form-control-sm"
-                            value={m.stock}
+                            value={m.weight || ""}
                             autoFocus
                             onKeyDown={(e) => isNumberKey(e, false)}
-                            onChange={(e) =>
-                              handleChange(m.id, "stock", e.target.value)
-                            }
+                            onChange={(e) => handleChange(m.id, "weight", e.target.value)}
                             onBlur={() => setEditingCell({ id: null, field: null })}
                           />
                         ) : (
                           <span
-                            onClick={() => setEditingCell({ id: m.id, field: "stock" })}
+                            onClick={() =>
+                              setEditingCell({ id: m.id, field: "weight" })
+                            }
                             style={{ cursor: "text", display: "block" }}
                           >
-                            {m.stock || 0}
+                            {m.weight || 0}
                           </span>
                         )}
                       </td>
 
-                      {/* Action */}
-                      <td className="py-1 px-2 text-center">
+                      {/* <td className="text-center">
                         <button
                           className="btn btn-sm btn-success"
                           disabled={savingId === m.id}
@@ -164,12 +188,14 @@ const StockAdjustment = () => {
                         >
                           {savingId === m.id ? "Saving..." : "Save"}
                         </button>
-                      </td>
+                      </td> */}
+
+                      
                     </tr>
                   ))
                 ) : (
                   <tr>
-                    <td colSpan="5" className="text-center text-muted py-2">
+                    <td colSpan="6" className="text-center text-muted py-2">
                       No materials found
                     </td>
                   </tr>

@@ -1,4 +1,3 @@
-// src/contexts/MaterialContext.js
 import { createContext, useState } from "react";
 
 export const MaterialContext = createContext();

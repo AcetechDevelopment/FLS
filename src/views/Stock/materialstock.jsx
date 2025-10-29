@@ -1,8 +1,50 @@
-import { useContext } from "react";
-import { MaterialContext } from "../../contexts/MaterialContext";
+import React, { useEffect, useState } from "react";
+import axios from "axios";
+import { toast } from "react-toastify";
+
+const API_URL = "https://115.124.111.111/FLS/public/api/material/stock-management";
 
 const MaterialStock = () => {
-  const { materials } = useContext(MaterialContext);
+  const [materials, setMaterials] = useState([]);
+  const [loading, setLoading] = useState(false);
+
+  const fetchMaterials = async () => {
+    setLoading(true);
+    try {
+      const token = sessionStorage.getItem("authToken");
+      const response = await axios.get(API_URL, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      console.log("Material Stock API response:", response.data);
+
+      const data = response.data?.data || [];
+
+      // ✅ Automatically assign material_type if missing
+      const processed = data.map((item) => {
+        let materialType = "General";
+
+        if (item.material_id?.startsWith("MID-01") || item.material_id?.startsWith("MID-02") || item.material_id?.startsWith("MID-03")) {
+          materialType = "Cable";
+        } else if (item.material_id?.startsWith("MID-04") || item.material_id?.startsWith("MID-05") || item.material_id?.startsWith("MID-06")) {
+          materialType = "Accessories";
+        }
+
+        return { ...item, material_type: item.material_type || materialType };
+      });
+
+      setMaterials(processed);
+    } catch (error) {
+      console.error("Error fetching material stock:", error);
+      toast.error("Error fetching material stock data");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchMaterials();
+  }, []);
 
   return (
     <div className="container mt-3">
@@ -27,20 +69,26 @@ const MaterialStock = () => {
                 </tr>
               </thead>
               <tbody>
-                {materials.length > 0 ? (
+                {loading ? (
+                  <tr>
+                    <td colSpan="6" className="text-center py-2">
+                      Loading...
+                    </td>
+                  </tr>
+                ) : materials.length > 0 ? (
                   materials.map((m) => (
                     <tr key={m.id}>
-                      <td className="py-1 px-2 text-center">{m.materialCode}</td>
-                      <td className="py-1 px-2 text-center">{m.materialName}</td>
-                      {/* <td className="py-1 px-2 text-center">{m.defaultPrice || 0}</td> */}
-                      <td className="py-1 px-2 text-center">{m.materialType}</td>
+                      <td className="py-1 px-2 text-center">{m.material_id || "-"}</td>
+                      <td className="py-1 px-2 text-center">{m.material_name || "-"}</td>
+                      {/* <td className="py-1 px-2 text-center">{m.default_price ?? 0}</td> */}
+                      <td className="py-1 px-2 text-center">{m.material_type || "N/A"}</td>
                       <td className="py-1 px-2 text-center">{m.fresh || 0}</td>
                       <td className="py-1 px-2 text-center">{m.soil || 0}</td>
                     </tr>
                   ))
                 ) : (
                   <tr>
-                    <td colSpan="6" className="text-center text-muted py-2" style={{ fontSize: "12px" }}>
+                    <td colSpan="6" className="text-center text-muted py-2">
                       No materials found
                     </td>
                   </tr>
