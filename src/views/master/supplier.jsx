@@ -40,14 +40,6 @@ const SupplierMaster = () => {
   }, [showModal, showImageModal]);
 
 
-  // added additionally
-
-//   useEffect(() => {
-//   fetchSuppliers(); // ✅ initial load
-// }, []);
-
-  // added additionally
-
   const [formData, setFormData] = useState({
     id: "",
     customer_name: "",
@@ -82,8 +74,6 @@ if (!token || token === "undefined" || token === "null") {
       validateStatus: (status) => status < 500,
     });
 
-    console.log("Raw API response:", response);
-
     const resData = response.data;
     const list =
       resData?.data ||
@@ -92,10 +82,8 @@ if (!token || token === "undefined" || token === "null") {
       (Array.isArray(resData) ? resData : []);
 
     if (list.length > 0) {
-      console.log("✅ Customers fetched successfully:", list);
       setSuppliers(list);
     } else {
-      console.warn("⚠️ No customers found in API response:", resData);
       toast.warn("No customers found.");
     }
   } catch (error) {
@@ -103,13 +91,10 @@ if (!token || token === "undefined" || token === "null") {
 
     if (axios.isAxiosError(error)) {
       if (error.response) {
-        console.log("Response error data:", error.response.data);
         toast.error(error.response.data?.message || "API returned an error.");
       } else if (error.request) {
-        console.log("No response received:", error.request);
         toast.error("No response from server.");
       } else {
-        console.log("Request setup error:", error.message);
         toast.error(error.message);
       }
     } else {
@@ -126,19 +111,6 @@ useEffect(() => {
 }, []);
 
 
-  // ✅ Enter key navigation
-  const handleKeyDown = (e, index) => {
-    if (e.key === "Enter") {
-      e.preventDefault();
-      const next = inputRefs.current[index + 1];
-      if (next) {
-        next.focus();
-      } else {
-        document.getElementById("saveSupplierBtn")?.focus();
-      }
-    }
-  };
-
   // ✅ Remove image
   const handleRemoveImage = () => {
     setFormData({ ...formData, image: "" });
@@ -147,32 +119,6 @@ useEffect(() => {
     }
     setPreviewImage(null);
   };
-
-  // ✅ Generate supplier code
-  // const generateSupplierCode = () => {
-  //   const nextNumber = suppliers.length + 1;
-  //   return `SUP${String(nextNumber).padStart(3, "0")}`;
-  // };
-
-  const generateSupplierCode = () => {
-  if (!Array.isArray(suppliers) || suppliers.length === 0) {
-    return "SUP001";
-  }
-
-  // Extract all numeric parts of existing customer codes (e.g., SUP001 -> 1)
-  const numbers = suppliers
-    .map((s) => {
-      const match = String(s.customer_id || "").match(/SUP(\d+)/);
-      return match ? parseInt(match[1], 10) : 0;
-    })
-    .filter((n) => !isNaN(n));
-
-  const maxNumber = numbers.length > 0 ? Math.max(...numbers) : 0;
-  const nextNumber = maxNumber + 1;
-
-  return `SUP${String(nextNumber).padStart(3, "0")}`;
-};
-
 
   // ✅ Handle image change
   const handleImageUpload = (e) => {
@@ -196,7 +142,7 @@ useEffect(() => {
     setFormData({
       id: "",
       customer_name: "",
-      customer_id: generateSupplierCode(),
+      customer_id: "",
       customer_group: "",
       gst: "",
       address: "",
@@ -216,9 +162,6 @@ const handleEditSupplier = async (supplier) => {
       window.location.href = "/login";
       return;
     }
-
-    // ✅ Log to debug
-    console.log("Editing supplier with ID:", supplier.id);
 
     // ✅ Try both possible endpoints — fallback if edit fails
     let response;
@@ -249,7 +192,7 @@ const handleEditSupplier = async (supplier) => {
       setFormData({
         id: data.id || "",
         customer_name: data.customer_name || "",
-        customer_id: data.customer_id || "",
+        customer_id: data.customer_id || supplier.customer_id || "",
         customer_group: data.customer_group || "",
         gst: data.gst || "",
         address: data.address || "",
@@ -284,16 +227,16 @@ const handleSaveSupplier = async () => {
       return;
     }
 
-    if (!formData.customer_name || !formData.customer_id || !formData.gst) {
+    // ✅ Basic validation
+    if (!formData.customer_name || !formData.gst) {
       toast.error("Please fill all required fields");
       setIsSaving(false);
       return;
     }
 
+    // ✅ Prepare form data
     const formDataToSend = new FormData();
-    if (editingSupplier) {
-      formDataToSend.append("id", formData.id);
-    }
+    if (editingSupplier) formDataToSend.append("id", formData.id);
     formDataToSend.append("customer_name", formData.customer_name.trim());
     formDataToSend.append("customer_id", formData.customer_id.trim());
     formDataToSend.append("customer_group", formData.customer_group || "");
@@ -314,19 +257,16 @@ const handleSaveSupplier = async () => {
       headers: { Authorization: `Bearer ${token}` },
     });
 
-    if (response.data.status === "success") {
+    if (response.data.status === "success" || response.data.success === true || response.data.message?.toLowerCase().includes("success")) {
       toast.success(
         `Customer ${editingSupplier ? "updated" : "created"} successfully!`
       );
 
-      // ✅ Refresh table
-      await fetchSuppliers();
-
-      // ✅ Reset form
+      // ✅ Reset form and close modal immediately
       setFormData({
         id: "",
         customer_name: "",
-        customer_id: generateSupplierCode(),
+        customer_id: "",
         customer_group: "",
         gst: "",
         address: "",
@@ -334,9 +274,9 @@ const handleSaveSupplier = async () => {
       });
       setPreviewImage(null);
       setEditingSupplier(null);
-
-      // ✅ CLOSE MODAL HERE
-      setShowModal(false);
+      setShowModal(false); // ✅ Close modal after success
+      // ✅ Refresh list after closing
+      await fetchSuppliers();
     } else {
       toast.error(response.data.message || "Failed to save customer");
     }
@@ -364,8 +304,6 @@ const deleteRow = async (id) => {
       return;
     }
 
-    console.log("Deleting customer ID:", id, "with token:", token);
-
     const response = await axios.delete(
       `https://115.124.111.111/FLS/public/api/customer/delete/${id}`,
       {
@@ -377,11 +315,10 @@ const deleteRow = async (id) => {
       }
     );
 
-    console.log("Delete API response:", response.data);
-
-    if (response.data?.status === "success") {
+    if (response.data?.status === "success" ||response.data?.status ===true || response.data.message?.toLowerCase().includes("success")) {
       toast.success("Customer deleted successfully!");
-      setSuppliers((prev) => prev.filter((s) => s.id !== id));
+      fetchSuppliers();
+      // setSuppliers((prev) => prev.filter((s) => s.id !== id));
     } else {
       toast.error(response.data?.message || "Failed to delete customer");
     }
@@ -506,20 +443,6 @@ const deleteRow = async (id) => {
   );
 
 
-  // Inside your component
-// const dummySupplier = {
-//   id: "dummy",
-//   customer_code: "SUP001",
-//   customer_name: "Dummy Supplier",
-//   customer_group: "Retail",
-//   address: "123, Main Street",
-//   gst: "123456789",
-//   image: "https://via.placeholder.com/25",
-// };
-
-
-// const displaySuppliers = [dummySupplier, ...filteredSuppliers];
-
   return (
     <Fragment>
       <div className="page-container">
@@ -607,8 +530,8 @@ const deleteRow = async (id) => {
 <div
   className="table-responsive"
   style={{
-    borderRadius: "8px",
-    boxShadow: "0 1px 5px rgba(0,0,0,0.08)",
+    border: "1.5px solid #2f2f2f", // Outer bold border
+    borderRadius: "4px",
     overflow: "hidden",
     backgroundColor: "#fff",
   }}
@@ -619,15 +542,16 @@ const deleteRow = async (id) => {
     style={{
       fontSize: "11px",
       width: "100%",
-      borderCollapse: "collapse",
+      borderCollapse: "collapse", // ✅ Perfect alignment for Excel-like lines
+      tableLayout: "fixed",
     }}
   >
+    {/* Header */}
     <thead
       style={{
-        background: "linear-gradient(90deg, #007bff, #00b4d8)",
-        color: "#fff",
-        textTransform: "uppercase",
-        fontSize: "11px",
+        backgroundColor: "#e3f0fd",
+        color: "#000",
+        fontWeight: "700",
       }}
     >
       <tr>
@@ -636,11 +560,11 @@ const deleteRow = async (id) => {
             <th
               key={i}
               style={{
-                padding: "4px 5px",
-                fontWeight: "600",
-                border: "1px solid #dee2e6",
-                whiteSpace: "nowrap",
-                ...(header === "Action" && { minWidth: "90px" }),
+                padding: "6px 5px",
+                border: "1.5px solid #2f2f2f", // 🟩 Equal border thickness for all sides
+                textAlign: "center",
+                verticalAlign: "middle",
+                background: "#e3f0fd",
               }}
             >
               {header}
@@ -650,132 +574,166 @@ const deleteRow = async (id) => {
       </tr>
     </thead>
 
+    {/* Body */}
     <tbody>
       {Array.isArray(filteredSuppliers) && filteredSuppliers.length > 0 ? (
         filteredSuppliers.map((supplier, index) => (
           <tr
             key={supplier.id}
             style={{
-              backgroundColor: index % 2 === 0 ? "#f9fafb" : "#ffffff",
+              backgroundColor: index % 2 === 0 ? "#ffffff" : "#f6f8fa",
               transition: "background-color 0.15s ease-in-out",
-              lineHeight: "1.1",
             }}
             onMouseEnter={(e) =>
-              (e.currentTarget.style.backgroundColor = "#e8f2ff")
+              (e.currentTarget.style.backgroundColor = "#e0ebff")
             }
             onMouseLeave={(e) =>
               (e.currentTarget.style.backgroundColor =
-                index % 2 === 0 ? "#f9fafb" : "#ffffff")
+                index % 2 === 0 ? "#ffffff" : "#f6f8fa")
             }
           >
-            <td style={{ padding: "3px 5px", border: "1px solid #dee2e6" }}>
+            <td style={{ padding: "4px 5px", border: "1.5px solid #2f2f2f" }}>
               {supplier.customer_id}
             </td>
-            <td style={{ padding: "3px 5px", border: "1px solid #dee2e6" }}>
+            <td style={{ padding: "4px 5px", border: "1.5px solid #2f2f2f" }}>
               {supplier.customer_name}
             </td>
-            <td style={{ padding: "3px 5px", border: "1px solid #dee2e6" }}>
+            <td style={{ padding: "4px 5px", border: "1.5px solid #2f2f2f" }}>
               {supplier.customer_group}
             </td>
-            <td style={{ padding: "3px 5px", border: "1px solid #dee2e6" }}>
+            <td
+              style={{
+                padding: "4px 5px",
+                border: "1.5px solid #2f2f2f",
+                textAlign: "left",
+              }}
+            >
               {supplier.address}
             </td>
-            <td style={{ padding: "3px 5px", border: "1px solid #dee2e6" }}>
+            <td style={{ padding: "4px 5px", border: "1.5px solid #2f2f2f" }}>
               {supplier.gst}
             </td>
-
-            <td style={{ padding: "3px 5px", border: "1px solid #dee2e6" }}>
+            <td style={{ padding: "4px 5px", border: "1.5px solid #2f2f2f" }}>
               {supplier.image ? (
                 <img
                   src={supplier.image}
                   alt="Supplier"
-                  width="18"
-                  height="18"
+                  width="20"
+                  height="20"
                   style={{
-                    borderRadius: "3px",
-                    cursor: "pointer",
+                    borderRadius: "2px",
                     objectFit: "cover",
+                    cursor: "pointer",
                     transition: "transform 0.2s ease-in-out",
                   }}
-                  onMouseEnter={(e) => (e.currentTarget.style.transform = "scale(1.1)")}
-                  onMouseLeave={(e) => (e.currentTarget.style.transform = "scale(1)")}
+                  onMouseEnter={(e) =>
+                    (e.currentTarget.style.transform = "scale(1.1)")
+                  }
+                  onMouseLeave={(e) =>
+                    (e.currentTarget.style.transform = "scale(1)")
+                  }
                   onClick={() => {
                     setPreviewImage(supplier.image);
                     setShowImageModal(true);
                   }}
                 />
               ) : (
-                <span style={{ color: "#6c757d", fontSize: "9px" }}>No Image</span>
+                <span style={{ color: "#6c757d", fontSize: "9px" }}>
+                  No Image
+                </span>
               )}
             </td>
 
-           <td style={{ padding: "3px 5px", border: "1px solid #dee2e6" }}>
-  {/* Edit */}
-  <button
-    className="btn btn-sm p-0 me-1"
-    style={{
-      background: "transparent",
-      border: "none",
-      padding: 0,
-      transition: "transform 0.1s ease-in-out",
-    }}
-    onMouseEnter={(e) => (e.currentTarget.style.transform = "scale(1.2)")}
-    onMouseLeave={(e) => (e.currentTarget.style.transform = "scale(1)")}
-    onClick={() => handleEditSupplier(supplier)}
-    title="Edit"
-  >
-    <span
-      className="material-icons-two-tone"
-      style={{ fontSize: "12px", color: "#ffc107", cursor: "pointer" }}
-    >
-      edit
-    </span>
-  </button>
+            <td style={{ padding: "4px 5px", border: "1.5px solid #2f2f2f" }}>
+              {/* Edit */}
+              <button
+                className="btn btn-sm p-0 me-1"
+                style={{
+                  background: "transparent",
+                  border: "none",
+                  transition: "transform 0.1s ease-in-out",
+                }}
+                onMouseEnter={(e) =>
+                  (e.currentTarget.style.transform = "scale(1.2)")
+                }
+                onMouseLeave={(e) =>
+                  (e.currentTarget.style.transform = "scale(1)")
+                }
+                onClick={() => handleEditSupplier(supplier)}
+                title="Edit"
+              >
+                <span
+                  className="material-icons-two-tone"
+                  style={{
+                    fontSize: "12px",
+                    color: "#ffc107",
+                    cursor: "pointer",
+                  }}
+                >
+                  edit
+                </span>
+              </button>
 
-  {/* Price List */}
-  <button
-    className="btn btn-sm p-0 me-1"
-    style={{
-      background: "transparent",
-      border: "none",
-      padding: 0,
-      transition: "transform 0.1s ease-in-out",
-    }}
-    onMouseEnter={(e) => (e.currentTarget.style.transform = "scale(1.2)")}
-    onMouseLeave={(e) => (e.currentTarget.style.transform = "scale(1)")}
-    onClick={() => alert("Open Price List for " + supplier.customer_name)}
-    title="Price List"
-  >
-    <span
-      className="material-icons-two-tone"
-      style={{ fontSize: "12px", color: "#0dcaf0", cursor: "pointer" }}
-    >
-      list_alt
-    </span>
-  </button>
+              {/* Price List */}
+              <button
+                className="btn btn-sm p-0 me-1"
+                style={{
+                  background: "transparent",
+                  border: "none",
+                  transition: "transform 0.1s ease-in-out",
+                }}
+                onMouseEnter={(e) =>
+                  (e.currentTarget.style.transform = "scale(1.2)")
+                }
+                onMouseLeave={(e) =>
+                  (e.currentTarget.style.transform = "scale(1)")
+                }
+                onClick={() =>
+                  alert("Open Price List for " + supplier.customer_name)
+                }
+                title="Price List"
+              >
+                <span
+                  className="material-icons-two-tone"
+                  style={{
+                    fontSize: "12px",
+                    color: "#0dcaf0",
+                    cursor: "pointer",
+                  }}
+                >
+                  list_alt
+                </span>
+              </button>
 
-  {/* Delete */}
-  <button
-    className="btn btn-sm p-0"
-    style={{
-      background: "transparent",
-      border: "none",
-      padding: 0,
-      transition: "transform 0.1s ease-in-out",
-    }}
-    onMouseEnter={(e) => (e.currentTarget.style.transform = "scale(1.2)")}
-    onMouseLeave={(e) => (e.currentTarget.style.transform = "scale(1)")}
-    onClick={() => deleteRow(supplier.id)}
-    title="Delete"
-  >
-    <span
-      className="material-icons-two-tone"
-      style={{ fontSize: "12px", color: "#dc3545", cursor: "pointer" }}
-    >
-      delete
-    </span>
-  </button>
-</td>
+              {/* Delete */}
+              <button
+                className="btn btn-sm p-0"
+                style={{
+                  background: "transparent",
+                  border: "none",
+                  transition: "transform 0.1s ease-in-out",
+                }}
+                onMouseEnter={(e) =>
+                  (e.currentTarget.style.transform = "scale(1.2)")
+                }
+                onMouseLeave={(e) =>
+                  (e.currentTarget.style.transform = "scale(1)")
+                }
+                onClick={() => deleteRow(supplier.id)}
+                title="Delete"
+              >
+                <span
+                  className="material-icons-two-tone"
+                  style={{
+                    fontSize: "12px",
+                    color: "#dc3545",
+                    cursor: "pointer",
+                  }}
+                >
+                  delete
+                </span>
+              </button>
+            </td>
           </tr>
         ))
       ) : (
@@ -787,7 +745,8 @@ const deleteRow = async (id) => {
               color: "#6c757d",
               fontSize: "10px",
               padding: "6px",
-              border: "1px solid #dee2e6",
+              border: "1.5px solid #2f2f2f",
+              fontWeight: "500",
             }}
           >
             No suppliers found
@@ -797,6 +756,8 @@ const deleteRow = async (id) => {
     </tbody>
   </table>
 </div>
+
+
 
 
 
@@ -821,7 +782,7 @@ const deleteRow = async (id) => {
                   setFormData({
                     id: "",
                     customer_name: "",
-                    customer_id: generateSupplierCode(),
+                    customer_id: "",
                     customer_group: "",
                     gst: "",
                     address: "",
@@ -952,7 +913,7 @@ const deleteRow = async (id) => {
             </div>
 
             {/* Footer */}
-            <div className="modal-footer py-2">
+       <div className="modal-footer py-2">
               <button
                 className="btn btn-sm btn-secondary"
                 onClick={() => {
@@ -960,7 +921,7 @@ const deleteRow = async (id) => {
                   setFormData({
                     id: "",
                     customer_name: "",
-                    customer_id: generateSupplierCode(),
+                    customer_id: "",
                     customer_group: "",
                     gst: "",
                     address: "",
@@ -972,6 +933,7 @@ const deleteRow = async (id) => {
               >
                 Close
               </button>
+
               <button
                 id="saveSupplierBtn"
                 className="btn btn-sm btn-primary"
@@ -1024,3 +986,473 @@ const deleteRow = async (id) => {
 };
 
 export default SupplierMaster;
+
+// import "bootstrap/dist/css/bootstrap.min.css";
+// import jsPDF from "jspdf";
+// import autoTable from "jspdf-autotable";
+// import * as XLSX from "xlsx";
+// import React, { useState, useEffect, useMemo, useCallback, Fragment } from "react";
+// import axios from "axios";
+// import { toast } from "react-toastify";
+
+// const API_BASE_URL = "https://115.124.111.111/FLS/public/api";
+
+// const axiosInstance = axios.create({
+//   baseURL: API_BASE_URL,
+//   timeout: 15000, // 15 sec timeout to avoid hanging requests
+//   headers: { Accept: "application/json" },
+// });
+
+// const SupplierMaster = () => {
+//   const [suppliers, setSuppliers] = useState([]);
+//   const [search, setSearch] = useState("");
+//   const [showModal, setShowModal] = useState(false);
+//   const [showImageModal, setShowImageModal] = useState(false);
+//   const [previewImage, setPreviewImage] = useState(null);
+//   const [editingSupplier, setEditingSupplier] = useState(null);
+//   const [formData, setFormData] = useState({
+//     id: "",
+//     customer_name: "",
+//     customer_id: "",
+//     customer_group: "",
+//     gst: "",
+//     address: "",
+//     image: null,
+//   });
+//   const [isSaving, setIsSaving] = useState(false);
+//   const [loading, setLoading] = useState(false);
+
+//   const handleAxiosError = (error, defaultMsg = "Unexpected error") => {
+//     console.error("❌ API Error:", error);
+//     if (axios.isAxiosError(error)) {
+//       const message =
+//         error.response?.data?.message ||
+//         (error.request ? "No response from server" : error.message);
+//       toast.error(message);
+//     } else toast.error(defaultMsg);
+//   };
+
+//   const fetchSuppliers = useCallback(async () => {
+//     const token = sessionStorage.getItem("authToken");
+//     if (!token) {
+//       toast.error("Session expired. Please login again.");
+//       window.location.href = "/login";
+//       return;
+//     }
+
+//     setLoading(true);
+//     try {
+//       const res = await axiosInstance.get("/customer/list", {
+//         headers: { Authorization: `Bearer ${token}` },
+//       });
+//       setSuppliers(res.data?.data || []);
+//     } catch (err) {
+//       handleAxiosError(err, "Failed to fetch suppliers");
+//     } finally {
+//       setLoading(false);
+//     }
+//   }, []);
+
+//   useEffect(() => {
+//     fetchSuppliers();
+//   }, [fetchSuppliers]);
+
+//   const handleImageUpload = (e) => {
+//     const file = e.target.files[0];
+//     if (!file) return;
+//     setFormData((prev) => ({ ...prev, image: file }));
+//     const reader = new FileReader();
+//     reader.onloadend = () => setPreviewImage(reader.result);
+//     reader.readAsDataURL(file);
+//   };
+
+//   const resetForm = () => {
+//     setFormData({
+//       id: "",
+//       customer_name: "",
+//       customer_id: "",
+//       customer_group: "",
+//       gst: "",
+//       address: "",
+//       image: null,
+//     });
+//     setPreviewImage(null);
+//     setEditingSupplier(null);
+//   };
+
+//   const handleNewSupplier = () => {
+//     resetForm();
+//     setShowModal(true);
+//   };
+
+//   const handleEditSupplier = async (supplier) => {
+//     const token = sessionStorage.getItem("authToken");
+//     if (!token) return toast.error("Unauthorized! Please login again.");
+
+//     try {
+//       const res = await axiosInstance.get(`/customer/edit/${supplier.id}`, {
+//         headers: { Authorization: `Bearer ${token}` },
+//       });
+//       const data = res.data?.data;
+//       setEditingSupplier(data);
+//       setFormData({
+//         id: data.id,
+//         customer_name: data.customer_name || "",
+//         customer_id: data.customer_id || "",
+//         customer_group: data.customer_group || "",
+//         gst: data.gst || "",
+//         address: data.address || "",
+//         image: data.image || null,
+//       });
+//       setPreviewImage(data.image || null);
+//       setShowModal(true);
+//     } catch (err) {
+//       handleAxiosError(err, "Failed to load supplier");
+//     }
+//   };
+
+//   const handleSaveSupplier = async () => {
+//     if (isSaving) return;
+//     const token = sessionStorage.getItem("authToken");
+//     if (!token) return toast.error("Unauthorized! Please login again.");
+
+//     if (!formData.customer_name || !formData.gst)
+//       return toast.error("Please fill all required fields");
+
+//     setIsSaving(true);
+//     try {
+//       const formDataToSend = new FormData();
+//       Object.entries(formData).forEach(([key, value]) => {
+//         if (value) formDataToSend.append(key, value);
+//       });
+
+//       const url = editingSupplier ? "/customer/update" : "/customer/create";
+//       const res = await axiosInstance.post(url, formDataToSend, {
+//         headers: { Authorization: `Bearer ${token}` },
+//       });
+
+//       if (res.data.status === "success" || res.data.success) {
+//         toast.success(
+//           `Customer ${editingSupplier ? "updated" : "created"} successfully!`
+//         );
+//         setShowModal(false);
+//         fetchSuppliers();
+//       } else toast.error(res.data.message || "Operation failed");
+//     } catch (err) {
+//       handleAxiosError(err, "Failed to save supplier");
+//     } finally {
+//       setIsSaving(false);
+//     }
+//   };
+
+//   const deleteSupplier = async (id) => {
+//     if (!window.confirm("Are you sure you want to delete this supplier?"))
+//       return;
+//     const token = sessionStorage.getItem("authToken");
+//     if (!token) return toast.error("Unauthorized! Please login again.");
+
+//     try {
+//       const res = await axiosInstance.delete(`/customer/delete/${id}`, {
+//         headers: { Authorization: `Bearer ${token}` },
+//       });
+//       if (res.data.status === "success" || res.data.success) {
+//         toast.success("Supplier deleted successfully!");
+//         fetchSuppliers();
+//       } else toast.error(res.data.message || "Failed to delete supplier");
+//     } catch (err) {
+//       handleAxiosError(err);
+//     }
+//   };
+
+//   const exportPDF = () => {
+//     if (!suppliers.length) return toast.info("No data to export.");
+//     const doc = new jsPDF();
+//     doc.text("Supplier Master", 14, 15);
+//     autoTable(doc, {
+//       startY: 25,
+//       head: [["Code", "Name", "Group", "Address", "GST"]],
+//       body: suppliers.map((s) => [
+//         s.customer_id,
+//         s.customer_name,
+//         s.customer_group,
+//         s.address,
+//         s.gst,
+//       ]),
+//       theme: "grid",
+//       styles: { fontSize: 10 },
+//       headStyles: { fillColor: [52, 58, 64] },
+//     });
+//     doc.save("SupplierMaster.pdf");
+//   };
+
+//   const exportExcel = () => {
+//     if (!suppliers.length) return toast.info("No data to export.");
+//     const data = suppliers.map((s) => ({
+//       Code: s.customer_id,
+//       Name: s.customer_name,
+//       Group: s.customer_group,
+//       Address: s.address,
+//       GST: s.gst,
+//     }));
+//     const ws = XLSX.utils.json_to_sheet(data);
+//     const wb = XLSX.utils.book_new();
+//     XLSX.utils.book_append_sheet(wb, ws, "Suppliers");
+//     XLSX.writeFile(wb, "SupplierMaster.xlsx");
+//   };
+
+//   const filteredSuppliers = useMemo(() => {
+//     const q = search.toLowerCase();
+//     return suppliers.filter(
+//       (s) =>
+//         s.customer_name?.toLowerCase().includes(q) ||
+//         s.customer_id?.toLowerCase().includes(q) ||
+//         s.gst?.toLowerCase().includes(q)
+//     );
+//   }, [suppliers, search]);
+
+//   return (
+//     <Fragment>
+//       <div
+//         className="container-fluid p-3"
+//         style={{
+//           backgroundColor: "#fff",
+//           borderRadius: "8px",
+//           boxShadow: "0 1px 5px rgba(0,0,0,0.08)",
+//         }}
+//       >
+//         {/* Header */}
+//         <div className="d-flex justify-content-between align-items-center mb-3">
+//           <h5 className="fw-bold mb-0">Supplier Master</h5>
+//           <div>
+//             <button
+//               className="btn btn-sm btn-success me-2"
+//               onClick={handleNewSupplier}
+//             >
+//               + New
+//             </button>
+//             <button className="btn btn-sm btn-danger me-2" onClick={exportPDF}>
+//               Export PDF
+//             </button>
+//             <button className="btn btn-sm btn-success" onClick={exportExcel}>
+//               Export Excel
+//             </button>
+//           </div>
+//         </div>
+
+//         {/* Search */}
+//         <div className="mb-3">
+//           <input
+//             type="text"
+//             className="form-control form-control-sm"
+//             placeholder="Search..."
+//             value={search}
+//             onChange={(e) => setSearch(e.target.value)}
+//           />
+//         </div>
+
+//         {/* Table */}
+//         <div
+//           className="table-responsive"
+//           style={{
+//             borderRadius: "8px",
+//             boxShadow: "0 1px 5px rgba(0,0,0,0.08)",
+//             overflow: "hidden",
+//           }}
+//         >
+//           <table
+//             id="supplier-table"
+//             className="table table-bordered table-sm align-middle mb-0 text-center"
+//             style={{
+//               border: "2px solid #dee2e6",
+//               borderCollapse: "collapse",
+//             }}
+//           >
+//             <thead className="table-light" style={{ fontWeight: "bold" }}>
+//               <tr>
+//                 <th>Code</th>
+//                 <th>Name</th>
+//                 <th>Group</th>
+//                 <th>Address</th>
+//                 <th>GST</th>
+//                 <th>Image</th>
+//                 <th>Action</th>
+//               </tr>
+//             </thead>
+//             <tbody>
+//               {filteredSuppliers.length ? (
+//                 filteredSuppliers.map((s, i) => (
+//                   <tr key={i}>
+//                     <td>{s.customer_id}</td>
+//                     <td>{s.customer_name}</td>
+//                     <td>{s.customer_group}</td>
+//                     <td className="text-start">{s.address}</td>
+//                     <td>{s.gst}</td>
+//                     <td>
+//                       {s.image ? (
+//                         <img
+//                           src={s.image}
+//                           alt="Supplier"
+//                           width="30"
+//                           height="30"
+//                           className="rounded"
+//                           style={{ cursor: "pointer" }}
+//                           onClick={() => {
+//                             setPreviewImage(s.image);
+//                             setShowImageModal(true);
+//                           }}
+//                         />
+//                       ) : (
+//                         <span className="text-muted small">No Image</span>
+//                       )}
+//                     </td>
+//                     <td>
+//                       <button
+//                         className="btn btn-sm btn-warning me-1"
+//                         onClick={() => handleEditSupplier(s)}
+//                       >
+//                         Edit
+//                       </button>
+//                       <button
+//                         className="btn btn-sm btn-danger"
+//                         onClick={() => deleteSupplier(s.id)}
+//                       >
+//                         Delete
+//                       </button>
+//                     </td>
+//                   </tr>
+//                 ))
+//               ) : (
+//                 <tr>
+//                   <td colSpan="7" className="text-muted small">
+//                     No suppliers found
+//                   </td>
+//                 </tr>
+//               )}
+//             </tbody>
+//           </table>
+//         </div>
+//       </div>
+
+//       {/* Image Preview Modal */}
+//       {showImageModal && (
+//         <div
+//           className="modal fade show d-block"
+//           style={{ backgroundColor: "rgba(0,0,0,0.4)" }}
+//         >
+//           <div className="modal-dialog modal-dialog-centered">
+//             <div className="modal-content p-2">
+//               <div className="modal-header py-1">
+//                 <h6>Image Preview</h6>
+//                 <button
+//                   className="btn-close"
+//                   onClick={() => setShowImageModal(false)}
+//                 />
+//               </div>
+//               <div className="modal-body text-center">
+//                 <img
+//                   src={previewImage}
+//                   alt="Preview"
+//                   className="img-fluid rounded"
+//                 />
+//               </div>
+//             </div>
+//           </div>
+//         </div>
+//       )}
+
+//       {/* Supplier Form Modal */}
+//       {showModal && (
+//         <div
+//           className="modal fade show d-block"
+//           style={{ backgroundColor: "rgba(0,0,0,0.4)" }}
+//         >
+//           <div className="modal-dialog modal-dialog-centered">
+//             <div className="modal-content">
+//               <div className="modal-header py-2">
+//                 <h6 className="mb-0">
+//                   {editingSupplier ? "Edit Supplier" : "Add Supplier"}
+//                 </h6>
+//                 <button
+//                   className="btn-close"
+//                   onClick={() => setShowModal(false)}
+//                 />
+//               </div>
+//               <div className="modal-body p-2">
+//                 <input
+//                   type="text"
+//                   placeholder="Customer Name"
+//                   className="form-control form-control-sm mb-2"
+//                   value={formData.customer_name}
+//                   onChange={(e) =>
+//                     setFormData({ ...formData, customer_name: e.target.value })
+//                   }
+//                 />
+//                 <select
+//                   className="form-select form-select-sm mb-2"
+//                   value={formData.customer_group}
+//                   onChange={(e) =>
+//                     setFormData({ ...formData, customer_group: e.target.value })
+//                   }
+//                 >
+//                   <option value="">Select Group</option>
+//                   <option value="Hospital">Hospital</option>
+//                   <option value="Retail">Retail</option>
+//                   <option value="Distributor">Distributor</option>
+//                 </select>
+//                 <input
+//                   type="text"
+//                   placeholder="GST"
+//                   className="form-control form-control-sm mb-2"
+//                   value={formData.gst}
+//                   onChange={(e) =>
+//                     setFormData({ ...formData, gst: e.target.value })
+//                   }
+//                 />
+//                 <textarea
+//                   placeholder="Address"
+//                   className="form-control form-control-sm mb-2"
+//                   value={formData.address}
+//                   onChange={(e) =>
+//                     setFormData({ ...formData, address: e.target.value })
+//                   }
+//                 />
+//                 <input
+//                   type="file"
+//                   className="form-control form-control-sm"
+//                   accept="image/*"
+//                   onChange={handleImageUpload}
+//                 />
+//                 {previewImage && (
+//                   <img
+//                     src={previewImage}
+//                     alt="Preview"
+//                     width="50"
+//                     height="50"
+//                     className="mt-2 rounded"
+//                   />
+//                 )}
+//               </div>
+//               <div className="modal-footer py-2">
+//                 <button
+//                   className="btn btn-sm btn-secondary"
+//                   onClick={() => setShowModal(false)}
+//                 >
+//                   Close
+//                 </button>
+//                 <button
+//                   className="btn btn-sm btn-primary"
+//                   disabled={isSaving}
+//                   onClick={handleSaveSupplier}
+//                 >
+//                   {isSaving ? "Saving..." : "Save"}
+//                 </button>
+//               </div>
+//             </div>
+//           </div>
+//         </div>
+//       )}
+//     </Fragment>
+//   );
+// };
+
+// export default SupplierMaster;

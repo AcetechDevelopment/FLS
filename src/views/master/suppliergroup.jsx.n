@@ -1,0 +1,732 @@
+import React, { useState, useEffect } from "react";
+import { useRef } from "react";
+import "bootstrap/dist/css/bootstrap.min.css";
+import axios from "axios";
+import { toast } from "react-toastify";
+
+// Create axios instance
+const axiosInstance = axios.create({
+  baseURL: "https://115.124.111.111/FLS/public/api",
+  timeout: 30000,
+  headers: {
+    'Accept': 'application/json',
+    'Content-Type': 'application/json'
+  }
+});
+
+// Add auth token to requests
+axios.interceptors.request.use(config => {
+  const token = sessionStorage.getItem("authToken"); // Using sessionStorage and correct key
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
+}, error => {
+  return Promise.reject(error);
+});
+
+const SupplierGroup = () => {
+  // State Management
+  const [groups, setGroups] = useState([]);
+  const [search, setSearch] = useState("");
+  const [showModal, setShowModal] = useState(false);
+  const [showMaterialModal, setShowMaterialModal] = useState(false);
+  const [editingGroup, setEditingGroup] = useState(null);
+  const [selectedGroupId, setSelectedGroupId] = useState(null);
+  const [tempMaterials, setTempMaterials] = useState([]);
+  const [formData, setFormData] = useState({
+    supplier_name: "",
+    supplier_items: [],
+    description: ""
+  });
+  const [materialForm, setMaterialForm] = useState({
+    material: "",
+    weight: "",
+    price: ""
+  });
+
+  // Refs
+  const inputRefs = useRef([]);
+
+  // Input handlers
+  const handleKeyDown = (e, index) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      const nextIndex = index + 1;
+      if (inputRefs.current[nextIndex]) {
+        inputRefs.current[nextIndex].focus();
+      }
+    }
+  };
+
+  const isNumberKey = (e) => {
+    const char = e.key;
+    const allowedChars = "0123456789";
+    const controlKeys = ["Backspace", "Delete", "ArrowLeft", "ArrowRight", "Tab"];
+    if (controlKeys.includes(char)) return;
+    if (!allowedChars.includes(char)) e.preventDefault();
+  };
+
+  const isDecimalKey = (e) => {
+    const char = e.key;
+    const allowedChars = "0123456789.";
+    const controlKeys = ["Backspace", "Delete", "ArrowLeft", "ArrowRight", "Tab"];
+    if (controlKeys.includes(char)) return;
+    if (!allowedChars.includes(char)) {
+      e.preventDefault();
+      return;
+    }
+    if (char === "." && e.target.value.includes(".")) {
+      e.preventDefault();
+    }
+  };
+
+  // API handlers
+  const fetchGroups = async () => {
+    try {
+      const token = sessionStorage.getItem("authToken");
+      if (!token) {
+        toast.error("Session expired. Please login again.");
+        window.location.href = "/login";
+        return;
+      }
+
+      const res = await axios.get(
+        "https://115.124.111.111/FLS/public/api/supplier-group/list",
+        { 
+          headers: { 
+            Authorization: `Bearer ${token}`,
+            'Accept': 'application/json',
+            'Content-Type': 'application/json'
+          } 
+        }
+      );
+
+      // Handle different possible response structures
+      const responseData = res.data?.data || res.data || [];
+      const normalizedGroups = responseData.map(group => {
+        // Ensure supplier_items is always an array
+        let supplier_items = [];
+        try {
+          if (typeof group.supplier_items === 'string') {
+            supplier_items = JSON.parse(group.supplier_items) || [];
+          } else if (Array.isArray(group.supplier_items)) {
+            supplier_items = group.supplier_items;
+          }
+        } catch (e) {
+          console.warn('Error parsing supplier_items:', e);
+        }
+
+        return {
+          id: group.id,
+          supplier_name: group.supplier_name || '',
+          description: group.description || '',
+          supplier_items: supplier_items
+        };
+      });
+
+      console.log('Normalized groups:', normalizedGroups);
+      setGroups(normalizedGroups);
+      if (res.data && Array.isArray(res.data.data)) {
+        setGroups(res.data.data.map(g => ({ ...g, materials: g.materials || [] })));
+      }
+    } catch (err) {
+      console.error("Error fetching supplier groups:", err);
+      toast.error("Failed to load supplier groups");
+    }
+  };
+
+  const handleSaveGroup = async () => {
+    if (!formData.groupName.trim()) {
+      toast.error("Group name is required");
+      return;
+    }
+
+    const token = sessionStorage.getItem("authToken");
+    if (!token) {
+      toast.error("You are not logged in. Please login again.");
+      return;
+    }
+
+    try {
+      const endpoint = editingGroup
+        ? "https://115.124.111.111/FLS/public/api/supplier-group/update"
+        : "https://115.124.111.111/FLS/public/api/supplier-group/create";
+      
+      // Ensure supplier_items is properly formatted
+      let supplier_items = [];
+      try {
+        if (Array.isArray(formData.supplier_items)) {
+          supplier_items = formData.supplier_items;
+        } else if (typeof formData.supplier_items === 'string') {
+          supplier_items = JSON.parse(formData.supplier_items);
+        }
+      } catch (e) {
+        console.warn('Error parsing supplier_items:', e);
+      }
+
+      const payload = {
+        supplier_name: formData.supplier_name,
+        supplier_items: JSON.stringify(supplier_items), // Convert to string for API
+        description: formData.description || "",
+        ...(editingGroup && { id: editingGroup.id })
+      };
+
+      console.log('Saving group with payload:', payload); // For debugging
+
+      const res = await axios({
+        method: editingGroup ? 'put' : 'post',
+        url: endpoint,
+        data: payload,
+        headers: { 
+          Authorization: `Bearer ${token}`,
+          'Accept': 'application/json',
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (res.data && (res.data.success || res.status === 200)) {
+        toast.success(editingGroup ? "Group updated successfully" : "Group created successfully");
+        fetchGroups();
+        setShowModal(false);
+        setFormData({ groupName: "", description: "", groupMembers: [] });
+      } else {
+        console.error('API Response:', res.data);
+        toast.error(res.data?.message || (editingGroup ? "Failed to update group" : "Failed to create group"));
+      }
+    } catch (err) {
+      console.error("Error saving group:", err.response?.data || err);
+      toast.error(err.response?.data?.message || "API error while saving group");
+    }
+  };
+
+  const deleteRow = async (id) => {
+    if (!window.confirm("Are you sure you want to delete this group?")) return;
+    try {
+      const token = localStorage.getItem("token");
+      if (!token) {
+        toast.error("You are not logged in. Please login again.");
+        return;
+      }
+
+      const res = await axios.delete(
+        `https://115.124.111.111/FLS/public/api/supplier-group/delete/${id}`,
+        { 
+          headers: { 
+            Authorization: `Bearer ${token}`,
+            'Accept': 'application/json',
+            'Content-Type': 'application/json'
+          } 
+        }
+      );
+      if (res.data.success) {
+        toast.success("Group deleted successfully");
+        fetchGroups();
+      } else {
+        toast.error("Failed to delete group");
+      }
+    } catch (err) {
+      console.error("Error deleting group:", err);
+      toast.error("API error while deleting group");
+    }
+  };
+
+  const handleSaveMaterial = async () => {
+    if (!selectedGroupId) return toast.warning("No group selected.");
+    if (!materialForm.material) return toast.warning("Enter material name.");
+
+    const token = sessionStorage.getItem("authToken");
+    if (!token) {
+      toast.error("Session expired. Please login again.");
+      window.location.href = "/login";
+      return;
+    }
+
+    try {
+      const res = await axios.post(
+        "https://115.124.111.111/FLS/public/api/supplier-group/create",
+        {
+          groupId: selectedGroupId,
+          material: materialForm.material,
+          weight: materialForm.weight,
+          price: materialForm.price,
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            'Accept': 'application/json',
+            'Content-Type': 'application/json'
+          },
+        }
+      );
+
+      if (res.data.success) {
+        toast.success("Material saved successfully!");
+        fetchGroups();
+        setShowMaterialModal(false);
+        setMaterialForm({ material: "", weight: "", price: "" });
+      } else {
+        toast.error("Failed to save material. Please try again.");
+      }
+    } catch (error) {
+      console.error("Error saving material:", error);
+      toast.error("API error: Failed to save material");
+    }
+  };
+
+  // Material handlers
+  const addTempMaterial = () => {
+    if (!materialForm.material || !materialForm.weight || !materialForm.price) {
+      toast.warning("Please fill all fields");
+      return;
+    }
+    setTempMaterials([...tempMaterials, materialForm]);
+    setMaterialForm({ material: "", weight: "", price: "" });
+  };
+
+  const removeTempMaterial = (index) => {
+    setTempMaterials(tempMaterials.filter((_, i) => i !== index));
+  };
+
+  // Modal handlers
+  const handleNewGroup = () => {
+    setEditingGroup(null);
+    setFormData({ supplier_name: "", description: "", supplier_items: [] });
+    setShowModal(true);
+  };
+
+  const handleEditGroup = (group) => {
+    setEditingGroup(group);
+    setFormData(group);
+    setShowModal(true);
+  };
+
+  const openMaterialModal = (groupId) => {
+    setSelectedGroupId(groupId);
+    setMaterialForm({ material: "", weight: "", price: "" });
+    setTempMaterials([]);
+    setShowMaterialModal(true);
+  };
+
+  // Filtered groups
+  const filteredGroups = groups.filter((g) => {
+    const searchTerm = search.toLowerCase();
+    const supplierName = (g.supplier_name || "").toLowerCase();
+    const description = (g.description || "").toLowerCase();
+    
+    return supplierName.includes(searchTerm) || description.includes(searchTerm);
+  });
+
+  // Load groups on mount
+  useEffect(() => {
+    fetchGroups();
+  }, []);
+
+  return (
+     
+<div className="container">
+      {/* Toolbar */}
+<div className="d-flex justify-content-between align-items-center mb-2 px-2">
+  {/* ✅ Action Buttons */}
+  <div className="d-flex flex-wrap gap-2">
+    {/* New Group */}
+    <button
+      className="btn btn-sm btn-success py-1 px-2 d-flex align-items-center"
+      style={{ borderRadius: "8px", fontSize: "12px" }}
+      onClick={handleNewGroup}
+    >
+      <span
+        className="material-icons-two-tone me-1"
+        style={{ fontSize: "12px" }}
+      >
+        add
+      </span>
+      New
+    </button>
+
+    {/* PDF */}
+  
+  </div>
+
+  {/* ✅ Search Box */}
+  <div style={{ width: "250px" }}>
+    <input
+      type="text"
+      className="form-control form-control-sm"
+      placeholder="🔍 Search group..."
+      value={search}
+      onChange={(e) => setSearch(e.target.value)}
+      style={{ borderRadius: "8px" }}
+    />
+  </div>
+</div>
+
+      {/* ✅ Table */}
+<div className="table-responsive">
+  <table className="table table-bordered table-sm align-middle">
+    <thead className="table-light">
+<tr className="text-center" style={{ fontSize: "12px" }}>
+  <th>Supplier Name</th>
+  {/* <th>Supplier</th> */}
+  {/* <th>Material</th> */}
+  <th>Materials</th>
+  {/* <th>Pieces</th> */}
+  <th style={{ minWidth: "100px" }}>Action</th>
+</tr>
+    </thead>
+
+    <tbody style={{ lineHeight: "1.05" }}>
+      {filteredGroups.map((group) => (
+        <tr className="text-center" key={group.id}>
+          {/* Group Name */}
+          <td className="py-1 px-1">{group.supplier_name}</td>
+
+          {/* Supplier Dropdown */}
+
+          {/* Materials list + + button */}
+<td>
+  {Array.isArray(group.supplier_items) && group.supplier_items.length > 0 && (
+    <ul className="mb-0">
+      {group.supplier_items.map((m) => (
+        <li key={m.id}>
+          {m.supplier} | {m.material} | {m.pieces}
+        </li>
+      ))}
+    </ul>
+  )}
+
+<button
+  className="btn btn-success ms-2"
+  style={{
+    padding: "0.15rem 0.35rem", // smaller padding
+    fontSize: "12px",           // smaller font
+    lineHeight: "1",            // compact line-height
+    height: "22px",              // optional fixed height
+    minWidth: "22px"             // optional fixed width for a square look
+  }}
+  onClick={() => openMaterialModal(group.id)}
+>
+  +
+</button> 
+</td>
+
+          {/* No. of Pieces */}
+
+          {/* Action */}
+          <td className="py-1 px-1">
+            {/* Edit */}
+            <button
+              className="btn btn-sm p-0 me-1"
+              style={{ background: "transparent", border: "none" }}
+              onClick={() => handleEditGroup(group)}
+              title="Edit"
+            >
+              <span
+                className="material-icons-two-tone text-warning"
+                style={{ fontSize: "16px", cursor: "pointer" }}
+              >
+                edit
+              </span>
+            </button>
+
+            {/* Delete */}
+            <button
+              className="btn btn-sm p-0"
+              style={{ background: "transparent", border: "none" }}
+              onClick={() => deleteRow(group.id)}
+              title="Delete"
+            >
+              <span
+                className="material-icons-two-tone text-danger"
+                style={{ fontSize: "16px", cursor: "pointer" }}
+              >
+                delete
+              </span>
+            </button>
+          </td>
+        </tr>
+      ))}
+
+      {filteredGroups.length === 0 && (
+        <tr>
+          <td colSpan="6" className="text-center text-muted py-1" style={{ fontSize: "12px" }}>
+            No supplier groups found
+          </td>
+        </tr>
+      )}
+    </tbody>
+  </table>
+</div>
+
+      {/* ✅ Group Modal (only keep one version) */}
+{showModal && (
+  <div
+    className="modal fade show d-block"
+    tabIndex="-1"
+    style={{ backgroundColor: "rgba(0,0,0,0.5)" }}
+  >
+    <div className="modal-dialog modal-sm">
+      <div className="modal-content">
+        {/* Header */}
+        <div className="modal-header py-2 px-3">
+          <h5 className="modal-title" style={{ fontSize: "14px" }}>
+            {editingGroup ? "Edit Group" : "Add Group"}
+          </h5>
+          <button
+            type="button"
+            className="btn-close"
+            aria-label="Close"
+            onClick={() => setShowModal(false)}
+          ></button>
+        </div>
+
+        {/* Body */}
+        <div className="modal-body p-2" style={{ fontSize: "13px" }}>
+          {/* Group Name */}
+          <div className="mb-2">
+            <label className="form-label" style={{ fontSize: "13px" }}>
+              Group Name
+            </label>
+            <input
+              type="text"
+              className="form-control form-control-sm"
+              value={formData.groupName || ""}
+              onChange={(e) =>
+                setFormData({ ...formData, groupName: e.target.value })
+              }
+              placeholder="Enter Group Name"
+              ref={(el) => (inputRefs.current[0] = el)}
+              onKeyDown={(e) => handleKeyDown(e, 0)}
+            />
+          </div>
+
+          {/* Group Members */}
+          <div className="mb-2">
+            <label className="form-label" style={{ fontSize: "13px" }}>
+              Group Members
+            </label>
+            <div
+              className="border rounded p-2"
+              style={{ maxHeight: "150px", overflowY: "auto" }}
+            >
+              {["Supplier 1", "Supplier 2", "Supplier 3", "Supplier 4"].map(
+                (supplier, index) => (
+                  <div className="form-check" key={index}>
+                    <input
+                      type="checkbox"
+                      className="form-check-input"
+                      id={`supplier-${index}`}
+                      value={supplier}
+                      checked={
+                        formData.groupMembers?.includes(supplier) || false
+                      }
+                      onChange={(e) => {
+                        const updated = e.target.checked
+                          ? [...(formData.groupMembers || []), supplier]
+                          : (formData.groupMembers || []).filter(
+                              (s) => s !== supplier
+                            );
+                        setFormData({ ...formData, groupMembers: updated });
+                      }}
+                      ref={(el) => (inputRefs.current[index + 1] = el)}
+                      onKeyDown={(e) => handleKeyDown(e, index + 1)}
+                    />
+                    <label
+                      className="form-check-label"
+                      htmlFor={`supplier-${index}`}
+                    >
+                      {supplier}
+                    </label>
+                  </div>
+                )
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Footer */}
+        <div className="modal-footer py-2 px-3">
+          <button
+            className="btn btn-sm btn-primary"
+            onClick={handleSaveGroup}
+            ref={(el) => (inputRefs.current[5] = el)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                e.preventDefault();
+                handleSaveGroup();
+              }
+            }}
+          >
+            {editingGroup ? "Update" : "Save"}
+          </button>
+          <button
+            className="btn btn-sm btn-secondary"
+            onClick={() => setShowModal(false)}
+          >
+            Cancel
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+)}
+      {/* ====== NEW: Material Modal ====== */}
+{showMaterialModal && (
+  <div
+    className="modal fade show d-block"
+    tabIndex="-1"
+    style={{ backgroundColor: "rgba(0,0,0,0.5)" }}
+  >
+    <div className="modal-dialog modal-lg">
+      <div className="modal-content">
+        <div className="modal-header py-2 px-3">
+          <h5 className="modal-title" style={{ fontSize: "14px" }}>Add Material</h5>
+          <button
+            type="button"
+            className="btn-close"
+            aria-label="Close"
+            onClick={() => setShowMaterialModal(false)}
+          ></button>
+        </div>
+
+        <div
+          className="modal-body p-2"
+          style={{
+            fontSize: "13px",
+            maxHeight: "400px",
+            overflowY: "auto",
+            overflowX: "hidden",
+          }}
+        >
+          <div className="row">
+            {/* Left Side - Materials List */}
+<div className="col-6 border-end d-flex flex-column">
+  <h6 style={{ fontSize: "13px" }}>Added Materials</h6>
+
+  {/* Scrollable List */}
+  <div
+    style={{
+      maxHeight: "250px",   // adjust as needed
+      overflowY: "auto",
+      overflowX: "hidden",
+      flexGrow: 1,
+    }}
+    className="mb-2"
+  >
+    {tempMaterials.length > 0 ? (
+      <ul className="list-group list-group-sm">
+        {tempMaterials.map((m, index) => (
+          <li
+            key={index}
+            className="list-group-item d-flex justify-content-between align-items-center py-1 px-2"
+            style={{ fontSize: "12px" }}
+          >
+            <span className="me-2 flex-grow-1">
+              {m.material} | {m.weight} Kg | ₹{m.price}
+            </span>
+            <button
+              className="btn btn-sm btn-danger py-0 px-2"
+              onClick={() => removeTempMaterial(index)}
+            >
+              x
+            </button>
+          </li>
+        ))}
+      </ul>
+    ) : (
+      <p className="text-muted" style={{ fontSize: "12px" }}>
+        No materials added yet
+      </p>
+    )}
+  </div>
+
+  {/* Footer stays fixed below list */}
+
+</div>
+
+            {/* Right Side - Add New Material */}
+            <div className="col-6">
+              <h6 style={{ fontSize: "13px" }}>New Material</h6>
+
+              {/* Material select */}
+              <div className="mb-2">
+                <label className="form-label" style={{ fontSize: "13px" }}>Material</label>
+                <select
+                  className="form-select form-select-sm"
+                  value={materialForm.material}
+                  onChange={(e) =>
+                    setMaterialForm({ ...materialForm, material: e.target.value })
+                  }
+                  ref={(el) => (inputRefs.current[2] = el)}
+                  onKeyDown={(e) => handleKeyDown(e, 2)}
+                >
+                  <option value="">Select Material</option>
+                  <option value="Bedsheet">Bedsheet</option>
+                  <option value="Towel">Towel</option>
+                </select>
+              </div>
+
+              {/* Weight input */}
+              <div className="mb-2">
+                <label className="form-label" style={{ fontSize: "13px" }}>Weight (Kg)</label>
+                <input
+                  type="text"
+                  className="form-control form-control-sm"
+                  value={materialForm.weight}
+                  onKeyDown={(e) => {
+                    isNumberKey(e);
+                    handleKeyDown(e, 3);
+                  }}
+                  onChange={(e) =>
+                    setMaterialForm({ ...materialForm, weight: e.target.value })
+                  }
+                  ref={(el) => (inputRefs.current[3] = el)}
+                />
+              </div>
+
+              {/* Price input */}
+              <div className="mb-2">
+                <label className="form-label" style={{ fontSize: "13px" }}>Price (₹)</label>
+                <input
+                  type="text"
+                  className="form-control form-control-sm"
+                  value={materialForm.price}
+                  onKeyDown={(e) => {
+                    isNumberKey(e);
+                    handleKeyDown(e, 4);
+                  }}
+                  onChange={(e) =>
+                    setMaterialForm({ ...materialForm, price: e.target.value })
+                  }
+                  ref={(el) => (inputRefs.current[4] = el)}
+                />
+              </div>
+
+              {/* Add button */}
+       <button
+  className="btn btn-sm btn-success"
+  ref={(el) => (inputRefs.current[5] = el)}
+  onKeyDown={(e) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      addTempMaterial();   // ✅ Add material on Enter
+    }
+  }}
+  onClick={addTempMaterial}
+>
+  Add
+</button>
+
+            </div>
+            
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+)}
+    </div>
+  );
+};
+
+export default SupplierGroup;
