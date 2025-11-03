@@ -61,6 +61,7 @@ const MaterialStock = () => {
               <thead className="table-primary text-center">
                 <tr>
                   <th className="py-2 px-2 text-center">Material Code</th>
+                  <th className="py-2 px-2 text-center">Customer Name</th>
                   <th className="py-2 px-2 text-center">Material Name</th>
                   {/* <th className="py-2 px-2 text-center">Default Price</th> */}
                   <th className="py-2 px-2 text-center">Material Type</th>
@@ -79,11 +80,12 @@ const MaterialStock = () => {
                   materials.map((m) => (
                     <tr key={m.id}>
                       <td className="py-1 px-2 text-center">{m.material_id || "-"}</td>
+                      <td className="py-1 px-2 text-center">{m.customer_name || "-"}</td>
                       <td className="py-1 px-2 text-center">{m.material_name || "-"}</td>
                       {/* <td className="py-1 px-2 text-center">{m.default_price ?? 0}</td> */}
                       <td className="py-1 px-2 text-center">{m.material_type || "N/A"}</td>
                       <td className="py-1 px-2 text-center">{m.fresh || 0}</td>
-                      <td className="py-1 px-2 text-center">{m.soil || 0}</td>
+                      <td className="py-1 px-2 text-center">{m.qty || 0}</td>
                     </tr>
                   ))
                 ) : (

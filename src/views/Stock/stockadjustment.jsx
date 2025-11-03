@@ -115,6 +115,7 @@ const StockAdjustment = () => {
               <thead className="table-primary text-center">
                 <tr>
                   <th>Material ID</th>
+                  <th>Customer Name</th>
                   <th>Material Name</th>
                   <th>Material Type</th>
                   <th>Default Price</th>
@@ -127,6 +128,7 @@ const StockAdjustment = () => {
                   materials.map((m) => (
                     <tr key={m.id}>
                       <td className="text-center">{m.material_id}</td>
+                      <td className="text-center">{m.customer_name}</td>
                       <td className="text-center">{m.material_name}</td>
                       <td className="text-center">{m.material_type}</td>
 

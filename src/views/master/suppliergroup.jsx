@@ -652,7 +652,7 @@ const deleteMaterial = async (materialId) => {
   <table className="table table-bordered table-sm align-middle">
     <thead className="table-light">
 <tr className="text-center" style={{ fontSize: "12px" }}>
-  <th> Customer Name</th>
+  <th> Group Name</th>
   {/* <th>Supplier</th> */}
   {/* <th>Material</th> */}
   <th>Materials</th>
@@ -797,7 +797,7 @@ const deleteMaterial = async (materialId) => {
               onChange={(e) =>
                 setFormData({ ...formData, supplier_name: e.target.value })
               }
-              placeholder="Enter Customer Name"
+              placeholder="Enter Group Name"
               ref={(el) => (inputRefs.current[0] = el)}
               onKeyDown={(e) => handleKeyDown(e, 0)}
             />
