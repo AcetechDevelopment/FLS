@@ -4,6 +4,8 @@ import axios from "axios";
 import { PrintUtils } from "../../utils/printUtils";
 import { toast } from "react-toastify";
 
+const BASE_URL = "https://115.124.111.111/FLS/public/api";
+
 const InwardPage = () => {
   const [formData, setFormData] = useState({
     customerName: "",
@@ -14,19 +16,17 @@ const InwardPage = () => {
 
   const [selectedCustomerId, setSelectedCustomerId] = useState(null);
   const [customers, setCustomers] = useState([]);
-  const [materials, setMaterials] = useState([]);
   const [availableMaterials, setAvailableMaterials] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [newMaterial, setNewMaterial] = useState({ material: "", quantity: "" });
+  const [showModal, setShowModal] = useState(false);
 
-  const qtyRefs = useRef([]);
   const headerRefs = useRef([]);
 
   const handlePrint = () => {
-    PrintUtils.Print(materials);
+    PrintUtils.Print(availableMaterials);
   };
 
-  // ✅ Fetch customers from API
+  // ✅ Fetch customers
   useEffect(() => {
     const fetchCustomers = async () => {
       const token = sessionStorage.getItem("authToken");
@@ -37,32 +37,28 @@ const InwardPage = () => {
 
       try {
         setLoading(true);
-        const response = await axios.get(
-          "https://115.124.111.111/FLS/public/api/options/getcustomers",
-          {
-            headers: {
-              Accept: "application/json",
-              Authorization: `Bearer ${token}`,
-            },
-          }
-        );
+        const response = await axios.get(`${BASE_URL}/options/getcustomers`, {
+          headers: {
+            Accept: "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+        });
 
         let customerList = [];
         const res = response.data;
-        if (Array.isArray(res)) {
-          customerList = res;
-        } else if (Array.isArray(res?.data)) {
-          customerList = res.data;
-        } else if (Array.isArray(res?.customers)) {
-          customerList = res.customers;
-        } else if (Array.isArray(res?.data?.customers)) {
+        if (Array.isArray(res)) customerList = res;
+        else if (Array.isArray(res?.data)) customerList = res.data;
+        else if (Array.isArray(res?.customers)) customerList = res.customers;
+        else if (Array.isArray(res?.data?.customers))
           customerList = res.data.customers;
-        }
 
-        customerList = customerList.filter((c) => c && c.id && c.customer_name);
+        customerList = customerList.filter(
+          (c) => c && c.id && c.customer_name
+        );
         setCustomers(customerList);
       } catch (error) {
         console.error("❌ Error fetching customers:", error);
+        toast.error("Failed to fetch customer data.");
         setCustomers([]);
       } finally {
         setLoading(false);
@@ -72,17 +68,48 @@ const InwardPage = () => {
     fetchCustomers();
   }, []);
 
-  // ✅ Auto-generate inward/ref numbers
+  // ✅ Fetch inward number
+  const fetchInwardNumber = async () => {
+    try {
+      const token = sessionStorage.getItem("authToken");
+      if (!token) {
+        toast.error("Unauthorized. Please login again.");
+        return;
+      }
+
+      const response = await axios.get(`${BASE_URL}/options/getinwarddata`, {
+        headers: {
+          Accept: "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      console.log("📦 Inward number API response:", response.data);
+
+      if (response.data?.data?.inward_no) {
+        setFormData((prev) => ({
+          ...prev,
+          inwardNo: response.data.data.inward_no,
+          referenceNo: response.data.data.reference_no || "",
+        }));
+      } else if (response.data?.inward_no) {
+        setFormData((prev) => ({
+          ...prev,
+          inwardNo: response.data.inward_no,
+          referenceNo: response.data.reference_no || "",
+        }));
+      } else {
+        toast.warning("Inward number not found in API response.");
+      }
+    } catch (error) {
+      console.error("❌ Error fetching inward number:", error);
+      toast.error("Failed to fetch inward number.");
+    }
+  };
+
+  // Fetch inward number on load
   useEffect(() => {
-    setFormData((prev) => {
-      const randomInward = "INV-" + Math.floor(1000 + Math.random() * 9000);
-      const randomRef = "REF-" + Math.floor(1000 + Math.random() * 9000);
-      return {
-        ...prev,
-        inwardNo: prev.inwardNo || randomInward,
-        referenceNo: prev.referenceNo || randomRef,
-      };
-    });
+    fetchInwardNumber();
   }, []);
 
   // ✅ Handle customer change
@@ -102,7 +129,13 @@ const InwardPage = () => {
       }));
 
       if (Array.isArray(selectedCustomer.materials)) {
-        setAvailableMaterials(selectedCustomer.materials);
+        const formatted = selectedCustomer.materials.map((m) => ({
+          material_id: m.id || m.material_id,
+          material_name: m.material_name || m.name,
+          qty: m.qty || 0,
+          default_price: m.default_price || m.price || 0,
+        }));
+        setAvailableMaterials(formatted);
       } else {
         setAvailableMaterials([]);
       }
@@ -111,75 +144,60 @@ const InwardPage = () => {
     }
   };
 
-  // ✅ Add material row
-  const handleAddMaterial = () => {
-    if (!newMaterial.material || !newMaterial.quantity) {
-      toast.warning("Please fill both Material and Quantity");
-      return;
-    }
+  // ✅ Save inward data (POST method)
+// ✅ Save inward data (GET method)
+const handleSave = async () => {
+  if (!selectedCustomerId) {
+    toast.warning("Please select a customer before saving!");
+    return;
+  }
 
-    setMaterials((prev) => [...prev, { ...newMaterial, id: Date.now() }]);
-    setNewMaterial({ material: "", quantity: "" });
-  };
+  const token = sessionStorage.getItem("authToken");
 
-  // ✅ Remove material
-  const handleRemove = (id) => {
-    setMaterials((prev) => prev.filter((m) => m.id !== id));
-  };
+  try {
+    // Convert payload into query string (GET doesn’t send body)
+    const params = {
+      inward_no: formData.inwardNo,
+      reference_no: formData.referenceNo,
+      customer_id: selectedCustomerId,
+      address: formData.address,
+    };
 
-  // ✅ Save inward via API
-  const handleSave = async () => {
-    if (!selectedCustomerId) {
-      toast.warning("Please select a customer before saving!");
-      return;
-    }
-
-    if (!materials.length) {
-      toast.warning("Please add at least one material!");
-      return;
-    }
-
-    try {
-      const token = sessionStorage.getItem("authToken");
-      if (!token) {
-        toast.error("Unauthorized. Please login again.");
-        return;
+    const response = await axios.get(
+      `${BASE_URL}/options/getinwarddata`,
+      {
+        params, // pass data as query string
+        headers: {
+          Accept: "application/json",
+          Authorization: `Bearer ${token}`,
+        },
       }
+    );
 
-      const payload = {
-        inward_no: formData.inwardNo,
-        reference_no: formData.referenceNo,
-        customer_id: selectedCustomerId,
-        address: formData.address,
-        materials: materials.map((m) => ({
-          material_name: m.material,
-          quantity: m.quantity,
-        })),
-      };
+    console.log("✅ Save response:", response.data);
+    toast.success("Inward data saved successfully!");
 
-      const response = await axios.post(
-        "https://115.124.111.111/FLS/public/api/inward/create",
-        payload,
-        {
-          headers: {
-            Accept: "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-        }
+    if (response.data?.data?.inward_no) {
+      setFormData((prev) => ({
+        ...prev,
+        inwardNo: response.data.data.inward_no,
+      }));
+    }
+
+    setShowModal(true);
+  } catch (error) {
+    console.error("❌ Error saving inward data:", error);
+    if (error.response?.status === 401) {
+      toast.error("Unauthorized. Please login again.");
+    } else {
+      toast.error(
+        `Failed to save inward data. ${
+          error.response?.data?.message || ""
+        }`
       );
-
-      if (response.data?.message?.toLowerCase().includes("success")) {
-        toast.success("Inward saved successfully!");
-        setMaterials([]);
-      } else {
-        toast.error(response.data?.message || "Failed to save inward!");
-      }
-    } catch (error) {
-      console.error("❌ Error saving inward:", error);
-      toast.error("Save failed. Please try again.");
     }
-  };
-
+  }
+};
   return (
     <div
       className="container"
@@ -192,7 +210,6 @@ const InwardPage = () => {
     >
       {/* Header Inputs */}
       <div className="row align-items-center g-1">
-        {/* Customer Dropdown */}
         <div className="col-md-3">
           <select
             ref={(el) => (headerRefs.current[0] = el)}
@@ -221,7 +238,6 @@ const InwardPage = () => {
           </select>
         </div>
 
-        {/* Address */}
         <div className="col-md-3">
           <textarea
             ref={(el) => (headerRefs.current[1] = el)}
@@ -243,7 +259,23 @@ const InwardPage = () => {
           />
         </div>
 
-        {/* Reference No */}
+        <div className="col-md-3">
+          <input
+            type="text"
+            ref={(el) => (headerRefs.current[2] = el)}
+            className="form-control form-control-sm"
+            style={{
+              fontSize: "10px",
+              height: "20px",
+              padding: "0 2px",
+              borderRadius: "8px",
+            }}
+            placeholder="Inward No."
+            value={formData.inwardNo || ""}
+            readOnly
+          />
+        </div>
+
         <div className="col-md-3">
           <input
             type="text"
@@ -265,181 +297,153 @@ const InwardPage = () => {
       </div>
 
       {/* Materials Table */}
-<div className="mt-3">
-  <div className="card" style={{ height: "400px", marginBottom: "10px" }}>
-    <div
-      className="card-body p-0"
-      style={{ height: "100%", overflow: "hidden" }}
-    >
-      <table
-        className="table table-bordered table-sm mb-0"
-        style={{ fontSize: "11px" }}
-      >
-        <thead
-          className="table-light text-center"
-          style={{ position: "sticky", top: 0, zIndex: 2 }}
-        >
-          <tr style={{ fontSize: "11px", lineHeight: "1.6" }}>
-            <th style={{ width: "6%", padding: "2px" }}>Sl.No</th>
-            <th style={{ padding: "2px" }}>Material</th>
-            <th style={{ width: "14%", padding: "2px" }}> Qty  </th>
-            <th style={{ width: "10%", padding: "2px" }}> Price </th>
-             {/* <th style={{ width: "14%", padding: "2px" }}>Qty</th> */}
+      <div className="mt-3">
+        <div className="card" style={{ height: "400px", marginBottom: "10px" }}>
+          <div
+            className="card-body p-0"
+            style={{ height: "100%", overflow: "hidden" }}
+          >
+            <table
+              className="table table-bordered table-sm mb-0"
+              style={{ fontSize: "11px" }}
+            >
+              <thead
+                className="table-light text-center"
+                style={{ position: "sticky", top: 0, zIndex: 2 }}
+              >
+                <tr style={{ fontSize: "11px", lineHeight: "1.6" }}>
+                  <th style={{ width: "6%", padding: "2px" }}>Sl.No</th>
+                  <th style={{ padding: "2px" }}>Material</th>
+                  <th style={{ width: "14%", padding: "2px" }}>Qty</th>
+                  <th style={{ width: "10%", padding: "2px" }}>Price</th>
+                </tr>
+              </thead>
+            </table>
 
-          </tr>
-        </thead>
-      </table>
+            <div style={{ height: "calc(100% - 35px)", overflowY: "auto" }}>
+              <table
+                className="table table-bordered table-sm mb-0"
+                style={{ fontSize: "11px" }}
+              >
+                <tbody>
+                  {availableMaterials.map((mat, i) => (
+                    <tr key={mat.material_id || i} className="text-center">
+                      <td style={{ width: "6%", padding: "2px" }}>{i + 1}</td>
+                      <td style={{ padding: "2px" }}>{mat.material_name}</td>
+                      <td style={{ width: "14%", padding: "2px" }}>
+                        <input
+                          type="number"
+                          min="0"
+                          value={mat.qty ?? ""}
+                          onChange={(e) => {
+                            const updated = [...availableMaterials];
+                            updated[i] = {
+                              ...updated[i],
+                              qty: e.target.value,
+                            };
+                            setAvailableMaterials(updated);
+                          }}
+                          className="form-control form-control-sm text-center"
+                          style={{
+                            fontSize: "11px",
+                            height: "22px",
+                            padding: "0",
+                          }}
+                        />
+                      </td>
+                      <td style={{ width: "10%", padding: "2px" }}>
+                        ₹{mat.default_price ?? mat.price ?? 0}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
 
-      <div style={{ height: "calc(100% - 35px)", overflowY: "auto" }}>
-        <table
-          className="table table-bordered table-sm mb-0"
-          style={{ fontSize: "11px" }}
-        >
-       <tbody>
-  {/* Existing Materials */}
-  {materials.map((m, index) => (
-    <tr key={m.id || index} className="text-center">
-      <td style={{ width: "6%", padding: "2px" }}>{index + 1}</td>
-
-      <td style={{ padding: "2px" }}>
-        {m.material || m.material_name}
-      </td>
-
-      <td style={{ width: "14%", padding: "2px" }}>
-        {m.quantity || m.qty}
-      </td>
-
-      {/* Price column: show price and small delete button */}
-      <td style={{ width: "10%", padding: "2px" }}>
+        {/* Save Buttons */}
         <div
+          className="card shadow-sm border-0"
           style={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            gap: "6px",
+            bottom: 0,
+            right: 0,
+            width: "100%",
+            zIndex: 1000,
           }}
         >
-          <span style={{ lineHeight: "1" }}>
-            ₹{m.default_price ?? m.price ?? 0}
-          </span>
+          <div className="card-body py-2 px-2 border-0">
+            <div className="row g-1 align-items-center">
+              <div className="col-12 col-md-4 d-flex justify-content-md-end justify-content-center gap-2 flex-wrap ms-auto">
+                <button
+                  className="btn btn-primary btn-sm"
+                  style={{
+                    padding: "2px 8px",
+                    fontSize: "12px",
+                    height: "28px",
+                    borderRadius: "8px",
+                    minWidth: "90px",
+                  }}
+                  onClick={handleSave}
+                >
+                  Save
+                </button>
 
-          {/* delete button stays small and unobtrusive */}
-          <button
-            className="btn btn-sm p-0"
-            title="Delete"
-            style={{
-              background: "transparent",
-              border: "none",
-              marginLeft: "6px",
-            }}
-            onClick={() => handleRemove(m.id)}
-          >
-            <span
-              className="material-icons-two-tone text-danger"
-              style={{ fontSize: "16px", cursor: "pointer" }}
-            >
-              delete
-            </span>
-          </button>
-        </div>
-      </td>
-    </tr>
-  ))}
-
-  {/* Available Materials with Qty Input and Price shown */}
-  {availableMaterials.length > 0 && (
-    <>
-      {availableMaterials.map((mat, i) => (
-        <tr key={mat.id || i} className="text-center">
-          <td style={{ width: "6%", padding: "2px" }}>
-            {materials.length + i + 1}
-          </td>
-
-          <td style={{ padding: "2px" }}>{mat.material_name}</td>
-
-          <td style={{ width: "14%", padding: "2px" }}>
-            <input
-              type="number"
-              min="0"
-              value={mat.qty ?? ""}
-              onChange={(e) => {
-                const updated = [...availableMaterials];
-                updated[i] = { ...updated[i], qty: e.target.value };
-                setAvailableMaterials(updated);
-              }}
-              className="form-control form-control-sm text-center"
-              style={{
-                fontSize: "11px",
-                height: "22px",
-                padding: "0",
-              }}
-            />
-          </td>
-
-          {/* Price column: show price (no delete for available items) */}
-          <td style={{ width: "10%", padding: "2px" }}>
-            <span>₹{mat.default_price ?? mat.price ?? 0}</span>
-          </td>
-        </tr>
-      ))}
-    </>
-  )}
-</tbody>
-
-        </table>
-      </div>
-    </div>
-  </div>
-
-  {/* Bottom Buttons */}
-  <div
-    className="card shadow-sm border-0"
-    style={{
-      bottom: 0,
-      right: 0,
-      width: "100%",
-      zIndex: 1000,
-    }}
-  >
-    
-    <div className="card-body py-2 px-2 border-0">
-      <div className="row g-1 align-items-center">
-        <div className="col-12 col-md-4 d-flex justify-content-md-end justify-content-center gap-2 flex-wrap ms-auto">
-          <button
-            className="btn btn-primary btn-sm"
-            style={{
-              padding: "2px 8px",
-              fontSize: "12px",
-              height: "28px",
-              borderRadius: "8px",
-              minWidth: "90px",
-            }}
-            onClick={handleSave}
-          >
-            Save
-          </button>
-
-          <button
-            className="btn btn-success btn-sm"
-            style={{
-              padding: "2px 8px",
-              fontSize: "12px",
-              height: "28px",
-              borderRadius: "8px",
-              minWidth: "110px",
-            }}
-            onClick={async () => {
-              await handleSave();
-              handlePrint();
-            }}
-          >
-            Save &amp; Print
-          </button>
+                <button
+                  className="btn btn-success btn-sm"
+                  style={{
+                    padding: "2px 8px",
+                    fontSize: "12px",
+                    height: "28px",
+                    borderRadius: "8px",
+                    minWidth: "110px",
+                  }}
+                  onClick={async () => {
+                    await handleSave();
+                    handlePrint();
+                  }}
+                >
+                  Save &amp; Print
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
-    </div>
-  </div>
-</div>
+
+      {/* ✅ Modal Popup */}
+      {showModal && (
+        <div
+          className="modal fade show d-block"
+          tabIndex="-1"
+          style={{ backgroundColor: "rgba(0,0,0,0.5)" }}
+        >
+          <div className="modal-dialog modal-sm modal-dialog-centered">
+            <div className="modal-content">
+              <div className="modal-header py-2">
+                <h6 className="modal-title">Inward Number</h6>
+                <button
+                  type="button"
+                  className="btn-close"
+                  onClick={() => setShowModal(false)}
+                ></button>
+              </div>
+              <div className="modal-body text-center py-3">
+                <h5 className="mb-2 text-primary">{formData.inwardNo}</h5>
+                <p className="text-muted mb-0">has been successfully saved.</p>
+              </div>
+              <div className="modal-footer py-2">
+                <button
+                  className="btn btn-sm btn-secondary"
+                  onClick={() => setShowModal(false)}
+                >
+                  Close
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
