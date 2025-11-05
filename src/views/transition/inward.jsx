@@ -17,9 +17,9 @@ const InwardPage = () => {
   const [selectedCustomerId, setSelectedCustomerId] = useState(null);
   const [customers, setCustomers] = useState([]);
   const [availableMaterials, setAvailableMaterials] = useState([]);
+  const [allMaterials, setAllMaterials] = useState([]);
   const [loading, setLoading] = useState(false);
   const [showModal, setShowModal] = useState(false);
-
   const headerRefs = useRef([]);
 
   const handlePrint = () => {
@@ -68,6 +68,7 @@ const InwardPage = () => {
     fetchCustomers();
   }, []);
 
+
   // ✅ Fetch inward number
   const fetchInwardNumber = async () => {
     try {
@@ -84,22 +85,15 @@ const InwardPage = () => {
         },
       });
 
-      console.log("📦 Inward number API response:", response.data);
-
-      if (response.data?.data?.inward_no) {
+      const inwardData = response.data?.data || response.data;
+      if (inwardData?.inward_no) {
         setFormData((prev) => ({
           ...prev,
-          inwardNo: response.data.data.inward_no,
-          referenceNo: response.data.data.reference_no || "",
-        }));
-      } else if (response.data?.inward_no) {
-        setFormData((prev) => ({
-          ...prev,
-          inwardNo: response.data.inward_no,
-          referenceNo: response.data.reference_no || "",
+          inwardNo: inwardData.inward_no,
+          referenceNo: inwardData.reference_no || "",
         }));
       } else {
-        toast.warning("Inward number not found in API response.");
+        toast.warning("⚠️ Inward number not found in API response.");
       }
     } catch (error) {
       console.error("❌ Error fetching inward number:", error);
@@ -107,7 +101,6 @@ const InwardPage = () => {
     }
   };
 
-  // Fetch inward number on load
   useEffect(() => {
     fetchInwardNumber();
   }, []);
@@ -129,10 +122,11 @@ const InwardPage = () => {
       }));
 
       if (Array.isArray(selectedCustomer.materials)) {
-        const formatted = selectedCustomer.materials.map((m) => ({
-          material_id: m.id || m.material_id,
+        const formatted = selectedCustomer.materials.map((m, i) => ({
+          sl_no: i + 1,
+          material_id: m.material_id || m.id, // ✅ store the real material id
           material_name: m.material_name || m.name,
-          qty: m.qty || 0,
+          qty: m.qty || 1,
           default_price: m.default_price || m.price || 0,
         }));
         setAvailableMaterials(formatted);
@@ -144,60 +138,63 @@ const InwardPage = () => {
     }
   };
 
-  // ✅ Save inward data (POST method)
-// ✅ Save inward data (GET method)
+  // ✅ Save inward data (send material_id instead of name)
 const handleSave = async () => {
-  if (!selectedCustomerId) {
-    toast.warning("Please select a customer before saving!");
-    return;
-  }
-
-  const token = sessionStorage.getItem("authToken");
-
   try {
-    // Convert payload into query string (GET doesn’t send body)
-    const params = {
-      inward_no: formData.inwardNo,
-      reference_no: formData.referenceNo,
-      customer_id: selectedCustomerId,
-      address: formData.address,
-    };
+    const token = sessionStorage.getItem("authToken");
+    if (!token) {
+      toast.error("Unauthorized. Please login again.");
+      return;
+    }
 
-    const response = await axios.get(
-      `${BASE_URL}/options/getinwarddata`,
-      {
-        params, // pass data as query string
-        headers: {
-          Accept: "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-      }
+    if (!selectedCustomerId) {
+      toast.error("Please select a customer.");
+      return;
+    }
+
+    const filteredMaterials = availableMaterials.filter(
+      (m) => m.material_id && m.qty && Number(m.qty) > 0
     );
 
-    console.log("✅ Save response:", response.data);
-    toast.success("Inward data saved successfully!");
-
-    if (response.data?.data?.inward_no) {
-      setFormData((prev) => ({
-        ...prev,
-        inwardNo: response.data.data.inward_no,
-      }));
+    if (filteredMaterials.length === 0) {
+      toast.error("At least one material with quantity is required.");
+      return;
     }
 
+    // ✅ Prepare payload as JSON (not FormData)
+    const payload = {
+      inward_no: formData.inwardNo,
+      customer_id: selectedCustomerId,
+      reference_no: formData.referenceNo || "",
+      materials: filteredMaterials.map((mat, index) => ({
+        sl_no: index + 1,
+        material_id: mat.material_id,
+        qty: mat.qty,
+      })),
+    };
+
+    const response = await axios.post(`${BASE_URL}/inward/create`, payload, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+        Accept: "application/json",
+        "Content-Type": "application/json",
+      },
+    });
+
+    console.log("✅ Save success:", response.data);
+    toast.success("Inward saved successfully!");
     setShowModal(true);
   } catch (error) {
-    console.error("❌ Error saving inward data:", error);
-    if (error.response?.status === 401) {
-      toast.error("Unauthorized. Please login again.");
-    } else {
-      toast.error(
-        `Failed to save inward data. ${
-          error.response?.data?.message || ""
-        }`
-      );
-    }
+    console.error("❌ Save Error:", error.response?.data || error.message);
+    toast.error(
+      `Validation Error: ${JSON.stringify(
+        error.response?.data?.errors || error.response?.data
+      )}`
+    );
   }
 };
+
+  // ✅ UI
   return (
     <div
       className="container"
@@ -299,18 +296,9 @@ const handleSave = async () => {
       {/* Materials Table */}
       <div className="mt-3">
         <div className="card" style={{ height: "400px", marginBottom: "10px" }}>
-          <div
-            className="card-body p-0"
-            style={{ height: "100%", overflow: "hidden" }}
-          >
-            <table
-              className="table table-bordered table-sm mb-0"
-              style={{ fontSize: "11px" }}
-            >
-              <thead
-                className="table-light text-center"
-                style={{ position: "sticky", top: 0, zIndex: 2 }}
-              >
+          <div className="card-body p-0" style={{ height: "100%", overflow: "hidden" }}>
+            <table className="table table-bordered table-sm mb-0" style={{ fontSize: "11px" }}>
+              <thead className="table-light text-center" style={{ position: "sticky", top: 0, zIndex: 2 }}>
                 <tr style={{ fontSize: "11px", lineHeight: "1.6" }}>
                   <th style={{ width: "6%", padding: "2px" }}>Sl.No</th>
                   <th style={{ padding: "2px" }}>Material</th>
@@ -321,10 +309,7 @@ const handleSave = async () => {
             </table>
 
             <div style={{ height: "calc(100% - 35px)", overflowY: "auto" }}>
-              <table
-                className="table table-bordered table-sm mb-0"
-                style={{ fontSize: "11px" }}
-              >
+              <table className="table table-bordered table-sm mb-0" style={{ fontSize: "11px" }}>
                 <tbody>
                   {availableMaterials.map((mat, i) => (
                     <tr key={mat.material_id || i} className="text-center">
@@ -363,15 +348,7 @@ const handleSave = async () => {
         </div>
 
         {/* Save Buttons */}
-        <div
-          className="card shadow-sm border-0"
-          style={{
-            bottom: 0,
-            right: 0,
-            width: "100%",
-            zIndex: 1000,
-          }}
-        >
+        <div className="card shadow-sm border-0" style={{ bottom: 0, right: 0, width: "100%", zIndex: 1000 }}>
           <div className="card-body py-2 px-2 border-0">
             <div className="row g-1 align-items-center">
               <div className="col-12 col-md-4 d-flex justify-content-md-end justify-content-center gap-2 flex-wrap ms-auto">
@@ -403,7 +380,7 @@ const handleSave = async () => {
                     handlePrint();
                   }}
                 >
-                  Save &amp; Print
+                  Save & Print
                 </button>
               </div>
             </div>
@@ -440,7 +417,7 @@ const handleSave = async () => {
                   Close
                 </button>
               </div>
-            </div>
+            </div>   
           </div>
         </div>
       )}

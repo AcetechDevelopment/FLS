@@ -359,7 +359,7 @@ const handleSave = useCallback(async () => {
           <thead className="table-primary">
             <tr>
               <th>Code</th>
-              <th>Customer</th>
+              {/* <th>Customer</th> */}
               <th>Name</th>
               <th>Price</th>
               <th>Type</th>
@@ -375,12 +375,12 @@ const handleSave = useCallback(async () => {
               filteredMaterials.map((m) => (
                 <tr key={m.id}>
                   <td>{m.material_id}</td>
-                  <td>
+                  {/* <td>
                     {m.customer_name ||
                       customers.find((c) => c.id == m.customer_id)
                         ?.customer_name ||
                       ""}
-                  </td>
+                  </td> */}
                   <td>{m.material_name}</td>
                   <td>{m.default_price}</td>
                   <td>{m.material_type}</td>
@@ -468,20 +468,22 @@ const handleSave = useCallback(async () => {
                 ))}
 
                 {/* Material Type Dropdown */}
-                <div>
-                  <label className="form-label">Material Type</label>
-                  <select
-                    className="form-select form-select-sm"
-                    value={formData.material_type}
-                    onChange={(e) =>
-                      setFormData({ ...formData, material_type: e.target.value })
-                    }
-                  >
-                    <option value="">Select</option>
-                    <option value="Bedsheet">Bedsheet</option>
-                    <option value="Towel">Towel</option>
-                  </select>
-                </div>
+              <div className="mb-2">
+  <label className="form-label">Material Type</label>
+  <input
+    list="materialTypes"
+    className="form-control form-control-sm"
+    value={formData.material_type || ""}
+    onChange={(e) =>
+      setFormData((prev) => ({ ...prev, material_type: e.target.value }))
+    }
+    placeholder="Select or type"
+  />
+  <datalist id="materialTypes">
+    <option value="Bedsheet" />
+    <option value="Towel" />
+  </datalist>
+</div>
               </div>
 
               <div className="modal-footer py-2">
