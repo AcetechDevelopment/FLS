@@ -34,12 +34,16 @@ const axiosInstance = axios.create({
   headers: { Accept: "application/json", "Content-Type": "application/json" },
 });
 
-axiosInstance.interceptors.request.use((config) => {
-  const token = getAuthToken();
-  if (!isValidToken(token)) throw new Error("Invalid or missing token");
-  config.headers.Authorization = `Bearer ${token}`;
-  return config;
-});
+// ✅ Interceptors
+axiosInstance.interceptors.request.use(
+  (config) => {
+    const token = getAuthToken();
+    if (!isValidToken(token)) throw new Error("Invalid or missing token");
+    config.headers.Authorization = `Bearer ${token}`;
+    return config;
+  },
+  (error) => Promise.reject(error)
+);
 
 axiosInstance.interceptors.response.use(
   (res) => res,
@@ -48,6 +52,8 @@ axiosInstance.interceptors.response.use(
       toast.error("Session expired. Please login again.");
     } else if (!error.response) {
       toast.error("Network error. Check your connection.");
+    } else if (error.response?.status === 429) {
+      toast.error("Too many requests. Please wait a moment and retry.");
     } else {
       toast.error(error.response.data?.message || "Server error");
     }
@@ -84,6 +90,7 @@ const MaterialMaster = () => {
       const data = res.data?.data || res.data?.materials || [];
       setMaterials(Array.isArray(data) ? data : []);
     } catch (err) {
+      console.error("Fetch materials error:", err);
       toast.error("Failed to load materials");
     } finally {
       setLoading(false);
@@ -126,7 +133,7 @@ const MaterialMaster = () => {
     if (!materials.length) fetchMaterials();
   }, [fetchMaterials, handleAuthError, materials.length]);
 
-  // ✅ Handlers
+  // ✅ New Material
   const handleNew = useCallback(() => {
     setEditingMaterial(null);
     setFormData({
@@ -140,6 +147,7 @@ const MaterialMaster = () => {
     setShowModal(true);
   }, []);
 
+  // ✅ Edit Material
   const handleEdit = useCallback((mat) => {
     setFormData({
       material_name: mat.material_name || "",
@@ -153,78 +161,78 @@ const MaterialMaster = () => {
     setShowModal(true);
   }, []);
 
-const handleSave = useCallback(async () => {
-  if (saving) return;
-  if (
-    !formData.material_name ||
-    !formData.default_price ||
-    !formData.material_type ||
-    !selectedCustomerId
-  ) {
-    toast.error("Please fill all required fields including customer");
-    return;
-  }
-
-  setSaving(true);
-  try {
-    const endpoint = editingMaterial
-      ? API_ENDPOINTS.update
-      : API_ENDPOINTS.create;
-
-    const payload = editingMaterial
-      ? { ...formData, id: editingMaterial.id, customer_id: selectedCustomerId }
-      : { ...formData, customer_id: selectedCustomerId };
-
-    const res = await axiosInstance.post(endpoint, payload);
-
-    if (res.data?.message?.toLowerCase().includes("success")) {
-      toast.success(
-        `Material ${editingMaterial ? "updated" : "created"} successfully`
-      );
-
-      // ✅ Fix: Update customer instantly in table
-      const updatedCustomer =
-        customers.find((c) => c.id == selectedCustomerId)?.customer_name ||
-        customers.find((c) => c.id == selectedCustomerId)?.name ||
-        "";
-
-      if (editingMaterial) {
-        // Update that record in local state immediately
-        setMaterials((prev) =>
-          prev.map((m) =>
-            m.id === editingMaterial.id
-              ? {
-                  ...m,
-                  ...formData,
-                  customer_id: selectedCustomerId,
-                  customer_name: updatedCustomer,
-                }
-              : m
-          )
-        );
-      } else {
-        // If it's a new material, refetch all
-        await fetchMaterials();
-      }
-
-      setShowModal(false);
-    } else {
-      toast.error("Failed to save material");
+  // ✅ Save Material
+  const handleSave = useCallback(async () => {
+    if (saving) return;
+    if (
+      !formData.material_name ||
+      !formData.default_price ||
+      !formData.material_type ||
+      !selectedCustomerId
+    ) {
+      toast.error("Please fill all required fields including customer");
+      return;
     }
-  } catch (err) {
-    console.error("Save failed:", err);
-    toast.error("Save failed");
-  } finally {
-    setSaving(false);
-  }
-}, [
-  formData,
-  editingMaterial,
-  fetchMaterials,
-  saving,
-  selectedCustomerId,
-  customers,
-]);
+
+    setSaving(true);
+    try {
+      const endpoint = editingMaterial
+        ? API_ENDPOINTS.update
+        : API_ENDPOINTS.create;
+
+      const payload = editingMaterial
+        ? { ...formData, id: editingMaterial.id, customer_id: selectedCustomerId }
+        : { ...formData, customer_id: selectedCustomerId };
+
+      const res = await axiosInstance.post(endpoint, payload);
+
+      if (res.data?.message?.toLowerCase().includes("success")) {
+        toast.success(
+          `Material ${editingMaterial ? "updated" : "created"} successfully`
+        );
+
+        const updatedCustomer =
+          customers.find((c) => c.id == selectedCustomerId)?.customer_name ||
+          customers.find((c) => c.id == selectedCustomerId)?.name ||
+          "";
+
+        if (editingMaterial) {
+          setMaterials((prev) =>
+            prev.map((m) =>
+              m.id === editingMaterial.id
+                ? {
+                    ...m,
+                    ...formData,
+                    customer_id: selectedCustomerId,
+                    customer_name: updatedCustomer,
+                  }
+                : m
+            )
+          );
+        } else {
+          await fetchMaterials();
+        }
+
+        setShowModal(false);
+      } else {
+        toast.error("Failed to save material");
+      }
+    } catch (err) {
+      console.error("Save failed:", err);
+      toast.error("Save failed");
+    } finally {
+      setSaving(false);
+    }
+  }, [
+    formData,
+    editingMaterial,
+    fetchMaterials,
+    saving,
+    selectedCustomerId,
+    customers,
+  ]);
+
+  // ✅ Delete Material
   const handleDelete = useCallback(
     async (id) => {
       if (!window.confirm("Delete this material?")) return;
@@ -239,7 +247,7 @@ const handleSave = useCallback(async () => {
     [fetchMaterials]
   );
 
-  // ✅ Memoized Filter
+  // ✅ Filter Materials
   const filteredMaterials = useMemo(() => {
     const q = search.toLowerCase();
     return materials.filter(
@@ -251,7 +259,7 @@ const handleSave = useCallback(async () => {
     );
   }, [materials, search]);
 
-  // ✅ Export PDF & Excel
+  // ✅ Export PDF
   const exportPDF = () => {
     if (!materials.length) return toast.info("No materials to export.");
     const doc = new jsPDF();
@@ -274,6 +282,7 @@ const handleSave = useCallback(async () => {
     doc.save("MaterialMaster.pdf");
   };
 
+  // ✅ Export Excel
   const exportExcel = () => {
     if (!materials.length) return toast.info("No materials to export.");
     const ws = XLSX.utils.json_to_sheet(
@@ -294,6 +303,7 @@ const handleSave = useCallback(async () => {
     XLSX.writeFile(wb, "MaterialMaster.xlsx");
   };
 
+  // ✅ Print
   const handlePrint = () => {
     const table = document.getElementById("data-table");
     if (!table) return alert("No data table found to print.");
@@ -311,7 +321,7 @@ const handleSave = useCallback(async () => {
           </style>
         </head>
         <body>
-          <h2>Data List</h2>
+          <h2>Material List</h2>
           ${table.outerHTML}
         </body>
       </html>
@@ -359,7 +369,6 @@ const handleSave = useCallback(async () => {
           <thead className="table-primary">
             <tr>
               <th>Code</th>
-              {/* <th>Customer</th> */}
               <th>Name</th>
               <th>Price</th>
               <th>Type</th>
@@ -369,18 +378,12 @@ const handleSave = useCallback(async () => {
           <tbody>
             {loading ? (
               <tr>
-                <td colSpan="6">Loading...</td>
+                <td colSpan="5">Loading...</td>
               </tr>
             ) : filteredMaterials.length ? (
               filteredMaterials.map((m) => (
                 <tr key={m.id}>
                   <td>{m.material_id}</td>
-                  {/* <td>
-                    {m.customer_name ||
-                      customers.find((c) => c.id == m.customer_id)
-                        ?.customer_name ||
-                      ""}
-                  </td> */}
                   <td>{m.material_name}</td>
                   <td>{m.default_price}</td>
                   <td>{m.material_type}</td>
@@ -402,7 +405,7 @@ const handleSave = useCallback(async () => {
               ))
             ) : (
               <tr>
-                <td colSpan="6" className="text-muted">
+                <td colSpan="5" className="text-muted">
                   No materials found
                 </td>
               </tr>
@@ -426,21 +429,21 @@ const handleSave = useCallback(async () => {
 
               <div className="modal-body p-2">
                 {/* Customer Dropdown */}
-              <div>
-  <label className="form-label">Select Customer</label>
-  <select
-    className="form-select form-select-sm"
-    value={selectedCustomerId}
-    onChange={(e) => setSelectedCustomerId(e.target.value)}
-  >
-    <option value="">Select</option>
-    {customers.map((cust) => (
-      <option key={cust.id} value={cust.id}>
-        {cust.customer_name || cust.name}
-      </option>
-    ))}
-  </select>
-</div>
+                <div>
+                  <label className="form-label">Select Customer</label>
+                  <select
+                    className="form-select form-select-sm"
+                    value={selectedCustomerId}
+                    onChange={(e) => setSelectedCustomerId(e.target.value)}
+                  >
+                    <option value="">Select</option>
+                    {customers.map((cust) => (
+                      <option key={cust.id} value={cust.id}>
+                        {cust.customer_name || cust.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
 
                 {/* Material Fields */}
                 {["material_name", "default_price", "weight"].map((field, i) => (
@@ -470,19 +473,58 @@ const handleSave = useCallback(async () => {
                 {/* Material Type Dropdown */}
               <div className="mb-2">
   <label className="form-label">Material Type</label>
-  <input
-    list="materialTypes"
-    className="form-control form-control-sm"
-    value={formData.material_type || ""}
-    onChange={(e) =>
-      setFormData((prev) => ({ ...prev, material_type: e.target.value }))
-    }
-    placeholder="Select or type"
-  />
-  <datalist id="materialTypes">
-    <option value="Bedsheet" />
-    <option value="Towel" />
-  </datalist>
+  <div className="d-flex gap-2">
+    <select
+      className="form-select form-select-sm flex-grow-1"
+      value={formData.material_type || ""}
+      onChange={(e) => {
+        const typeId = e.target.selectedOptions[0]?.getAttribute("data-id");
+        setSelectedTypeId(typeId);
+        setFormData((prev) => ({
+          ...prev,
+          material_type: e.target.value,
+        }));
+      }}
+    >
+      <option value="">-- Select Type --</option>
+      {materialTypes.map((type) => (
+        <option key={type.id} value={type.name} data-id={type.id}>
+          {type.name}
+        </option>
+      ))}
+    </select>
+
+    {/* Add / Update Button */}
+    <button
+      className="btn btn-outline-primary btn-sm"
+      onClick={async () => {
+        const newType = prompt("Enter new or updated Material Type name:");
+        if (!newType?.trim()) return toast.info("No value entered");
+
+        try {
+          const idToEdit = selectedTypeId || 0; // if 0, create new
+          const res = await axiosInstance.post(`/material-type/edit/${idToEdit}`, {
+            name: newType.trim(),
+          });
+
+          if (res.data?.message?.toLowerCase().includes("success")) {
+            toast.success(
+              selectedTypeId ? "Material Type updated" : "Material Type added"
+            );
+            fetchMaterialTypes(); // refresh list
+            setFormData((prev) => ({ ...prev, material_type: newType.trim() }));
+          } else {
+            toast.error("Failed to save Material Type");
+          }
+        } catch (error) {
+          console.error("Error updating type:", error);
+          toast.error("Error while saving Material Type");
+        }
+      }}
+    >
+      ✎
+    </button>
+  </div>
 </div>
               </div>
 

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Card, Table, Form, Spinner } from "react-bootstrap";
+import { Card, Table, Form, Spinner, Button } from "react-bootstrap";
 import axios from "axios";
 import { toast } from "react-toastify";
 
@@ -8,8 +8,9 @@ const BASE_URL = "https://115.124.111.111/FLS/public/api";
 const PriceMaster = () => {
   const [customers, setCustomers] = useState([]);
   const [selectedCustomer, setSelectedCustomer] = useState("");
-  const [priceList, setPriceList] = useState([]);
+  const [materials, setMaterials] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [saving, setSaving] = useState(false);
 
   // Allow only numeric input for price
   const isNumberKey = (e) => {
@@ -17,45 +18,8 @@ const PriceMaster = () => {
     if (!/[0-9]/.test(e.key) && !allowed.includes(e.key)) e.preventDefault();
   };
 
-  // Fetch customers from API
+  // Fetch customers + materials
   const fetchCustomers = async () => {
-    try {
-      const token = sessionStorage.getItem("authToken");
-      if (!token) {
-        toast.error("Unauthorized. Please login again.");
-        return;
-      }
-
-      const res = await axios.get(`${BASE_URL}/options/getcustomers`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-
-      const data = res.data?.data || [];
-      if (!Array.isArray(data) || data.length === 0) {
-        setCustomers([]);
-        toast.info("No customers found.");
-        return;
-      }
-
-      const formatted = data.map((cus) => ({
-        id: String(cus.id ?? cus.customer_id ?? cus.customerId),
-        name: cus.name ?? cus.customer_name ?? cus.customerName ?? "Unnamed Customer",
-      }));
-
-      setCustomers(formatted);
-      setSelectedCustomer(formatted[0]?.id ?? ""); // select first customer by default
-    } catch (err) {
-      console.error("Error fetching customers:", err);
-      toast.error("Failed to load customers.");
-    }
-  };
-
-  // Fetch prices for selected customer
-  const fetchPriceList = async (customerId) => {
-    if (!customerId) {
-      setPriceList([]);
-      return;
-    }
     try {
       setLoading(true);
       const token = sessionStorage.getItem("authToken");
@@ -65,25 +29,40 @@ const PriceMaster = () => {
         return;
       }
 
-      const res = await axios.get(`${BASE_URL}/price-master/list`, {
+      const res = await axios.get(`${BASE_URL}/price-master/getcustomer`, {
         headers: { Authorization: `Bearer ${token}` },
-        params: { customer_id: customerId }, // send customer_id as param
       });
 
-      const data = res.data?.data || [];
-      setPriceList(data);
+      const customersData = res.data?.customers || res.data?.data || [];
+
+      if (!Array.isArray(customersData) || customersData.length === 0) {
+        setCustomers([]);
+        toast.info("No customers found.");
+        setLoading(false);
+        return;
+      }
+
+      const formattedCustomers = customersData.map((cus) => ({
+        id: String(cus.id),
+        name: cus.customer_name,
+        materials: cus.materials || [],
+      }));
+
+      setCustomers(formattedCustomers);
+      setSelectedCustomer(formattedCustomers[0]?.id ?? "");
       setLoading(false);
     } catch (err) {
-      console.error("Error fetching price master:", err);
-      toast.error("Failed to load price data.");
+      console.error("Error fetching customers:", err);
+      toast.error("Failed to load customers.");
       setLoading(false);
     }
   };
 
-  // Handle customer change
+  // Load materials for selected customer
   const handleCustomerChange = (customerId) => {
     setSelectedCustomer(customerId);
-    fetchPriceList(customerId);
+    const selected = customers.find((c) => c.id === customerId);
+    setMaterials(selected?.materials || []);
   };
 
   // Initial load
@@ -91,23 +70,74 @@ const PriceMaster = () => {
     fetchCustomers();
   }, []);
 
-  // Fetch prices for default customer
+  // Auto-load materials for default customer
   useEffect(() => {
-    if (selectedCustomer) {
-      fetchPriceList(selectedCustomer);
+    if (selectedCustomer && customers.length > 0) {
+      const selected = customers.find((c) => c.id === selectedCustomer);
+      setMaterials(selected?.materials || []);
     }
-  }, [selectedCustomer]);
+  }, [selectedCustomer, customers]);
 
+  // Handle price change
   const handlePriceChange = (id, value) => {
-    setPriceList((prev) =>
-      prev.map((row) => (row.id === id ? { ...row, price: value } : row))
+    setMaterials((prev) =>
+      prev.map((mat) =>
+        mat.id === id ? { ...mat, default_price: value } : mat
+      )
     );
+  };
+
+  // ✅ Save updated prices
+  const handleSave = async () => {
+    if (!selectedCustomer) {
+      toast.warn("Please select a customer first.");
+      return;
+    }
+
+    const token = sessionStorage.getItem("authToken");
+    if (!token) {
+      toast.error("Unauthorized. Please login again.");
+      return;
+    }
+
+    const payload = {
+      customer_id: selectedCustomer,
+      materials: materials.map((m) => ({
+        id: m.id,
+        default_price: m.default_price || "0",
+      })),
+    };
+
+    try {
+      setSaving(true);
+      const res = await axios.post(`${BASE_URL}/price-master/update`, payload, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      });
+
+      if (res.data?.message) {
+        toast.success(res.data.message);
+      } else {
+        toast.success("Prices updated successfully.");
+      }
+
+      setSaving(false);
+    } catch (err) {
+      console.error("Error updating prices:", err);
+      toast.error("Failed to update prices.");
+      setSaving(false);
+    }
   };
 
   return (
     <div className="container-fluid mt-3">
       <Card className="shadow-sm border-0">
-        <Card.Header className="bg-primary text-white py-2" style={{ fontSize: "12px" }}>
+        <Card.Header
+          className="bg-primary text-white py-2"
+          style={{ fontSize: "12px" }}
+        >
           <h6 className="mb-0">Price Master</h6>
         </Card.Header>
 
@@ -130,50 +160,86 @@ const PriceMaster = () => {
             </Form.Select>
           </div>
 
-          {/* Price Table */}
+              
+
+          {/* Materials Table */}
           {loading ? (
             <div className="text-center py-3">
               <Spinner animation="border" size="sm" /> Loading...
             </div>
           ) : (
-            <Table bordered hover responsive className="table-sm mb-0 text-center">
-              <thead className="table-light">
-                <tr>
-                  <th style={{ width: "60px" }}>Sl.No</th>
-                  <th>Material</th>
-                  <th>Customer</th>
-                  <th style={{ width: "100px" }}>Price</th>
-                </tr>
-              </thead>
-              <tbody>
-                {priceList.length > 0 ? (
-                  priceList.map((row, idx) => (
-                    <tr key={row.id || idx}>
-                      <td>{idx + 1}</td>
-                      <td>{row.material_name ?? row.materialName}</td>
-                      <td>{row.customer_name ?? row.customerName ?? customers.find(c => c.id === selectedCustomer)?.name}</td>
-                      <td>
-                        <Form.Control
-                          type="text"
-                          size="sm"
-                          value={row.price ?? ""}
-                          onKeyDown={isNumberKey}
-                          onChange={(e) => handlePriceChange(row.id, e.target.value)}
-                        />
+            <>
+              <Table
+                bordered
+                hover
+                responsive
+                className="table-sm mb-0 text-center"
+              >
+                <thead className="table-light">
+                  <tr>
+                    <th style={{ width: "60px" }}>Sl.No</th>
+                    <th>Material</th>
+                    <th>Weight</th>
+                    <th>Default Price</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {materials.length > 0 ? (
+                    materials.map((row, idx) => (
+                      <tr key={row.id || idx}>
+                        <td>{idx + 1}</td>
+                        <td>{row.material_name}</td>
+                        <td>{row.weight}</td>
+                        <td>
+                          <Form.Control
+                            type="text"
+                            size="sm"
+                            value={row.default_price ?? ""}
+                            onKeyDown={isNumberKey}
+                            onChange={(e) =>
+                              handlePriceChange(row.id, e.target.value)
+                            }
+                          />
+                        </td>
+                      </tr>
+                    ))
+                  ) : (
+                    <tr>
+                      <td colSpan="4" className="text-center text-muted py-2">
+                        {selectedCustomer
+                          ? "No materials found for this customer."
+                          : "Please select a customer."}
                       </td>
                     </tr>
-                  ))
-                ) : (
-                  <tr>
-                    <td colSpan="4" className="text-center text-muted py-2">
-                      {selectedCustomer
-                        ? "No price data found for this customer."
-                        : "Please select a customer."}
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </Table>
+                  )}
+                </tbody>
+              </Table>
+
+              {/* ✅ Save Button */}
+              {materials.length > 0 && (
+                <div className="text-end mt-3">
+                  <Button
+                    variant="success"
+                    size="sm"
+                    onClick={handleSave}
+                    disabled={saving}
+                  >
+                    {saving ? (
+                      <>
+                        <Spinner
+                          animation="border"
+                          size="sm"
+                          className="me-2"
+                        />
+                        Saving...
+                      </>
+                    ) : (
+                      "Save Changes"
+                    )}
+                  </Button>
+                </div>
+              )}
+            </>
           )}
         </Card.Body>
       </Card>
