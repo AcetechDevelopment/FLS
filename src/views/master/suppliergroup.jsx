@@ -1,33 +1,15 @@
 import React, { useState, useEffect, useRef } from "react";
 import "bootstrap/dist/css/bootstrap.min.css";
-import axios from "axios";
 import { toast } from "react-toastify";
-
-// ✅ Central axios instance
-const axiosInstance = axios.create({
-  baseURL: "https://115.124.111.111/FLS/public/api",
-  timeout: 3000,
-  headers: {
-    Accept: "application/json",
-    "Content-Type": "application/json",
-  },
-});
-
-// ✅ Add auth token interceptor
-axiosInstance.interceptors.request.use(
-  (config) => {
-    const token = sessionStorage.getItem("authToken");
-    if (token) config.headers.Authorization = `Bearer ${token}`;
-    return config;
-  },
-  (error) => Promise.reject(error)
-);
+import { apiService } from "../../services/api";
+import Loading from "../../components/Loading";
 
 const SupplierGroup = () => {
   const [groups, setGroups] = useState([]);
   const [materials, setMaterials] = useState([]);
   const [customers, setCustomers] = useState([]);
   const [materialsList, setMaterialsList] = useState([]);
+  const [loading, setLoading] = useState(true);
 
   const [formData, setFormData] = useState({
     supplier_name: "",
@@ -61,8 +43,8 @@ const SupplierGroup = () => {
   // -------------------- API --------------------
   const fetchGroups = async () => {
     try {
-      const res = await axiosInstance.get("/supplier-group/list");
-      const responseData = res.data?.data || [];
+      setLoading(true);
+      const responseData = await apiService.getSupplierGroups();
       const normalized = responseData.map((g) => {
         let supplier_items = [];
         try {
@@ -82,26 +64,24 @@ const SupplierGroup = () => {
       });
       setGroups(normalized);
     } catch (err) {
-      console.error("Error fetching groups:", err);
       toast.error("Failed to load supplier groups");
+    } finally {
+      setLoading(false);
     }
   };
 
   const fetchCustomers = async () => {
     try {
-      const res = await axiosInstance.get("/customer/list");
-      const data = res.data?.data || [];
+      const data = await apiService.getCustomers();
       setCustomers(data.map((c) => ({ id: c.id, name: c.customer_name })));
     } catch (err) {
-      console.error("Error fetching customers:", err);
       toast.error("Failed to load customers");
     }
   };
 
   const fetchMaterialsList = async () => {
     try {
-      const res = await axiosInstance.get("/material/list");
-      const data = res.data?.data || [];
+      const data = await apiService.getMaterials();
       setMaterialsList(
         data.map((m) => ({
           id: m.id,
@@ -109,30 +89,47 @@ const SupplierGroup = () => {
         }))
       );
     } catch (err) {
-      console.error("Error fetching materials list:", err);
       toast.error("Failed to load materials list");
     }
   };
 
   const fetchMaterialsByGroup = async (groupId) => {
     try {
-      const res = await axiosInstance.get("/supplier-material/list");
-      const allMaterials = res.data?.data || [];
+      // Try with query parameter first, fallback to client-side filtering
+      const allMaterials = await apiService.getSupplierMaterials(groupId);
+      
+      // If query parameter doesn't work, filter client-side
+      // Check if response already filtered or needs client-side filtering
       const filtered = allMaterials
-        .filter((m) => Number(m.supplier_group_id) === Number(groupId))
-        .map((item) => ({
-          id: item.id,
-          material_id: item.material_id,
-          material_name:
-            materialsList.find((m) => m.id === item.material_id)?.name ||
-            item.material_name ||
-            "Unknown",
-          weight: item.weight,
-          price: item.price,
-        }));
+        .filter((m) => {
+          // Try supplier_group_id first, then fallback to supplier_id if needed
+          if (m.supplier_group_id !== undefined) {
+            return Number(m.supplier_group_id) === Number(groupId);
+          }
+          // Fallback: if API doesn't support query param, filter by supplier_id
+          // Note: This might not be correct if supplier_id != supplier_group_id
+          return Number(m.supplier_id) === Number(groupId);
+        })
+        .map((item) => {
+          // Use material_id from response if available, otherwise find by name
+          let material_id = item.material_id;
+          if (!material_id && item.material_name) {
+            const matchedMaterial = materialsList.find(
+              (m) => m.name === item.material_name
+            );
+            material_id = matchedMaterial?.id || null;
+          }
+          
+          return {
+            id: item.id,
+            material_id: material_id || null,
+            material_name: item.material_name || "Unknown",
+            weight: item.weight,
+            price: item.price,
+          };
+        });
       setMaterials(filtered);
     } catch (err) {
-      console.error("Error fetching materials:", err);
       toast.error("Failed to load materials");
     }
   };
@@ -160,26 +157,25 @@ const SupplierGroup = () => {
         fd.append(`customer_id[${index}]`, id);
       });
 
-      const res = await axiosInstance.post(endpoint, fd, {
-        headers: { "Content-Type": "multipart/form-data" },
-      });
+      const res = isEdit
+        ? await apiService.updateSupplierGroup(fd)
+        : await apiService.createSupplierGroup(fd);
 
       if (
-        res.status === 200 &&
-        res.data?.message?.toLowerCase().includes("success")
+        res.status === "success" ||
+        res.success === true ||
+        res.message?.toLowerCase().includes("success") ||
+        res.message?.toLowerCase().includes("stored")
       ) {
-        toast.success(
-          isEdit ? "Group updated successfully" : "Group created successfully"
-        );
+        toast.success(res.message || (isEdit ? "Group updated successfully" : "Group created successfully"));
         fetchGroups();
         setShowModal(false);
         setEditingGroup(null);
         setFormData({ supplier_name: "", description: "", groupMembers: [] });
       } else {
-        toast.error(res.data?.message || "Failed to save group");
+        toast.error(res.message || "Failed to save group");
       }
     } catch (err) {
-      console.error("Error saving group:", err);
       toast.error(err.response?.data?.message || "Failed to save group");
     }
   };
@@ -187,14 +183,19 @@ const SupplierGroup = () => {
   const deleteGroup = async (id) => {
     if (!window.confirm("Delete this group?")) return;
     try {
-      const res = await axiosInstance.delete(`/supplier-group/delete/${id}`);
-      if (res.status === 200 || res.data?.success) {
-        toast.success("Group deleted successfully");
+      const res = await apiService.deleteSupplierGroup(id);
+      if (
+        res.status === "success" ||
+        res.success === true ||
+        res.message?.toLowerCase().includes("success")
+      ) {
+        toast.success(res.message || "Group deleted successfully");
         fetchGroups();
-      } else toast.error("Failed to delete group");
+      } else {
+        toast.error(res.message || "Failed to delete group");
+      }
     } catch (err) {
-      console.error("Delete group error:", err);
-      toast.error("Failed to delete group");
+      toast.error(err.response?.data?.message || "Failed to delete group");
     }
   };
 
@@ -217,31 +218,27 @@ const SupplierGroup = () => {
         price: materialForm.price,
       };
 
-      const res = await axiosInstance.post("/supplier-material/create", payload);
+      const formData = new FormData();
+      formData.append("supplier_id", supplierId);
+      formData.append("supplier_group_id", selectedGroupId);
+      formData.append("material_id", materialForm.material_id);
+      formData.append("weight", materialForm.weight);
+      formData.append("price", materialForm.price);
+      
+      const res = await apiService.createSupplierMaterial(formData);
 
-      if (
-        res.status === 200 &&
-        (res.data?.message?.toLowerCase().includes("stored") ||
-          res.data?.message?.toLowerCase().includes("success") ||
-          res.data?.id)
+      if (res.message?.toLowerCase().includes("stored") ||
+          res.message?.toLowerCase().includes("success") ||
+          res.id
       ) {
         toast.success("Material added successfully");
-        const addedMaterial = {
-          id: res.data?.id?.id || Date.now(),
-          material_id: materialForm.material_id,
-          material_name:
-            materialsList.find((m) => m.id == materialForm.material_id)?.name ||
-            "New Material",
-          weight: materialForm.weight,
-          price: materialForm.price,
-        };
-        setMaterials((prev) => [...prev, addedMaterial]);
         setMaterialForm({ material_id: "", weight: "", price: "" });
+        // Refresh materials list from API
+        await fetchMaterialsByGroup(selectedGroupId);
       } else {
         toast.error(res.data?.message || "Failed to add material");
       }
     } catch (err) {
-      console.error("❌ Add material error:", err.response?.data || err.message);
       toast.error(err.response?.data?.message || "Failed to add material");
     }
   };
@@ -250,15 +247,15 @@ const SupplierGroup = () => {
     const material_id = material.id;
     if (!material_id) return toast.error("Invalid material ID");
     try {
-      const res = await axiosInstance.delete(
-        `/supplier-material/delete/${material_id}`
-      );
+      const res = await apiService.deleteSupplierMaterial(material_id);
       if (res.status === 200 || res.data?.success) {
         toast.success("Material deleted successfully");
-        setMaterials((prev) => prev.filter((m) => m.id !== material_id));
+        // Refresh materials list from API
+        if (selectedGroupId) {
+          await fetchMaterialsByGroup(selectedGroupId);
+        }
       } else toast.error("Failed to delete material");
     } catch (err) {
-      console.error("Delete material error:", err);
       toast.error("Failed to delete material");
     }
   };
@@ -266,8 +263,8 @@ const SupplierGroup = () => {
   const handleEditGroup = async (group) => {
     try {
       setEditingGroup(group);
-      const res = await axiosInstance.get(`/supplier-group/edit/${group.id}`);
-      const data = res.data?.data;
+      const res = await apiService.getSupplierGroup(group.id);
+      const data = res?.data;
       if (!data) return toast.error("Failed to load group details");
 
       const memberIds = Array.isArray(data.customer_id)
@@ -281,7 +278,6 @@ const SupplierGroup = () => {
       });
       setShowModal(true);
     } catch (err) {
-      console.error("Error fetching group details:", err);
       toast.error("Failed to fetch group details");
     }
   };
@@ -340,34 +336,41 @@ const SupplierGroup = () => {
             </tr>
           </thead>
           <tbody>
-            {filteredGroups.map((group) => (
-              <tr key={group.id} className="text-center">
-                <td>{group.supplier_name}</td>
-                <td>
-                  <button
-                    className="btn btn-sm btn-success mt-1"
-                    onClick={() => openMaterialModal(group.id)}
-                  >
-                    +
-                  </button>
-                </td>
-                <td>
-                  <button
-                    className="btn btn-sm text-warning me-1"
-                    onClick={() => handleEditGroup(group)}
-                  >
-                    ✎
-                  </button>
-                  <button
-                    className="btn btn-sm text-danger"
-                    onClick={() => deleteGroup(group.id)}
-                  >
-                    🗑️
-                  </button>
+            {loading ? (
+              <tr>
+                <td colSpan="3">
+                  <Loading message="Loading groups..." />
                 </td>
               </tr>
-            ))}
-            {filteredGroups.length === 0 && (
+            ) : filteredGroups.length > 0 ? (
+              filteredGroups.map((group) => (
+                <tr key={group.id} className="text-center">
+                  <td>{group.supplier_name}</td>
+                  <td>
+                    <button
+                      className="btn btn-sm btn-success mt-1"
+                      onClick={() => openMaterialModal(group.id)}
+                    >
+                      +
+                    </button>
+                  </td>
+                  <td>
+                    <button
+                      className="btn btn-sm text-warning me-1"
+                      onClick={() => handleEditGroup(group)}
+                    >
+                      ✎
+                    </button>
+                    <button
+                      className="btn btn-sm text-danger"
+                      onClick={() => deleteGroup(group.id)}
+                    >
+                      🗑️
+                    </button>
+                  </td>
+                </tr>
+              ))
+            ) : (
               <tr>
                 <td colSpan="3" className="text-center text-muted">
                   No groups found

@@ -1,5 +1,6 @@
-import { lazy, useState, useEffect, Suspense } from "react";
+import { lazy, Suspense } from "react";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { useAppSelector } from "./store/hooks";
 import "./index.scss";
 
 // Layouts
@@ -39,9 +40,6 @@ const Login = lazy(() => import("./views/auth/login"));
 const Register = lazy(() => import("./views/auth/register"));
 const Dashboard = lazy(() => import("./views/dashboard/dashboard"));
 const Color = lazy(() => import("./views/ui-elements/basic/BasicColor"));
-const FeatherIcon = lazy(() => import("./views/ui-elements/icons/Feather"));
-const FontAwesome = lazy(() => import("./views/ui-elements/icons/FontAwesome"));
-const MaterialIcon = lazy(() => import("./views/ui-elements/icons/Material"));
 const Sample = lazy(() => import("./views/sample"));
 
 // Master/Stock/Reports Pages
@@ -60,36 +58,21 @@ const DispatchReport = lazy(() => import("./views/reports/dispatchreport"));
 const VehicleInventory = lazy(() => import("./views/master/vehicleinventory")); // ✅ keep this one only
 
 export default function App() {
-  const [isLoggedIn, setIsLoggedIn] = useState(!!sessionStorage.getItem("authToken"));
-  const [isLoading, setIsLoading] = useState(true);
-
-  useEffect(() => {
-    const token = sessionStorage.getItem("authToken");
-    setIsLoggedIn(!!token);
-    setIsLoading(false);
-
-    const handleStorageChange = (e) => {
-      if (e.key === "authToken") setIsLoggedIn(!!e.newValue);
-    };
-    window.addEventListener("storage", handleStorageChange);
-    return () => window.removeEventListener("storage", handleStorageChange);
-  }, []);
-
-  if (isLoading) return <LoadingSpinner />;
+  const isAuthenticated = useAppSelector((state) => state?.auth?.isAuthenticated ?? false);
 
   return (
     <BrowserRouter>
       <Suspense fallback={<LoadingSpinner />}>
         <Routes>
           {/* Root redirect */}
-          <Route path="/" element={<Navigate to={isLoggedIn ? "/dashboard" : "/login"} replace />} />
+          <Route path="/" element={<Navigate to={isAuthenticated ? "/dashboard" : "/login"} replace />} />
 
           {/* Public routes */}
           <Route element={<GuestLayout />}>
             <Route
               path="/login"
               element={
-                isLoggedIn ? <Navigate to="/dashboard" replace /> : <Login setIsLoggedIn={setIsLoggedIn} />
+                isAuthenticated ? <Navigate to="/dashboard" replace /> : <Login />
               }
             />
             <Route path="/register" element={<Register />} />
@@ -105,9 +88,6 @@ export default function App() {
 
             {/* Settings/UI routes */}
             <Route path="/settings" element={<Color />} />
-            <Route path="/privilege" element={<FeatherIcon />} />
-            <Route path="/icons/font-awesome-5" element={<FontAwesome />} />
-            <Route path="/icons/material" element={<MaterialIcon />} />
             <Route path="/sample-page" element={<Sample />} />
 
             {/* Master routes */}
@@ -129,7 +109,7 @@ export default function App() {
           </Route>
 
           {/* Catch all */}
-          <Route path="*" element={<Navigate to={isLoggedIn ? "/dashboard" : "/login"} replace />} />
+          <Route path="*" element={<Navigate to={isAuthenticated ? "/dashboard" : "/login"} replace />} />
         </Routes>
       </Suspense>
 

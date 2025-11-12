@@ -27,42 +27,11 @@ const menuItems = {
       id: 'components-group',
       children: [
         {
-          id: 'typography',
-          title: 'Typography',
-          type: 'item',
-          url: '/typography'
-        },
-        {
           id: 'color',
           title: 'Color',
           type: 'item',
           url: '/color'
         },
-        {
-          id: 'icons',
-          title: 'Icons',
-          type: 'collapse',
-          children: [
-            {
-              id: 'feather',
-              title: 'Feather',
-              type: 'item',
-              url: '/icons/Feather'
-            },
-            {
-              id: 'font-awesome-5',
-              title: 'Font Awesome',
-              type: 'item',
-              url: '/icons/font-awesome-5'
-            },
-            {
-              id: 'material',
-              title: 'Material',
-              type: 'item',
-              url: '/icons/material'
-            }
-          ]
-        }
       ]
     },
     {

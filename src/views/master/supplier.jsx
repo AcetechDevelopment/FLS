@@ -1,12 +1,9 @@
 import "bootstrap/dist/css/bootstrap.min.css";
-import jsPDF from "jspdf";
-import autoTable from "jspdf-autotable";
-import * as XLSX from "xlsx";
 import React, { useState, useRef, useEffect, Fragment } from "react";
-import axios from "axios";
 import { toast } from "react-toastify";
-
-const API_BASE_URL = "https://115.124.111.111/FLS/public/api";
+import { apiService } from "../../services/api";
+import Loading from "../../components/Loading";
+import { exportTableToPDF, exportTableToExcel, printTable } from "../../utils/exportUtils";
 
 const SupplierMaster = () => {
   const [suppliers, setSuppliers] = useState([]);
@@ -20,9 +17,18 @@ const SupplierMaster = () => {
   const [supplierGroups, setSupplierGroups] = useState([]);
   const [groupsLoaded, setGroupsLoaded] = useState(false);
 
+
+  const inputRefs = useRef([]);
   const fileInputRef = useRef(null);
 
-  // ✅ Form state
+  // Return focus to the main container when modal closes
+  useEffect(() => {
+    if (!showModal && !showImageModal) {
+      document.getElementById("supplier-container")?.focus();
+    }
+  }, [showModal, showImageModal]);
+
+
   const [formData, setFormData] = useState({
     id: "",
     customer_name: "",
@@ -33,499 +39,1067 @@ const SupplierMaster = () => {
     image: null,
   });
 
-  // ✅ Load data on mount
-  useEffect(() => {
-    const loadData = async () => {
-      setLoading(true);
-      await fetchSupplierGroups();
-      await fetchSuppliers();
-      setLoading(false);
-    };
-    loadData();
-  }, []);
+  // ✅ Fetch suppliers
 
-  // ✅ Fetch groups
-  const fetchSupplierGroups = async () => {
-    try {
-      const token = sessionStorage.getItem("authToken");
-      if (!token) return;
-
-      const res = await axios.get(`${API_BASE_URL}/supplier-group/list`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      setSupplierGroups(res.data?.data || []);
-      setGroupsLoaded(true);
-    } catch (error) {
-      console.error(error);
-      toast.error("Failed to fetch supplier groups.");
-      setGroupsLoaded(true);
-    }
-  };
-
-  // ✅ Fetch customers
   const fetchSuppliers = async () => {
     try {
-      const token = sessionStorage.getItem("authToken");
-      if (!token) {
-        toast.error("Session expired. Please login again.");
-        return;
-      }
+      setLoading(true);
+      const resData = await apiService.getCustomers();
+      const list =
+        resData?.data ||
+        resData?.customers ||
+        resData?.list ||
+        (Array.isArray(resData) ? resData : []);
 
-      const res = await axios.get(`${API_BASE_URL}/customer/list`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      const list = res.data?.data || [];
-      const mappedList = list.map((item) => {
-        const group = supplierGroups.find((g) => String(g.id) === String(item.group_id));
-        return { ...item, group_name: group ? group.supplier_name : "" };
-      });
-      setSuppliers(mappedList);
-    } catch (err) {
-      console.error(err);
+      if (list.length > 0) {
+        // ✅ Map group_id → supplier_name
+
+const mappedList = list.map((item) => {
+  const group = supplierGroups.find(
+    (g) => String(g.id) === String(item.group_id)
+  );
+  return {
+    ...item,
+    group_name: group ? group.supplier_name : "", // ✅ Add readable group name
+  };
+});
+setSuppliers(mappedList);
+
+      } else {
+        toast.warn("No customers found.");
+      }
+    } catch (error) {
       toast.error("Failed to fetch suppliers.");
+    } finally {
+      setLoading(false);
     }
   };
 
-  // ✅ Image handling
+const fetchSupplierGroups = async () => {
+  try {
+    const groupsData = await apiService.getSupplierGroups();
+    if (groupsData && Array.isArray(groupsData)) {
+      setSupplierGroups(groupsData);
+      setGroupsLoaded(true); // ✅ mark ready
+    } else {
+      toast.warn("No supplier groups found.");
+      setGroupsLoaded(true); // ✅ still mark ready to avoid waiting forever
+    }
+  } catch (error) {
+    toast.error("Failed to fetch supplier groups.");
+    setGroupsLoaded(true);
+  }
+};
+
+  // // ✅ Add this right below
+  // useEffect(() => {
+  //   fetchSupplierGroups(); // first load groups
+  // }, []);
+
+  // useEffect(() => {
+  //   if (groupsLoaded) {
+  //     fetchSuppliers(); // only load suppliers after groups loaded
+  //   }
+  // }, [groupsLoaded]);
+  
+useEffect(() => {
+  const loadData = async () => {
+    setLoading(true);
+    await fetchSupplierGroups();
+    await fetchSuppliers();
+    setLoading(false);
+  };
+  loadData();
+}, []);
+
+
+  // ✅ Remove image
+  const handleRemoveImage = () => {
+    setFormData({ ...formData, image: "" });
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+    setPreviewImage(null);
+  };
+
+  // ✅ Handle image change
   const handleImageUpload = (e) => {
     const file = e.target.files[0];
     if (!file) return;
-    if (!file.type.startsWith("image/")) {
+
+    if (file.type.startsWith("image/")) {
+      setFormData({ ...formData, image: file });
+      const reader = new FileReader();
+      reader.onloadend = () => setPreviewImage(reader.result);
+      reader.readAsDataURL(file);
+    } else {
       toast.error("Please select a valid image file");
-      return;
+      handleRemoveImage();
     }
-    setFormData({ ...formData, image: file });
-    const reader = new FileReader();
-    reader.onloadend = () => setPreviewImage(reader.result);
-    reader.readAsDataURL(file);
   };
 
-  const handleRemoveImage = () => {
-    setFormData({ ...formData, image: null });
-    setPreviewImage(null);
-    if (fileInputRef.current) fileInputRef.current.value = "";
-  };
-
-  // ✅ Add new
+  // ✅ New supplier
   const handleNewSupplier = () => {
     setEditingSupplier(null);
     setFormData({
       id: "",
       customer_name: "",
       customer_id: "",
-      group_id: "",
+      customer_group: "",
       gst: "",
       address: "",
       image: null,
     });
     setPreviewImage(null);
+    if (fileInputRef.current) fileInputRef.current.value = "";
     setShowModal(true);
   };
 
-  // ✅ Edit supplier
-  const handleEditSupplier = async (supplier) => {
+// ✅ Edit supplier
+const handleEditSupplier = async (supplier) => {
+  try {
+    // ✅ Try both possible endpoints — fallback if edit fails
+    let response;
     try {
-      const token = sessionStorage.getItem("authToken");
-      const res = await axios.get(`${API_BASE_URL}/customer/edit/${supplier.id}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      const data = res.data?.data || {};
+      response = await apiService.editCustomer(supplier.id);
+    } catch {
+      response = await apiService.getCustomer(supplier.id);
+    }
+
+    // ✅ Normalize response
+    const resData = response;
+    const data = resData?.data || resData?.customer || resData;
+
+    if (data && Object.keys(data).length > 0) {
+
       setEditingSupplier(data);
       setFormData({
         id: data.id || "",
         customer_name: data.customer_name || "",
-        customer_id: data.customer_id || "",
-        group_id: data.group_id || "",
+        customer_id: data.customer_id || supplier.customer_id || "",
+        customer_group: data.group_id || "",
         gst: data.gst || "",
         address: data.address || "",
         image: data.image || null,
       });
+
       setPreviewImage(data.image || null);
       setShowModal(true);
-    } catch (err) {
-      console.error(err);
-      toast.error("Failed to load supplier details.");
+    } else {
+      toast.error(resData?.message || "Failed to fetch supplier details.");
     }
-  };
+  } catch (error) {
+    if (error.response) {
+      toast.error(
+        error.response.data?.message ||
+          "Server error while fetching details."
+      );
+    } else {
+      toast.error("Network error while loading supplier details.");
+    }
+  }
+};
 
-  // ✅ Save
-  const handleSaveSupplier = async () => {
-    if (isSaving) return;
-    setIsSaving(true);
-    try {
-      const token = sessionStorage.getItem("authToken");
-      if (!token) return toast.error("Unauthorized! Please login again.");
-      if (!formData.customer_name || !formData.gst) {
-        toast.error("Please fill all required fields");
-        setIsSaving(false);
-        return;
-      }
+// ✅ Save supplier (Create or Update)
+const handleSaveSupplier = async () => {
+  if (isSaving) return;
+  setIsSaving(true);
 
-      const formDataToSend = new FormData();
-      if (editingSupplier) formDataToSend.append("id", formData.id);
-      formDataToSend.append("customer_name", formData.customer_name.trim());
-      formDataToSend.append("customer_id", formData.customer_id.trim());
-      formDataToSend.append("group_id", formData.group_id || ""); // ✅ correct field
-      formDataToSend.append("gst", formData.gst.trim());
-      formDataToSend.append("address", formData.address || "");
-
-      if (formData.image instanceof File) {
-        formDataToSend.append("image", formData.image);
-      } else if (typeof formData.image === "string" && formData.image !== "") {
-        formDataToSend.append("image_url", formData.image);
-      }
-
-      const url = editingSupplier
-        ? `${API_BASE_URL}/customer/update`
-        : `${API_BASE_URL}/customer/create`;
-
-      const res = await axios.post(url, formDataToSend, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-
-      if (res.data?.status === "success" || res.data?.success) {
-        toast.success(`Customer ${editingSupplier ? "updated" : "created"} successfully`);
-        setShowModal(false);
-        setFormData({
-          id: "",
-          customer_name: "",
-          customer_id: "",
-          group_id: "",
-          gst: "",
-          address: "",
-          image: null,
-        });
-        setPreviewImage(null);
-        setEditingSupplier(null);
-        await fetchSuppliers();
-      } else {
-        toast.error(res.data?.message || "Failed to save");
-      }
-    } catch (err) {
-      console.error(err);
-      toast.error("Error while saving supplier.");
-    } finally {
+  try {
+    // ✅ Basic validation
+    if (!formData.customer_name || !formData.gst) {
+      toast.error("Please fill all required fields");
       setIsSaving(false);
+      return;
     }
-  };
 
-  // ✅ Delete
-  const deleteRow = async (id) => {
-    if (!window.confirm("Are you sure you want to delete this customer?")) return;
-    try {
-      const token = sessionStorage.getItem("authToken");
-      const res = await axios.delete(`${API_BASE_URL}/customer/delete/${id}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      if (res.data?.status === "success") {
-        toast.success("Customer deleted successfully!");
-        fetchSuppliers();
-      } else toast.error("Delete failed.");
-    } catch (err) {
-      console.error(err);
-      toast.error("Error deleting customer.");
+    // ✅ Prepare form data
+    const formDataToSend = new FormData();
+    if (editingSupplier) formDataToSend.append("id", formData.id);
+    formDataToSend.append("customer_name", formData.customer_name.trim());
+    formDataToSend.append("customer_id", formData.customer_id.trim());
+    formDataToSend.append(
+      "customer_group",
+      formData.customer_group !== "" ? formData.customer_group : ""
+    );
+    formDataToSend.append("gst", formData.gst.trim());
+    formDataToSend.append("address", formData.address || "");
+
+    if (formData.image instanceof File) {
+      formDataToSend.append("image", formData.image);
+    } else if (typeof formData.image === "string" && formData.image !== "") {
+      formDataToSend.append("image_url", formData.image);
     }
-  };
+
+    const response = editingSupplier
+      ? await apiService.updateCustomer(formDataToSend)
+      : await apiService.createCustomer(formDataToSend);
+
+    if (
+      response.status === "success" ||
+      response.success === true ||
+      response.message?.toLowerCase().includes("success")
+    ) {
+      toast.success(
+        response.message || `Customer ${editingSupplier ? "updated" : "created"} successfully!`
+      );
+
+      // ✅ Reset form and close modal
+      setFormData({
+        id: "",
+        customer_name: "",
+        customer_id: "",
+        customer_group: "",
+        gst: "",
+        address: "",
+        image: null,
+      });
+      setPreviewImage(null);
+      setEditingSupplier(null);
+      setShowModal(false);
+
+      // ✅ Refresh list
+      await fetchSuppliers();
+    } else {
+      toast.error(response.message || "Failed to save customer");
+    }
+  } catch (error) {
+    toast.error("Something went wrong while saving supplier.");
+  } finally {
+    setIsSaving(false);
+  }
+};
+
+// ✅ Delete supplier
+const deleteRow = async (id) => {
+  if (!window.confirm("Are you sure you want to delete this customer?")) return;
+
+  try {
+    const response = await apiService.deleteCustomer(id);
+
+    if (
+      response.status === "success" ||
+      response.success === true ||
+      response.message?.toLowerCase().includes("success")
+    ) {
+      toast.success(response.message || "Customer deleted successfully!");
+      fetchSuppliers();
+    } else {
+      toast.error(response.message || "Failed to delete customer");
+    }
+  } catch (error) {
+
+    if (error.response) {
+      toast.error(
+        error.response.data?.message ||
+          "Server error while deleting customer"
+      );
+    } else if (error.request) {
+      toast.error("No response from server. Please check your network.");
+    } else {
+      toast.error("Unexpected error occurred while deleting customer.");
+    }
+  }
+};
 
   // ✅ Export PDF
   const exportPDF = () => {
-    if (suppliers.length === 0) return alert("No data to export.");
-    const doc = new jsPDF();
-    doc.text("Supplier Master", 14, 15);
-    autoTable(doc, {
-      startY: 25,
-      head: [["Code", "Name", "Group", "Address", "GST"]],
-      body: suppliers.map((s) => [
-        s.customer_id,
-        s.customer_name,
-        s.group_name || s.group_id || "",
-        s.address,
-        s.gst,
-      ]),
-      theme: "grid",
+    const headers = ["Code", "Name", "Group", "Address", "GST"];
+    const rows = suppliers.map((s) => [
+      s.customer_id,
+      s.customer_name,
+      s.customer_group || "",
+      s.address || "",
+      s.gst,
+    ]);
+    exportTableToPDF({
+      title: "Supplier Master",
+      filename: "SupplierMaster.pdf",
+      headers,
+      rows,
     });
-    doc.save("SupplierMaster.pdf");
   };
 
   // ✅ Export Excel
   const exportExcel = () => {
-    if (suppliers.length === 0) return alert("No data to export.");
-    const data = suppliers.map((s) => ({
-      Code: s.customer_id,
-      Name: s.customer_name,
-      Group: s.group_name || s.group_id || "",
-      Address: s.address,
-      "GST No.": s.gst,
-    }));
-    const ws = XLSX.utils.json_to_sheet(data);
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, "Suppliers");
-    XLSX.writeFile(wb, "SupplierMaster.xlsx");
+    const headers = ["Code", "Name", "Group", "Address", "GST No."];
+    const rows = suppliers.map((s) => [
+      s.customer_id,
+      s.customer_name,
+      s.customer_group || "",
+      s.address || "",
+      s.gst,
+    ]);
+    exportTableToExcel({
+      filename: "SupplierMaster.xlsx",
+      sheetName: "Suppliers",
+      headers,
+      rows,
+    });
   };
 
   // ✅ Print
   const handlePrint = () => {
-    const w = window.open("", "", "width=900,height=600");
-    w.document.write("<h2>Supplier Master</h2>");
-    w.document.write(document.getElementById("supplier-table").outerHTML);
-    w.print();
+    const headers = ["Code", "Name", "Group", "Address", "GST"];
+    const rows = suppliers.map((s) => [
+      s.customer_id,
+      s.customer_name,
+      s.customer_group || "",
+      s.address || "",
+      s.gst,
+    ]);
+    printTable({
+      title: "Supplier Master",
+      headers,
+      rows,
+    });
   };
 
-  // ✅ Filter
+  // ✅ Filtered suppliers
   const filteredSuppliers = suppliers.filter(
     (s) =>
       s.customer_name?.toLowerCase().includes(search.toLowerCase()) ||
       s.customer_id?.toLowerCase().includes(search.toLowerCase()) ||
-      s.group_name?.toLowerCase().includes(search.toLowerCase())
+      s.customer_group?.toLowerCase().includes(search.toLowerCase()) ||
+      s.gst?.toLowerCase().includes(search.toLowerCase()) ||
+      s.address?.toLowerCase().includes(search.toLowerCase())
   );
+
 
   return (
     <Fragment>
-      <div className="container-fluid p-3">
-        {/* Toolbar */}
-        <div className="d-flex flex-wrap gap-2 mb-2">
-          <button className="btn btn-sm btn-success" onClick={handleNewSupplier}>
-            + New
-          </button>
-          <button className="btn btn-sm btn-danger" onClick={exportPDF}>
-            PDF
-          </button>
-          <button className="btn btn-sm btn-primary" onClick={exportExcel}>
-            Excel
-          </button>
-          <button className="btn btn-sm btn-secondary" onClick={handlePrint}>
-            Print
-          </button>
-          <input
-            type="text"
-            placeholder="Search..."
-            className="form-control form-control-sm ms-auto"
-            style={{ width: "200px" }}
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-          />
-        </div>
-
-        {/* Table */}
-        <div className="table-responsive border">
-          <table id="supplier-table" className="table table-sm text-center">
-            <thead className="table-light">
-              <tr>
-                <th>Code</th>
-                <th>Name</th>
-                <th>Group</th>
-                <th>Address</th>
-                <th>GST</th>
-                <th>Image</th>
-                <th>Action</th>
-              </tr>
-            </thead>
-            <tbody>
-              {loading ? (
-                <tr>
-                  <td colSpan="7">Loading...</td>
-                </tr>
-              ) : filteredSuppliers.length > 0 ? (
-                filteredSuppliers.map((s) => (
-                  <tr key={s.id}>
-                    <td>{s.customer_id}</td>
-                    <td>{s.customer_name}</td>
-                    <td>{s.group_name || s.group_id}</td>
-                    <td>{s.address}</td>
-                    <td>{s.gst}</td>
-                    <td>
-                      {s.image ? (
-                        <img
-                          src={s.image}
-                          alt="img"
-                          width="25"
-                          height="25"
-                          style={{ cursor: "pointer" }}
-                          onClick={() => {
-                            setPreviewImage(s.image);
-                            setShowImageModal(true);
-                          }}
-                        />
-                      ) : (
-                        "No"
-                      )}
-                    </td>
-                    <td>
-                      <button
-                        className="btn btn-sm btn-warning me-1"
-                        onClick={() => handleEditSupplier(s)}
-                      >
-                        Edit
-                      </button>
-                      <button
-                        className="btn btn-sm btn-danger"
-                        onClick={() => deleteRow(s.id)}
-                      >
-                        Delete
-                      </button>
-                    </td>
-                  </tr>
-                ))
-              ) : (
-                <tr>
-                  <td colSpan="7">No suppliers found</td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
-
-        {/* Modal */}
-        {showModal && (
-          <div className="modal fade show d-block" tabIndex="-1">
-            <div className="modal-dialog modal-dialog-centered">
-              <div className="modal-content">
-                <div className="modal-header py-2">
-                  <h6 className="modal-title">
-                    {editingSupplier ? "Edit Supplier" : "Add Supplier"}
-                  </h6>
-                  <button
-                    type="button"
-                    className="btn-close"
-                    onClick={() => setShowModal(false)}
-                  ></button>
+      <div className="page-container">
+        <div className="main-container">
+          <div
+            className="container-fluid p-3"
+            id="supplier-container"
+            tabIndex="-1"
+          >
+            {/* Loading Indicator */}
+            {/* {loading && (
+              <div className="text-center my-3">
+                <div className="spinner-border text-primary" role="status">
+                  <span className="visually-hidden">Loading...</span>
                 </div>
+              </div>
+            )} */}
 
-                <div className="modal-body">
-                  {editingSupplier && (
-                    <div className="mb-2">
-                      <label>Customer Code</label>
-                      <input
-                        type="text"
-                        className="form-control form-control-sm"
-                        value={formData.customer_id}
-                        readOnly
-                      />
-                    </div>
+            {/* Toolbar */}
+            <div className="d-flex flex-wrap gap-2 mb-2 px-2">
+              <button
+                className="btn btn-sm btn-success py-1 px-2 d-flex align-items-center"
+                style={{ borderRadius: "8px", fontSize: "13px" }}
+                onClick={handleNewSupplier}
+              >
+                <span
+                  className="material-icons-two-tone me-1"
+                  style={{ fontSize: "12px" }}
+                >
+                  add
+                </span>
+                New
+              </button>
+
+              <button
+                className="btn btn-sm btn-danger py-1 px-2 d-flex align-items-center"
+                style={{ borderRadius: "8px", fontSize: "13px" }}
+                onClick={exportPDF}
+              >
+                <span
+                  className="material-icons-two-tone me-1"
+                  style={{ fontSize: "14px" }}
+                >
+                  picture_as_pdf
+                </span>
+                PDF
+              </button>
+
+              <button
+                className="btn btn-sm text-white py-1 px-2 d-flex align-items-center"
+                style={{
+                  backgroundColor: "#1D6F42",
+                  borderColor: "#1D6F42",
+                  borderRadius: "8px",
+                  fontSize: "13px",
+                }}
+                onClick={exportExcel}
+              >
+                <span
+                  className="material-icons-two-tone me-1"
+                  style={{ fontSize: "14px" }}
+                >
+                  grid_on
+                </span>
+                Excel
+              </button>
+
+              <button
+                className="btn btn-sm btn-primary py-1 px-2 d-flex align-items-center"
+                style={{ borderRadius: "8px", fontSize: "13px" }}
+                onClick={handlePrint}
+              >
+                <span
+                  className="material-icons-two-tone me-1"
+                  style={{ fontSize: "14px" }}
+                >
+                  print
+                </span>
+                Print
+              </button>
+            </div>
+
+            {/* Table */}
+
+            <div
+              className="table-responsive"
+              style={{
+                border: "1.5px solid #2f2f2f", // Outer bold border
+                borderRadius: "4px",
+                overflow: "hidden",
+                backgroundColor: "#fff",
+              }}
+            >
+              <table
+                id="supplier-table"
+                className="table align-middle mb-0 text-center"
+                style={{
+                  fontSize: "11px",
+                  width: "100%",
+                  borderCollapse: "collapse", // ✅ Perfect alignment for Excel-like lines
+                  tableLayout: "fixed",
+                }}
+              >
+                {/* Header */}
+                <thead
+                  style={{
+                    backgroundColor: "#e3f0fd",
+                    color: "#000",
+                    fontWeight: "700",
+                  }}
+                >
+                  <tr>
+                    {["Code", "Name", "Group", "Address", "GST", "Image", "Action"].map(
+                      (header, i) => (
+                        <th
+                          key={i}
+                          style={{
+                            padding: "6px 5px",
+                            border: "1.5px solid #2f2f2f", // 🟩 Equal border thickness for all sides
+                            textAlign: "center",
+                            verticalAlign: "middle",
+                            background: "#e3f0fd",
+                          }}
+                        >
+                          {header}
+                        </th>
+                      )
+                    )}
+                  </tr>
+                </thead>
+
+                {/* Body */}
+                {/* <tbody>
+                  {Array.isArray(filteredSuppliers) && filteredSuppliers.length > 0 ? (
+                    filteredSuppliers.map((supplier, index) => (
+                      <tr
+                        key={supplier.id}
+                        style={{
+                          backgroundColor: index % 2 === 0 ? "#ffffff" : "#f6f8fa",
+                          transition: "background-color 0.15s ease-in-out",
+                        }}
+                        onMouseEnter={(e) =>
+                          (e.currentTarget.style.backgroundColor = "#e0ebff")
+                        }
+                        onMouseLeave={(e) =>
+                        (e.currentTarget.style.backgroundColor =
+                          index % 2 === 0 ? "#ffffff" : "#f6f8fa")
+                        }
+                      >
+                        <td style={{ padding: "4px 5px", border: "1.5px solid #2f2f2f" }}>
+                          {supplier.customer_id}
+                        </td>
+                        <td style={{ padding: "4px 5px", border: "1.5px solid #2f2f2f" }}>
+                          {supplier.customer_name}
+                        </td>
+                        <td style={{ padding: "4px 5px", border: "1.5px solid #2f2f2f" }}>
+                          {supplier.customer_group}
+                        </td>
+                        <td
+                          style={{
+                            padding: "4px 5px",
+                            border: "1.5px solid #2f2f2f",
+                            textAlign: "left",
+                          }}
+                        >
+                          {supplier.address}
+                        </td>
+                        <td style={{ padding: "4px 5px", border: "1.5px solid #2f2f2f" }}>
+                          {supplier.gst}
+                        </td>
+                        <td style={{ padding: "4px 5px", border: "1.5px solid #2f2f2f" }}>
+                          {supplier.image ? (
+                            <img
+                              src={supplier.image}
+                              alt="Supplier"
+                              width="20"
+                              height="20"
+                              style={{
+                                borderRadius: "2px",
+                                objectFit: "cover",
+                                cursor: "pointer",
+                                transition: "transform 0.2s ease-in-out",
+                              }}
+                              onMouseEnter={(e) =>
+                                (e.currentTarget.style.transform = "scale(1.1)")
+                              }
+                              onMouseLeave={(e) =>
+                                (e.currentTarget.style.transform = "scale(1)")
+                              }
+                              onClick={() => {
+                                setPreviewImage(supplier.image);
+                                setShowImageModal(true);
+                              }}
+                            />
+                          ) : (
+                            <span style={{ color: "#6c757d", fontSize: "9px" }}>
+                              No Image
+                            </span>
+                          )}
+                        </td>
+
+                        <td style={{ padding: "4px 5px", border: "1.5px solid #2f2f2f" }}>
+                         
+                          <button
+                            className="btn btn-sm p-0 me-1"
+                            style={{
+                              background: "transparent",
+                              border: "none",
+                              transition: "transform 0.1s ease-in-out",
+                            }}
+                            onMouseEnter={(e) =>
+                              (e.currentTarget.style.transform = "scale(1.2)")
+                            }
+                            onMouseLeave={(e) =>
+                              (e.currentTarget.style.transform = "scale(1)")
+                            }
+                            onClick={() => handleEditSupplier(supplier)}
+                            title="Edit"
+                          >
+                            <span
+                              className="material-icons-two-tone"
+                              style={{
+                                fontSize: "12px",
+                                color: "#ffc107",
+                                cursor: "pointer",
+                              }}
+                            >
+                              edit
+                            </span>
+                          </button>
+                          <button
+                            className="btn btn-sm p-0 me-1"
+                            style={{
+                              background: "transparent",
+                              border: "none",
+                              transition: "transform 0.1s ease-in-out",
+                            }}
+                            onMouseEnter={(e) =>
+                              (e.currentTarget.style.transform = "scale(1.2)")
+                            }
+                            onMouseLeave={(e) =>
+                              (e.currentTarget.style.transform = "scale(1)")
+                            }
+                            onClick={() =>
+                              alert("Open Price List for " + supplier.customer_name)
+                            }
+                            title="Price List"
+                          >
+                            <span
+                              className="material-icons-two-tone"
+                              style={{
+                                fontSize: "12px",
+                                color: "#0dcaf0",
+                                cursor: "pointer",
+                              }}
+                            >
+                              list_alt
+                            </span>
+                          </button>
+
+                          <button
+                            className="btn btn-sm p-0"
+                            style={{
+                              background: "transparent",
+                              border: "none",
+                              transition: "transform 0.1s ease-in-out",
+                            }}
+                            onMouseEnter={(e) =>
+                              (e.currentTarget.style.transform = "scale(1.2)")
+                            }
+                            onMouseLeave={(e) =>
+                              (e.currentTarget.style.transform = "scale(1)")
+                            }
+                            onClick={() => deleteRow(supplier.id)}
+                            title="Delete"
+                          >
+                            <span
+                              className="material-icons-two-tone"
+                              style={{
+                                fontSize: "12px",
+                                color: "#dc3545",
+                                cursor: "pointer",
+                              }}
+                            >
+                              delete
+                            </span>
+                          </button>
+                        </td>
+                      </tr>
+                    ))
+                  ) : (
+                    <tr>
+                      <td
+                        colSpan="7"
+                        style={{
+                          textAlign: "center",
+                          color: "#6c757d",
+                          fontSize: "10px",
+                          padding: "6px",
+                          border: "1.5px solid #2f2f2f",
+                          fontWeight: "500",
+                        }}
+                      >
+                        No suppliers found
+                      </td>
+                    </tr>
                   )}
+                </tbody> */}
+                <tbody>
+                  {loading ? (
+                    <tr>
+                      <td colSpan="7">
+                        <Loading message="Loading suppliers..." />
+                      </td>
+                    </tr>
+                  ) : Array.isArray(filteredSuppliers) && filteredSuppliers.length > 0 ? (
+                    filteredSuppliers.map((supplier, index) => (
+                      // existing supplier rows
+                      <tr
+                        key={supplier.id}
+                        style={{
+                          backgroundColor: index % 2 === 0 ? "#ffffff" : "#f6f8fa",
+                          transition: "background-color 0.15s ease-in-out",
+                        }}
+                        onMouseEnter={(e) =>
+                          (e.currentTarget.style.backgroundColor = "#e0ebff")
+                        }
+                        onMouseLeave={(e) =>
+                        (e.currentTarget.style.backgroundColor =
+                          index % 2 === 0 ? "#ffffff" : "#f6f8fa")
+                        }
+                      >
+                        <td style={{ padding: "4px 5px", border: "1.5px solid #2f2f2f" }}>
+                          {supplier.customer_id}
+                        </td>
+                        <td style={{ padding: "4px 5px", border: "1.5px solid #2f2f2f" }}>
+                          {supplier.customer_name}
+                        </td>
+<td>{supplier.group_name || supplier.group_id}</td>
+                        
+                        <td
+                          style={{
+                            padding: "4px 5px",
+                            border: "1.5px solid #2f2f2f",
+                            textAlign: "left",
+                          }}
+                        >
+                          {supplier.address}
+                        </td>
+                        <td style={{ padding: "4px 5px", border: "1.5px solid #2f2f2f" }}>
+                          {supplier.gst}
+                        </td>
+                        <td style={{ padding: "4px 5px", border: "1.5px solid #2f2f2f" }}>
+                          {supplier.image ? (
+                            <img
+                              src={supplier.image}
+                              alt="Supplier"
+                              width="20"
+                              height="20"
+                              style={{
+                                borderRadius: "2px",
+                                objectFit: "cover",
+                                cursor: "pointer",
+                              }}
+                              onClick={() => {
+                                setPreviewImage(supplier.image);
+                                setShowImageModal(true);
+                              }}
+                            />
+                          ) : (
+                            <span style={{ color: "#6c757d", fontSize: "9px" }}>No Image</span>
+                          )}
+                        </td>
+                           <td style={{ padding: "4px 5px", border: "1.5px solid #2f2f2f" }}>
+                         
+                          <button
+                            className="btn btn-sm p-0 me-1"
+                            style={{
+                              background: "transparent",
+                              border: "none",
+                              transition: "transform 0.1s ease-in-out",
+                            }}
+                            onMouseEnter={(e) =>
+                              (e.currentTarget.style.transform = "scale(1.2)")
+                            }
+                            onMouseLeave={(e) =>
+                              (e.currentTarget.style.transform = "scale(1)")
+                            }
+                            onClick={() => handleEditSupplier(supplier)}
+                            title="Edit"
+                          >
+                            <span
+                              className="material-icons-two-tone"
+                              style={{
+                                fontSize: "12px",
+                                color: "#ffc107",
+                                cursor: "pointer",
+                              }}
+                            >
+                              edit
+                            </span>
+                          </button>
+                          <button
+                            className="btn btn-sm p-0 me-1"
+                            style={{
+                              background: "transparent",
+                              border: "none",
+                              transition: "transform 0.1s ease-in-out",
+                            }}
+                            onMouseEnter={(e) =>
+                              (e.currentTarget.style.transform = "scale(1.2)")
+                            }
+                            onMouseLeave={(e) =>
+                              (e.currentTarget.style.transform = "scale(1)")
+                            }
+                            onClick={() =>
+                              alert("Open Price List for " + supplier.customer_name)
+                            }
+                            title="Price List"
+                          >
+                            <span
+                              className="material-icons-two-tone"
+                              style={{
+                                fontSize: "12px",
+                                color: "#0dcaf0",
+                                cursor: "pointer",
+                              }}
+                            >
+                              list_alt
+                            </span>
+                          </button>
 
-                  <div className="mb-2">
-                    <label>Customer Name</label>
-                    <input
-                      type="text"
-                      className="form-control form-control-sm"
-                      value={formData.customer_name}
-                      onChange={(e) =>
-                        setFormData({ ...formData, customer_name: e.target.value })
-                      }
-                    />
+                          <button
+                            className="btn btn-sm p-0"
+                            style={{
+                              background: "transparent",
+                              border: "none",
+                              transition: "transform 0.1s ease-in-out",
+                            }}
+                            onMouseEnter={(e) =>
+                              (e.currentTarget.style.transform = "scale(1.2)")
+                            }
+                            onMouseLeave={(e) =>
+                              (e.currentTarget.style.transform = "scale(1)")
+                            }
+                            onClick={() => deleteRow(supplier.id)}
+                            title="Delete"
+                          >
+                            <span
+                              className="material-icons-two-tone"
+                              style={{
+                                fontSize: "12px",
+                                color: "#dc3545",
+                                cursor: "pointer",
+                              }}
+                            >
+                              delete
+                            </span>
+                          </button>
+                        </td>
+                      </tr>
+                    ))
+                  ) : (
+                    <tr>
+                      <td
+                        colSpan="7"
+                        style={{
+                          textAlign: "center",
+                          color: "#6c757d",
+                          fontSize: "10px",
+                          padding: "6px",
+                          border: "1.5px solid #2f2f2f",
+                          fontWeight: "500",
+                        }}
+                      >
+                        No suppliers found
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+
+              </table>
+            </div>
+
+
+
+
+
+            {/* Form Modal */}
+            {showModal && (
+              <Fragment>
+                <div className="modal-wrapper">
+                  <div className="modal-backdrop fade show"></div>
+                  <div className="modal fade show d-block" tabIndex="-1">
+                    <div className="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+                      <div className="modal-content" style={{ fontSize: "13px" }}>
+
+                        <div className="modal-header py-2">
+                          <h6 className="modal-title">
+                            {editingSupplier ? "Edit Supplier" : "Add Supplier"}
+                          </h6>
+                          <button
+                            type="button"
+                            className="btn-close"
+                            onClick={() => {
+                              setShowModal(false);
+                              setFormData({
+                                id: "",
+                                customer_name: "",
+                                customer_id: "",
+                                group_id: "",
+                                gst: "",
+                                address: "",
+                                image: null,
+                              });
+                              setPreviewImage(null);
+                              setEditingSupplier(null);
+                            }}
+                          ></button>
+                        </div>
+
+                        <div
+                          className="modal-body p-2"
+                          style={{ maxHeight: "300px", overflowY: "auto" }}
+                        >
+                          {/* Customer Code (Read-only in Edit Mode) */}
+                          {editingSupplier && (
+                            <div className="mb-2">
+                              <label className="form-label">Customer Code</label>
+                              <input
+                                type="text"
+                                className="form-control form-control-sm"
+                                value={formData.customer_id}
+                                readOnly
+                              />
+                            </div>
+                          )}
+
+                          {/* Customer Name */}
+                          <div className="mb-2">
+                            <label className="form-label">Customer Name</label>
+                            <input
+                              type="text"
+                              className="form-control form-control-sm"
+                              value={formData.customer_name}
+                              onChange={(e) =>
+                                setFormData({ ...formData, customer_name: e.target.value })
+                              }
+                            />
+                          </div>
+
+                          {/* Customer Group */}
+                          <div className="mb-2">
+                            <label className="form-label">Customer Group</label>
+
+<select
+  className="form-select form-select-sm"
+  value={formData.group_id}
+  onChange={(e) =>
+    setFormData({
+      ...formData,
+      group_id: e.target.value ? Number(e.target.value) : "",
+    })
+  }
+>
+  <option value="">Select</option>
+  {supplierGroups.map((group) => (
+    <option key={group.id} value={group.id}>
+      {group.supplier_name}
+    </option>
+  ))}
+</select>
+
+
+
+                            {/* 
+ <select
+  className="form-select form-select-sm"
+  value={formData.customer_group}
+  onChange={(e) =>
+    setFormData({
+      ...formData,
+      customer_group: e.target.value ? Number(e.target.value) : "",
+    })
+  }
+>
+  <option value="">Select</option>
+  {supplierGroups.map((group) => (
+    <option key={group.id} value={group.id}>
+      {group.supplier_name}
+    </option>
+  ))}
+</select> */}
+                          </div>
+
+                          {/* GST */}
+                          <div className="mb-2">
+                            <label className="form-label">GST</label>
+                            <input
+                              type="text"
+                              className="form-control form-control-sm"
+                              value={formData.gst}
+                              onChange={(e) =>
+                                setFormData({ ...formData, gst: e.target.value })
+                              }
+                            />
+                          </div>
+
+                          {/* Address */}
+                          <div className="mb-2">
+                            <label className="form-label">Address</label>
+                            <textarea
+                              className="form-control form-control-sm"
+                              value={formData.address}
+                              onChange={(e) =>
+                                setFormData({ ...formData, address: e.target.value })
+                              }
+                            ></textarea>
+                          </div>
+
+                          {/* Image Upload */}
+                          <div className="mb-2 position-relative">
+                            <label className="form-label">Image</label>
+                            <input
+                              type="file"
+                              className="form-control form-control-sm"
+                              ref={fileInputRef}
+                              onChange={handleImageUpload}
+                            />
+                            {previewImage && (
+                              <div
+                                className="position-relative mt-1"
+                                style={{ width: "50px", height: "50px" }}
+                              >
+                                <img
+                                  src={previewImage}
+                                  alt="Preview"
+                                  width="50"
+                                  height="50"
+                                  style={{ objectFit: "cover", borderRadius: "4px" }}
+                                />
+                                <span
+                                  onClick={handleRemoveImage}
+                                  style={{
+                                    position: "absolute",
+                                    top: "-5px",
+                                    right: "-5px",
+                                    background: "red",
+                                    color: "white",
+                                    borderRadius: "50%",
+                                    width: "16px",
+                                    height: "16px",
+                                    fontSize: "12px",
+                                    fontWeight: "bold",
+                                    textAlign: "center",
+                                    lineHeight: "16px",
+                                    cursor: "pointer",
+                                  }}
+                                >
+                                  ×
+                                </span>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Footer */}
+                        <div className="modal-footer py-2">
+                          <button
+                            className="btn btn-sm btn-secondary"
+                            onClick={() => {
+                              setShowModal(false);
+                              setFormData({
+                                id: "",
+                                customer_name: "",
+                                customer_id: "",
+                                customer_group: "",
+                                gst: "",
+                                address: "",
+                                image: null,
+                              });
+                              setPreviewImage(null);
+                              setEditingSupplier(null);
+                            }}
+                          >
+                            Close
+                          </button>
+
+                          <button
+                            id="saveSupplierBtn"
+                            className="btn btn-sm btn-primary"
+                            onClick={handleSaveSupplier}
+                            disabled={isSaving}
+                          >
+                            {isSaving ? "Saving..." : "Save"}
+                          </button>
+                        </div>
+                      </div>
+                    </div>
                   </div>
+                </div>
+              </Fragment>
+            )}
 
-                  <div className="mb-2">
-                    <label>Customer Group</label>
-                    <select
-                      className="form-select form-select-sm"
-                      value={formData.group_id}
-                      onChange={(e) =>
-                        setFormData({
-                          ...formData,
-                          group_id: e.target.value ? Number(e.target.value) : "",
-                        })
-                      }
-                    >
-                      <option value="">Select</option>
-                      {supplierGroups.map((group) => (
-                        <option key={group.id} value={group.id}>
-                          {group.supplier_name}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
 
-                  <div className="mb-2">
-                    <label>GST</label>
-                    <input
-                      type="text"
-                      className="form-control form-control-sm"
-                      value={formData.gst}
-                      onChange={(e) => setFormData({ ...formData, gst: e.target.value })}
-                    />
-                  </div>
-
-                  <div className="mb-2">
-                    <label>Address</label>
-                    <textarea
-                      className="form-control form-control-sm"
-                      value={formData.address}
-                      onChange={(e) =>
-                        setFormData({ ...formData, address: e.target.value })
-                      }
-                    ></textarea>
-                  </div>
-
-                  <div className="mb-2">
-                    <label>Image</label>
-                    <input
-                      type="file"
-                      className="form-control form-control-sm"
-                      ref={fileInputRef}
-                      onChange={handleImageUpload}
-                    />
-                    {previewImage && (
-                      <div className="mt-2 position-relative" style={{ width: "60px" }}>
-                        <img
-                          src={previewImage}
-                          alt="preview"
-                          width="60"
-                          height="60"
-                          style={{ objectFit: "cover", borderRadius: "5px" }}
-                        />
+            {/* Image Modal */}
+            {showImageModal && (
+              <div className="modal-wrapper">
+                <div className="modal-backdrop fade show"></div>
+                <div className="modal fade show d-block" tabIndex="-1">
+                  <div className="modal-dialog modal-dialog-centered">
+                    <div className="modal-content p-2">
+                      <div className="modal-header py-1">
+                        <h6 className="modal-title">Image Preview</h6>
                         <button
                           type="button"
-                          onClick={handleRemoveImage}
-                          className="btn-close btn-close-white position-absolute top-0 end-0 bg-danger"
+                          className="btn-close"
+                          onClick={() => setShowImageModal(false)}
                         ></button>
                       </div>
-                    )}
+                      <div className="modal-body text-center">
+                        <img
+                          src={previewImage}
+                          alt="Preview"
+                          style={{ maxWidth: "100%", maxHeight: "400px" }}
+                        />
+                      </div>
+                    </div>
                   </div>
                 </div>
-
-                <div className="modal-footer py-2">
-                  <button className="btn btn-sm btn-secondary" onClick={() => setShowModal(false)}>
-                    Close
-                  </button>
-                  <button
-                    className="btn btn-sm btn-primary"
-                    onClick={handleSaveSupplier}
-                    disabled={isSaving}
-                  >
-                    {isSaving ? "Saving..." : "Save"}
-                  </button>
-                </div>
               </div>
-            </div>
+            )}
           </div>
-        )}
-
-        {/* Image modal */}
-        {showImageModal && (
-          <div className="modal fade show d-block" tabIndex="-1">
-            <div className="modal-dialog modal-dialog-centered">
-              <div className="modal-content">
-                <div className="modal-header py-2">
-                  <h6 className="modal-title">Image Preview</h6>
-                  <button
-                    type="button"
-                    className="btn-close"
-                    onClick={() => setShowImageModal(false)}
-                  ></button>
-                </div>
-                <div className="modal-body text-center">
-                  <img
-                    src={previewImage}
-                    alt="Preview"
-                    style={{ maxWidth: "100%", maxHeight: "400px" }}
-                  />
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
+        </div>
       </div>
     </Fragment>
   );

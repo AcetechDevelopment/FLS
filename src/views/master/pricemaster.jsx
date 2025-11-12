@@ -1,9 +1,8 @@
 import React, { useState, useEffect } from "react";
-import { Card, Table, Form, Spinner, Button } from "react-bootstrap";
-import axios from "axios";
+import { Card, Table, Form, Button } from "react-bootstrap";
 import { toast } from "react-toastify";
-
-const BASE_URL = "https://115.124.111.111/FLS/public/api";
+import { apiService } from "../../services/api";
+import Loading from "../../components/Loading";
 
 const PriceMaster = () => {
   const [customers, setCustomers] = useState([]);
@@ -22,18 +21,8 @@ const PriceMaster = () => {
   const fetchCustomers = async () => {
     try {
       setLoading(true);
-      const token = sessionStorage.getItem("authToken");
-      if (!token) {
-        toast.error("Unauthorized. Please login again.");
-        setLoading(false);
-        return;
-      }
-
-      const res = await axios.get(`${BASE_URL}/price-master/getcustomer`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-
-      const customersData = res.data?.customers || res.data?.data || [];
+      const res = await apiService.getPriceMasterCustomer();
+      const customersData = res?.customers || res?.data || [];
 
       if (!Array.isArray(customersData) || customersData.length === 0) {
         setCustomers([]);
@@ -52,7 +41,6 @@ const PriceMaster = () => {
       setSelectedCustomer(formattedCustomers[0]?.id ?? "");
       setLoading(false);
     } catch (err) {
-      console.error("Error fetching customers:", err);
       toast.error("Failed to load customers.");
       setLoading(false);
     }
@@ -94,12 +82,6 @@ const PriceMaster = () => {
       return;
     }
 
-    const token = sessionStorage.getItem("authToken");
-    if (!token) {
-      toast.error("Unauthorized. Please login again.");
-      return;
-    }
-
     const payload = {
       customer_id: selectedCustomer,
       materials: materials.map((m) => ({
@@ -110,12 +92,7 @@ const PriceMaster = () => {
 
     try {
       setSaving(true);
-      const res = await axios.post(`${BASE_URL}/price-master/update`, payload, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-      });
+      const res = await apiService.updatePriceMaster(payload);
 
       if (res.data?.message) {
         toast.success(res.data.message);
@@ -125,7 +102,6 @@ const PriceMaster = () => {
 
       setSaving(false);
     } catch (err) {
-      console.error("Error updating prices:", err);
       toast.error("Failed to update prices.");
       setSaving(false);
     }
@@ -164,9 +140,7 @@ const PriceMaster = () => {
 
           {/* Materials Table */}
           {loading ? (
-            <div className="text-center py-3">
-              <Spinner animation="border" size="sm" /> Loading...
-            </div>
+            <Loading message="Loading customers and materials..." />
           ) : (
             <>
               <Table
@@ -225,14 +199,7 @@ const PriceMaster = () => {
                     disabled={saving}
                   >
                     {saving ? (
-                      <>
-                        <Spinner
-                          animation="border"
-                          size="sm"
-                          className="me-2"
-                        />
-                        Saving...
-                      </>
+                      <Loading message="Saving..." inline size="sm" />
                     ) : (
                       "Save Changes"
                     )}

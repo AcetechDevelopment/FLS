@@ -1,42 +1,30 @@
 import { useContext, useEffect, useState } from "react";
-import axios from "axios";
 import { MaterialContext } from "../../contexts/MaterialContext";
 import { toast } from "react-toastify";
+import { apiService } from "../../services/api";
 
 const StockAdjustment = () => {
   const { materials, setMaterials } = useContext(MaterialContext);
   const [editingCell, setEditingCell] = useState({ id: null, field: null });
   // const [savingId, setSavingId] = useState(null);
-  const authToken = sessionStorage.getItem("authToken");
 
   // ✅ Fetch materials from API
   useEffect(() => {
     const fetchMaterials = async () => {
-      if (!authToken) return toast.error("Unauthorized. Please login again.");
       try {
-        const response = await axios.get(
-          "https://115.124.111.111/FLS/public/api/material/list",
-          {
-            headers: {
-              Authorization: `Bearer ${authToken}`,
-              "Content-Type": "application/json",
-            },
-          }
-        );
-
-        if (response.data?.data) {
-          setMaterials(response.data.data);
+        const materialsData = await apiService.getMaterials();
+        if (materialsData && materialsData.length > 0) {
+          setMaterials(materialsData);
         } else {
           toast.warning("No materials found.");
         }
       } catch (error) {
-        console.error("Fetch materials error:", error);
         toast.error("Failed to fetch materials.");
       }
     };
 
     fetchMaterials();
-  }, [authToken, setMaterials]);
+  }, [setMaterials]);
 
   const handleChange = (id, field, value) => {
     setMaterials((prev) =>
@@ -56,24 +44,13 @@ const StockAdjustment = () => {
 
   // ✅ Save API - updated endpoint
   const saveMaterial = async (material) => {
-    if (!authToken) return toast.error("Session expired. Please login again.");
-
     setSavingId(material.id);
     try {
-      const response = await axios.post(
-        "https://115.124.111.111/FLS/public/api/material/stock-adjustment",
-        {
-          material_id: material.material_id,
-          stock: material.weight, // Using 'weight' as stock
-          default_price: material.default_price,
-        },
-        {
-          headers: {
-            Authorization: `Bearer ${authToken}`,
-            "Content-Type": "application/json",
-          },
-        }
-      );
+      const response = await apiService.updateStockAdjustment({
+        material_id: material.material_id,
+        stock: material.weight, // Using 'weight' as stock
+        default_price: material.default_price,
+      });
 
       if (response.data.status === "success") {
         toast.success("Stock updated successfully!");
@@ -93,7 +70,6 @@ const StockAdjustment = () => {
         toast.error(response.data.message || "Failed to update stock");
       }
     } catch (error) {
-      console.error("Error updating stock:", error);
       toast.error(error.response?.data?.message || "Error updating stock");
     } finally {
       setSavingId(null);

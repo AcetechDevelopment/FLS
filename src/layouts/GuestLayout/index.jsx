@@ -2,8 +2,7 @@ import { Suspense } from 'react';
 import { Outlet } from 'react-router-dom';
 
 // project imports
-
-import Loader from 'components/Loader/Loader';
+import Loading from 'components/Loading';
 
 /**
  * GuestLayout is a top-level component that wraps around the <Outlet> component
@@ -19,7 +18,7 @@ import Loader from 'components/Loader/Loader';
 export default function GuestLayout() {
   let GuestLayout = (
     <>
-      <Suspense fallback={<Loader />}>
+      <Suspense fallback={<Loading fullScreen />}>
         <Outlet />
       </Suspense>
     </>

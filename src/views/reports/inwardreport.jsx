@@ -1,8 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { Table, Card, Button } from "react-bootstrap";
-import jsPDF from "jspdf";
-import autoTable from "jspdf-autotable";
-import * as XLSX from "xlsx";
+import { exportToPDF, exportToExcel, printReport, calculateTotals } from "../../utils/exportUtils";
 
 const InwardReport = () => {
   const [reportData, setReportData] = useState({
@@ -19,16 +17,6 @@ const InwardReport = () => {
     }
   }, []);
 
-  const calculateTotals = (rows) =>
-    rows.reduce(
-      (acc, row) => {
-        acc.pieces += Number(row.pieces || 0);
-        acc.weight += Number(row.weight || 0);
-        return acc;
-      },
-      { pieces: 0, weight: 0 }
-    );
-
   const hospitalTotals = calculateTotals(reportData.hospital || []);
   const hotelTotals = calculateTotals(reportData.hotel || []);
   const othersTotals = calculateTotals(reportData.others || []);
@@ -36,107 +24,49 @@ const InwardReport = () => {
 
   // ================== PDF Export ==================
   const exportPDF = () => {
-    const doc = new jsPDF();
-    doc.setFontSize(16);
-    doc.text("Inward Report", 14, 15);
-
-    const addTable = (title, data) => {
-      const topY = doc.lastAutoTable ? doc.lastAutoTable.finalY + 15 : 25;
-
-      doc.setFontSize(12);
-      doc.text(title, 14, topY);
-
-      autoTable(doc, {
-        startY: topY + 5,
-        margin: { top: 5 },
-        head: [["Sl No", "Item", "Pieces", "Weight"]],
-        body: data.map((row, idx) => [idx + 1, row.item, row.pieces, row.weight]),
-        theme: "grid",
-        styles: { fontSize: 10 },
-        headStyles: { fillColor: [0, 123, 255] },
-        foot: [["TOTAL", "",
-          data.reduce((a, r) => a + Number(r.pieces || 0), 0),
-          data.reduce((a, r) => a + Number(r.weight || 0), 0)
-        ]]
-      });
-    };
-
-    addTable("Hospital", reportData.hospital || []);
-    addTable("Others", reportData.others || []);
-    addTable("Hotel", reportData.hotel || []);
-    addTable("Overall Inward Details", reportData.overall || []);
-
-    doc.save("InwardReport.pdf");
+    const sections = [
+      { title: "Hospital", data: reportData.hospital || [] },
+      { title: "Others", data: reportData.others || [] },
+      { title: "Hotel", data: reportData.hotel || [] },
+      { title: "Overall Inward Details", data: reportData.overall || [] },
+    ];
+    exportToPDF({
+      title: "Inward Report",
+      filename: "InwardReport.pdf",
+      sections,
+      columns: ["Sl No", "Item", "Pieces", "Weight"],
+    });
   };
 
   // ================== Excel Export ==================
   const exportExcel = () => {
-    const workbook = XLSX.utils.book_new();
-    let worksheetData = [];
-
-    const addTable = (title, data) => {
-      worksheetData.push([title]);
-      worksheetData.push(["Sl No", "Item", "Pieces", "Weight"]);
-      data.forEach((row, idx) => {
-        worksheetData.push([idx + 1, row.item, row.pieces, row.weight]);
-      });
-
-      worksheetData.push([
-        "",
-        "TOTAL",
-        data.reduce((a, r) => a + Number(r.pieces || 0), 0),
-        data.reduce((a, r) => a + Number(r.weight || 0), 0)
-      ]);
-      worksheetData.push([]);
-    };
-
-    addTable("Hospital", reportData.hospital || []);
-    addTable("Others", reportData.others || []);
-    addTable("Hotel", reportData.hotel || []);
-    addTable("Overall Inward Details", reportData.overall || []);
-
-    const worksheet = XLSX.utils.aoa_to_sheet(worksheetData);
-    XLSX.utils.book_append_sheet(workbook, worksheet, "Inward Report");
-    XLSX.writeFile(workbook, "InwardReport.xlsx");
+    const sections = [
+      { title: "Hospital", data: reportData.hospital || [] },
+      { title: "Others", data: reportData.others || [] },
+      { title: "Hotel", data: reportData.hotel || [] },
+      { title: "Overall Inward Details", data: reportData.overall || [] },
+    ];
+    exportToExcel({
+      filename: "InwardReport.xlsx",
+      sheetName: "Inward Report",
+      sections,
+      columns: ["Sl No", "Item", "Pieces", "Weight"],
+    });
   };
 
   // ================== Print ==================
   const handlePrint = () => {
-    const printWindow = window.open("", "", "width=900,height=600");
-    let content = `<html><head><title>Inward Report</title>
-      <style>
-        table { width: 100%; border-collapse: collapse; font-size: 13px; }
-        th, td { border: 1px solid #ddd; padding: 6px; text-align: center; }
-        th { background-color: #0d6efd; color: white; }
-        h4 { text-align: center; }
-      </style></head><body>`;
-
-    const addPrintTable = (title, data) => {
-      content += `<h4>${title}</h4><table><thead>
-        <tr><th>Sl No</th><th>Item</th><th>Pieces</th><th>Weight</th></tr></thead><tbody>`;
-      data.forEach((row, idx) => {
-        content += `<tr>
-          <td>${idx + 1}</td>
-          <td>${row.item}</td>
-          <td>${row.pieces}</td>
-          <td>${row.weight}</td>
-        </tr>`;
-      });
-      const totalPieces = data.reduce((a, r) => a + Number(r.pieces || 0), 0);
-      const totalWeight = data.reduce((a, r) => a + Number(r.weight || 0), 0);
-      content += `<tr style="font-weight:bold"><td colspan="2">TOTAL</td><td>${totalPieces}</td><td>${totalWeight}</td></tr>`;
-      content += `</tbody></table><br/>`;
-    };
-
-    addPrintTable("Hospital", reportData.hospital || []);
-    addPrintTable("Others", reportData.others || []);
-    addPrintTable("Hotel", reportData.hotel || []);
-    addPrintTable("Overall Inward Details", reportData.overall || []);
-
-    content += `</body></html>`;
-    printWindow.document.write(content);
-    printWindow.document.close();
-    printWindow.print();
+    const sections = [
+      { title: "Hospital", data: reportData.hospital || [] },
+      { title: "Others", data: reportData.others || [] },
+      { title: "Hotel", data: reportData.hotel || [] },
+      { title: "Overall Inward Details", data: reportData.overall || [] },
+    ];
+    printReport({
+      title: "Inward Report",
+      sections,
+      columns: ["Sl No", "Item", "Pieces", "Weight"],
+    });
   };
 
   return (

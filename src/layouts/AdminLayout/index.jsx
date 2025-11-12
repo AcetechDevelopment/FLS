@@ -9,7 +9,7 @@ import Breadcrumb from './Breadcrumb';
 import useWindowSize from 'hooks/useWindowSize';
 import { ConfigContext } from 'contexts/ConfigContext';
 import * as actionType from 'store/actions';
-import Loader from 'components/Loader/Loader';
+import Loading from 'components/Loading';
 
 // -----------------------|| ADMIN LAYOUT ||-----------------------//
 
@@ -50,7 +50,7 @@ export default function AdminLayout() {
         <div className="pcoded-content">
           <>
             <Breadcrumb />
-            <Suspense fallback={<Loader />}>
+            <Suspense fallback={<Loading fullScreen />}>
               <Outlet />
             </Suspense>
           </>

@@ -1,8 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { Table, Card, Button } from "react-bootstrap";
-import jsPDF from "jspdf";
-import autoTable from "jspdf-autotable";
-import * as XLSX from "xlsx";
+import { exportToPDF, exportToExcel, printReport, calculateTotals } from "../../utils/exportUtils";
 
 const DispatchReport = () => {
   const [dispatchData, setDispatchData] = useState({
@@ -19,16 +17,6 @@ const DispatchReport = () => {
     }
   }, []);
 
-  const calculateTotals = (rows) =>
-    rows.reduce(
-      (acc, row) => {
-        acc.pieces += Number(row.pieces || 0);
-        acc.weight += Number(row.weight || 0);
-        return acc;
-      },
-      { pieces: 0, weight: 0 }
-    );
-
   const hospitalTotals = calculateTotals(dispatchData.hospital || []);
   const hotelTotals = calculateTotals(dispatchData.hotel || []);
   const othersTotals = calculateTotals(dispatchData.others || []);
@@ -36,109 +24,49 @@ const DispatchReport = () => {
 
   // ================== PDF Export ==================
   const exportPDF = () => {
-    const doc = new jsPDF();
-    doc.setFontSize(16);
-    doc.text("Dispatch Report", 14, 15);
-
-    const addTable = (title, data) => {
-      const topY = doc.lastAutoTable ? doc.lastAutoTable.finalY + 15 : 25;
-
-      doc.setFontSize(12);
-      doc.text(title, 14, topY);
-
-      autoTable(doc, {
-        startY: topY + 5,
-        head: [["Sl No", "Item", "Pieces", "Weight"]],
-        body: data.map((row, idx) => [idx + 1, row.item, row.pieces, row.weight]),
-        theme: "grid",
-        styles: { fontSize: 10 },
-        headStyles: { fillColor: [40, 167, 69] },
-        foot: [["TOTAL", "",
-          data.reduce((a, r) => a + Number(r.pieces || 0), 0),
-          data.reduce((a, r) => a + Number(r.weight || 0), 0)
-        ]]
-      });
-    };
-
-    addTable("Hospital", dispatchData.hospital || []);
-    addTable("Others", dispatchData.others || []);
-    addTable("Hotel", dispatchData.hotel || []);
-    addTable("Overall Dispatch Details", dispatchData.overall || []);
-
-    doc.save("DispatchReport.pdf");
+    const sections = [
+      { title: "Hospital", data: dispatchData.hospital || [] },
+      { title: "Others", data: dispatchData.others || [] },
+      { title: "Hotel", data: dispatchData.hotel || [] },
+      { title: "Overall Dispatch Details", data: dispatchData.overall || [] },
+    ];
+    exportToPDF({
+      title: "Dispatch Report",
+      filename: "DispatchReport.pdf",
+      sections,
+      columns: ["Sl No", "Item", "Pieces", "Weight"],
+    });
   };
 
   // ================== Excel Export ==================
   const exportExcel = () => {
-    const workbook = XLSX.utils.book_new();
-    let worksheetData = [];
-
-    const addTable = (title, data) => {
-      worksheetData.push([title]);
-      worksheetData.push(["Sl No", "Item", "Pieces", "Weight"]);
-
-      data.forEach((row, idx) => {
-        worksheetData.push([idx + 1, row.item, row.pieces, row.weight]);
-      });
-
-      worksheetData.push([
-        "",
-        "TOTAL",
-        data.reduce((a, r) => a + Number(r.pieces || 0), 0),
-        data.reduce((a, r) => a + Number(r.weight || 0), 0)
-      ]);
-
-      worksheetData.push([]);
-    };
-
-    addTable("Hospital", dispatchData.hospital || []);
-    addTable("Others", dispatchData.others || []);
-    addTable("Hotel", dispatchData.hotel || []);
-    addTable("Overall Dispatch Details", dispatchData.overall || []);
-
-    const worksheet = XLSX.utils.aoa_to_sheet(worksheetData);
-    XLSX.utils.book_append_sheet(workbook, worksheet, "Dispatch Report");
-
-    XLSX.writeFile(workbook, "DispatchReport.xlsx");
+    const sections = [
+      { title: "Hospital", data: dispatchData.hospital || [] },
+      { title: "Others", data: dispatchData.others || [] },
+      { title: "Hotel", data: dispatchData.hotel || [] },
+      { title: "Overall Dispatch Details", data: dispatchData.overall || [] },
+    ];
+    exportToExcel({
+      filename: "DispatchReport.xlsx",
+      sheetName: "Dispatch Report",
+      sections,
+      columns: ["Sl No", "Item", "Pieces", "Weight"],
+    });
   };
 
   // ================== Print ==================
   const handlePrint = () => {
-    const printWindow = window.open("", "", "width=900,height=600");
-    let content = `<html><head><title>Dispatch Report</title>
-      <style>
-        table { width: 100%; border-collapse: collapse; font-size: 13px; }
-        th, td { border: 1px solid #ddd; padding: 6px; text-align: center; }
-        th { background-color: #28a745; color: white; }
-        h4 { text-align: center; }
-      </style></head><body>`;
-    
-    const addPrintTable = (title, data) => {
-      content += `<h4>${title}</h4><table><thead>
-        <tr><th>Sl No</th><th>Item</th><th>Pieces</th><th>Weight</th></tr></thead><tbody>`;
-      data.forEach((row, idx) => {
-        content += `<tr>
-          <td>${idx + 1}</td>
-          <td>${row.item}</td>
-          <td>${row.pieces}</td>
-          <td>${row.weight}</td>
-        </tr>`;
-      });
-      const totalPieces = data.reduce((a, r) => a + Number(r.pieces || 0), 0);
-      const totalWeight = data.reduce((a, r) => a + Number(r.weight || 0), 0);
-      content += `<tr style="font-weight:bold"><td colspan="2">TOTAL</td><td>${totalPieces}</td><td>${totalWeight}</td></tr>`;
-      content += `</tbody></table><br/>`;
-    };
-
-    addPrintTable("Hospital", dispatchData.hospital || []);
-    addPrintTable("Others", dispatchData.others || []);
-    addPrintTable("Hotel", dispatchData.hotel || []);
-    addPrintTable("Overall Dispatch Details", dispatchData.overall || []);
-
-    content += `</body></html>`;
-    printWindow.document.write(content);
-    printWindow.document.close();
-    printWindow.print();
+    const sections = [
+      { title: "Hospital", data: dispatchData.hospital || [] },
+      { title: "Others", data: dispatchData.others || [] },
+      { title: "Hotel", data: dispatchData.hotel || [] },
+      { title: "Overall Dispatch Details", data: dispatchData.overall || [] },
+    ];
+    printReport({
+      title: "Dispatch Report",
+      sections,
+      columns: ["Sl No", "Item", "Pieces", "Weight"],
+    });
   };
 
   return (

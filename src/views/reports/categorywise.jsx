@@ -1,8 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { Table, Card, Button } from "react-bootstrap";
-import jsPDF from "jspdf";
-import autoTable from "jspdf-autotable";
-import * as XLSX from "xlsx";
+import { exportToPDF, exportToExcel, printReport, calculateTotals } from "../../utils/exportUtils";
 
 const CategoryWise = () => {
   const [reportData, setReportData] = useState({
@@ -19,15 +17,6 @@ const CategoryWise = () => {
     }
   }, []);
 
-  const calculateTotals = (rows) =>
-    rows.reduce(
-      (acc, row) => {
-        acc.pieces += Number(row.pieces || 0);
-        acc.weight += Number(row.weight || 0);
-        return acc;
-      },
-      { pieces: 0, weight: 0 }
-    );
 
   const hospitalTotals = calculateTotals(reportData.hospital || []);
   const hotelTotals = calculateTotals(reportData.hotel || []);
@@ -35,122 +24,48 @@ const CategoryWise = () => {
   const overallTotals = calculateTotals(reportData.overall || []);
 
   // ================== PDF Export ==================
-const exportPDF = () => {
-  const doc = new jsPDF();
-  doc.setFontSize(16);
-  doc.text("Category Wise Processed Line Details", 14, 15);
-
-  const addTable = (title, data) => {
-    const topY = doc.lastAutoTable ? doc.lastAutoTable.finalY + 15 : 25;
-
-    doc.setFontSize(12);
-    doc.text(title, 14, topY);
-
-    autoTable(doc, {
-      startY: topY + 5, // add extra 5 units margin before header
-      margin: { top: 5 }, // additional top margin if needed
-      head: [["Sl No", "Item", "Pieces", "Weight"]],
-      body: data.map((row, idx) => [idx + 1, row.item, row.pieces, row.weight]),
-      theme: "grid",
-      styles: { fontSize: 10 },
-      headStyles: { fillColor: [0, 123, 255] },
-      foot: [["TOTAL", "",
-        data.reduce((a, r) => a + Number(r.pieces || 0), 0),
-        data.reduce((a, r) => a + Number(r.weight || 0), 0)
-      ]]
+  const exportPDF = () => {
+    const sections = [
+      { title: "Hospital", data: reportData.hospital || [] },
+      { title: "Others", data: reportData.others || [] },
+      { title: "Hotel", data: reportData.hotel || [] },
+      { title: "Overall Processed Line Details", data: reportData.overall || [] },
+    ];
+    exportToPDF({
+      title: "Category Wise Processed Line Details",
+      filename: "CategoryWiseReport.pdf",
+      sections,
+      columns: ["Sl No", "Item", "Pieces", "Weight"],
     });
   };
 
-  addTable("Hospital", reportData.hospital || []);
-  addTable("Others", reportData.others || []);
-  addTable("Hotel", reportData.hotel || []);
-  addTable("Overall Processed Line Details", reportData.overall || []);
-
-  doc.save("CategoryWiseReport.pdf");
-};
-
-// ================== Excel Export ==================
-const exportExcel = () => {
-  const workbook = XLSX.utils.book_new();
-
-  let worksheetData = [];
-
-  // Helper to push table into single sheet
-  const addTable = (title, data) => {
-    worksheetData.push([title]); // Section Title
-    worksheetData.push(["Sl No", "Item", "Pieces", "Weight"]); // Header row
-
-    data.forEach((row, idx) => {
-      worksheetData.push([
-        idx + 1,
-        row.item,
-        row.pieces,
-        row.weight
-      ]);
+  const exportExcel = () => {
+    const sections = [
+      { title: "Hospital", data: reportData.hospital || [] },
+      { title: "Others", data: reportData.others || [] },
+      { title: "Hotel", data: reportData.hotel || [] },
+      { title: "Overall Processed Linen Details", data: reportData.overall || [] },
+    ];
+    exportToExcel({
+      filename: "CategoryWiseReport.xlsx",
+      sheetName: "Category Wise Report",
+      sections,
+      columns: ["Sl No", "Item", "Pieces", "Weight"],
     });
-
-    // Totals row
-    worksheetData.push([
-      "",
-      "TOTAL",
-      data.reduce((a, r) => a + Number(r.pieces || 0), 0),
-      data.reduce((a, r) => a + Number(r.weight || 0), 0)
-    ]);
-
-    worksheetData.push([]); // Blank row for spacing
   };
 
-  addTable("Hospital", reportData.hospital || []);
-  addTable("Others", reportData.others || []);
-  addTable("Hotel", reportData.hotel || []);
-  addTable("Overall Processed Linen Details", reportData.overall || []);
-
-  // Convert array of arrays to sheet
-  const worksheet = XLSX.utils.aoa_to_sheet(worksheetData);
-  XLSX.utils.book_append_sheet(workbook, worksheet, "Category Wise Report");
-
-  // ✅ Trigger download
-  XLSX.writeFile(workbook, "CategoryWiseReport.xlsx");
-};
-
-
-  // ================== Print ==================
   const handlePrint = () => {
-    const printWindow = window.open("", "", "width=900,height=600");
-    let content = `<html><head><title>Category Wise Report</title>
-      <style>
-        table { width: 100%; border-collapse: collapse; font-size: 13px; }
-        th, td { border: 1px solid #ddd; padding: 6px; text-align: center; }
-        th { background-color: #0d6efd; color: white; }
-        h4 { text-align: center; }
-      </style></head><body>`;
-    
-    const addPrintTable = (title, data) => {
-      content += `<h4>${title}</h4><table><thead>
-        <tr><th>Sl No</th><th>Item</th><th>Pieces</th><th>Weight</th></tr></thead><tbody>`;
-      data.forEach((row, idx) => {
-        content += `<tr>
-          <td>${idx + 1}</td>
-          <td>${row.item}</td>
-          <td>${row.pieces}</td>
-          <td>${row.weight}</td>
-        </tr>`;
-      });
-      const totalPieces = data.reduce((a, r) => a + Number(r.pieces || 0), 0);
-      const totalWeight = data.reduce((a, r) => a + Number(r.weight || 0), 0);
-      content += `<tr style="font-weight:bold"><td colspan="2">TOTAL</td><td>${totalPieces}</td><td>${totalWeight}</td></tr>`;
-      content += `</tbody></table><br/>`;
-    };
-
-    addPrintTable("Hospital", reportData.hospital || []);
-    addPrintTable("Others", reportData.others || []);
-    addPrintTable("Hotel", reportData.hotel || []);
-    addPrintTable("Overall Processed Linen Details", reportData.overall || []);
-
-    content += `</body></html>`;
-    printWindow.document.write(content);
-    printWindow.document.close();
-    printWindow.print();
+    const sections = [
+      { title: "Hospital", data: reportData.hospital || [] },
+      { title: "Others", data: reportData.others || [] },
+      { title: "Hotel", data: reportData.hotel || [] },
+      { title: "Overall Processed Linen Details", data: reportData.overall || [] },
+    ];
+    printReport({
+      title: "Category Wise Report",
+      sections,
+      columns: ["Sl No", "Item", "Pieces", "Weight"],
+    });
   };
 
   return (

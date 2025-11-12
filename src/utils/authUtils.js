@@ -9,9 +9,11 @@ export const isValidToken = (token) => {
 
 export const clearAuthToken = () => {
   sessionStorage.removeItem("authToken");
+  sessionStorage.removeItem("Name");
+  sessionStorage.removeItem("RoleId");
 };
 
 export const handleAuthError = (navigate) => {
   clearAuthToken();
-  window.location.href = "/login";
+  window.location.replace("/login");
 };

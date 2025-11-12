@@ -1,73 +1,35 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Card, Row, Col, Button, Form, InputGroup } from "react-bootstrap";
 import FeatherIcon from "feather-icons-react";
-import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
+import { useAppDispatch, useAppSelector } from "../../store/hooks";
+import { login } from "../../store/slices/authSlice";
 import logo from "assets/images/strom.svg";
 
-
-export default function Login({ setIsLoggedIn }) {
+export default function Login() {
   const [mobile, setMobile] = useState("");
   const [password, setPassword] = useState("");
-  const [loading, setLoading] = useState(false);
-
+  const dispatch = useAppDispatch();
+  const { loading, isAuthenticated } = useAppSelector((state) => state.auth);
   const navigate = useNavigate();
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      navigate("/dashboard", { replace: true });
+    }
+  }, [isAuthenticated, navigate]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setLoading(true);
 
     // ✅ Basic validation
     if (!mobile || !password) {
       toast.warning("Please enter both mobile and password");
-      setLoading(false);
       return;
     }
 
-    try {
-      const response = await axios.post(
-        "https://115.124.111.111/FLS/public/api/auth/login",
-        { mobile, password },
-        { headers: { "Content-Type": "application/json" } }
-      );
-
-      console.log("Login API Response:", response.data);
-      const result = response.data;
-
-      // ✅ Handle different API response structures
-      const token =
-        result?.token ||
-        result?.access_token ||
-        result?.data?.token ||
-        result?.data?.access_token;
-      const user = result?.user || result?.data?.user;
-
-      if (token && user) {
-        // Save session info
-        sessionStorage.setItem("authToken", token);
-        sessionStorage.setItem("Name", user?.name || "");
-        const encodedRoleId = btoa(user?.role_id ?? "");
-        sessionStorage.setItem("RoleId", encodedRoleId);
-
-        // Update app state and redirect
-        setIsLoggedIn(true);
-        toast.success("Login successful!");
-        
-        // Use replace instead of push to avoid navigation stack issues
-        navigate("/dashboard", { replace: true });
-      } else {
-        toast.error("Invalid login credentials");
-        console.warn("Login failed: No token or user in response", result);
-      }
-    } catch (err) {
-      console.error("Login Error:", err.response || err.message);
-      toast.error(
-        err.response?.data?.message || "Network error or server not reachable"
-      );
-    } finally {
-      setLoading(false);
-    }
+    await dispatch(login({ mobile, password }));
   };
 
   return (
